@@ -130,6 +130,16 @@
 #define __has_builtin(x) __equals_1(__has_builtin_ ## x)
 #endif
 
+#if !defined(__GNUC__)
+/* Some versions of glibc irresponsibly redefine __attribute__() to empty for
+ * non-gcc compilers, and as such, silently break all constructors with other
+ * other compilers. Let's make sure such incompatibilities are detected if any,
+ * or that the attribute is properly enforced.
+ */
+#undef __attribute__
+#define __attribute__(x) __attribute__(x)
+#endif
+
 /* Define the missing __builtin_prefetch() for tcc. */
 #if defined(__TINYC__) && !defined(__builtin_prefetch)
 #define __builtin_prefetch(addr, ...) do { } while (0)
