@@ -111,6 +111,17 @@
 #define ___equals_1(x)       ____equals_1(comma_for_one ## x 1)
 #define __equals_1(x)        ___equals_1(x)
 
+/* gcc 5 and clang 3 brought __has_attribute(), which is not well documented in
+ * the case of gcc, but is convenient since handled at the preprocessor level.
+ * In both cases it's possible to test for __has_attribute() using ifdef. When
+ * not defined we remap this to the __has_attribute_<name> macro so that we'll
+ * later be able to implement on a per-compiler basis those which are missing,
+ * by defining __has_attribute_<name> to 1.
+ */
+#ifndef __has_attribute
+#define __has_attribute(x) __equals_1(__has_attribute_ ## x)
+#endif
+
 /* Define the missing __builtin_prefetch() for tcc. */
 #if defined(__TINYC__) && !defined(__builtin_prefetch)
 #define __builtin_prefetch(addr, ...) do { } while (0)
