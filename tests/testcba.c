@@ -33,27 +33,27 @@ static void dump_node(struct cba_node *node, int level)
 	u32 pxor, lxor, rxor;
 
 	/* xor of the keys of the two lower branches */
-	pxor = container_of(__cba_clrtag(node->l), struct key, node)->key ^
-		container_of(__cba_clrtag(node->r), struct key, node)->key;
+	pxor = container_of(__cba_clrtag(node->b[0]), struct key, node)->key ^
+		container_of(__cba_clrtag(node->b[1]), struct key, node)->key;
 
 	printf("  \"%lx_n\" [label=\"%lx\\nlev=%d\\nkey=%u\" fillcolor=\"lightskyblue1\"];\n",
 	       (long)node, (long)node, level, key->key);
 
 	/* xor of the keys of the left branch's lower branches */
-	lxor = container_of(__cba_clrtag(((struct cba_node*)__cba_clrtag(node->l))->l), struct key, node)->key ^
-		container_of(__cba_clrtag(((struct cba_node*)__cba_clrtag(node->l))->r), struct key, node)->key;
+	lxor = container_of(__cba_clrtag(((struct cba_node*)__cba_clrtag(node->b[0]))->b[0]), struct key, node)->key ^
+		container_of(__cba_clrtag(((struct cba_node*)__cba_clrtag(node->b[0]))->b[1]), struct key, node)->key;
 
 	printf("  \"%lx_n\" -> \"%lx_%c\" [taillabel=\"L\"];\n",
-	       (long)node, (long)__cba_clrtag(node->l),
-	       (((long)node->l & 1) || (lxor < pxor && ((struct cba_node*)node->l)->l != ((struct cba_node*)node->l)->r)) ? 'n' : 'l');
+	       (long)node, (long)__cba_clrtag(node->b[0]),
+	       (((long)node->b[0] & 1) || (lxor < pxor && ((struct cba_node*)node->b[0])->b[0] != ((struct cba_node*)node->b[0])->b[1])) ? 'n' : 'l');
 
 	/* xor of the keys of the right branch's lower branches */
-	rxor = container_of(__cba_clrtag(((struct cba_node*)__cba_clrtag(node->r))->l), struct key, node)->key ^
-		container_of(__cba_clrtag(((struct cba_node*)__cba_clrtag(node->r))->r), struct key, node)->key;
+	rxor = container_of(__cba_clrtag(((struct cba_node*)__cba_clrtag(node->b[1]))->b[0]), struct key, node)->key ^
+		container_of(__cba_clrtag(((struct cba_node*)__cba_clrtag(node->b[1]))->b[1]), struct key, node)->key;
 
 	printf("  \"%lx_n\" -> \"%lx_%c\" [taillabel=\"R\"];\n",
-	       (long)node, (long)__cba_clrtag(node->r),
-	       (((long)node->r & 1) || (rxor < pxor && ((struct cba_node*)node->r)->l != ((struct cba_node*)node->r)->r)) ? 'n' : 'l');
+	       (long)node, (long)__cba_clrtag(node->b[1]),
+	       (((long)node->b[1] & 1) || (rxor < pxor && ((struct cba_node*)node->b[1])->b[0] != ((struct cba_node*)node->b[1])->b[1])) ? 'n' : 'l');
 }
 
 static void dump_leaf(struct cba_node *node, int level)
