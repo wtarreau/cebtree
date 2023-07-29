@@ -124,7 +124,7 @@ struct cba_node *cbau_descend_u32(/*const*/ struct cba_node **root,
 	/* the parent will be the (possibly virtual) node so that
 	 * &lparent->l == root.
 	 */
-	lparent = container_of(root, struct cba_node, l);
+	lparent = container_of(root, struct cba_node, b[0]);
 	gparent = nparent = lparent;
 
 	/* the previous xor is initialized to the largest possible inter-branch
@@ -135,8 +135,8 @@ struct cba_node *cbau_descend_u32(/*const*/ struct cba_node **root,
 		p = container_of(*root, struct cba_u32, node);
 
 		/* neither pointer is tagged */
-		l = container_of(p->node.l, struct cba_u32, node);
-		r = container_of(p->node.r, struct cba_u32, node);
+		l = container_of(p->node.b[0], struct cba_u32, node);
+		r = container_of(p->node.b[1], struct cba_u32, node);
 
 		/* two equal pointers identifies the nodeless leaf */
 		if (l == r) {
@@ -190,11 +190,11 @@ struct cba_node *cbau_descend_u32(/*const*/ struct cba_node **root,
 
 		if ((key ^ l->key) < (key ^ r->key)) {
 			lpside = 0;
-			root = &p->node.l;
+			root = &p->node.b[0];
 		}
 		else {
 			lpside = 1;
-			root = &p->node.r;
+			root = &p->node.b[1];
 		}
 
 		if (p == container_of(*root, struct cba_u32, node)) {
@@ -274,7 +274,7 @@ struct cba_node *cba_insert_u32(struct cba_node **root, struct cba_node *node)
 
 	if (!*root) {
 		/* empty tree, insert a leaf only */
-		node->l = node->r = node;
+		node->b[0] = node->b[1] = node;
 		*root = node;
 		return node;
 	}
@@ -283,12 +283,12 @@ struct cba_node *cba_insert_u32(struct cba_node **root, struct cba_node *node)
 
 	if (ret == node) {
 		if (!nside) {
-			node->l = node;
-			node->r = *parent;
+			node->b[0] = node;
+			node->b[1] = *parent;
 		}
 		else {
-			node->l = *parent;
-			node->r = node;
+			node->b[0] = *parent;
+			node->b[1] = node;
 		}
 		*parent = ret;
 	}
@@ -318,7 +318,7 @@ struct cba_node *cba_delete_u32(struct cba_node **root, struct cba_node *node)
 	int lpside, npside, gpside;
 	struct cba_node *ret;
 
-	if (!node->l) {
+	if (!node->b[0]) {
 		/* NULL on a branch means the node is not in the tree */
 		return node;
 	}
@@ -332,7 +332,7 @@ struct cba_node *cba_delete_u32(struct cba_node **root, struct cba_node *node)
 	if (ret == node) {
 		//fprintf(stderr, "root=%p ret=%p l=%p[%d] n=%p[%d] g=%p[%d]\n", root, ret, lparent, lpside, nparent, npside, gparent, gpside);
 
-		if (&lparent->l == root) {
+		if (&lparent->b[0] == root) {
 			/* there was a single entry, this one */
 			*root = NULL;
 			goto done;
@@ -340,11 +340,11 @@ struct cba_node *cba_delete_u32(struct cba_node **root, struct cba_node *node)
 		//printf("g=%p\n", gparent);
 
 		/* then we necessarily have a gparent */
-		sibling = lpside ? lparent->l : lparent->r;
+		sibling = lpside ? lparent->b[0] : lparent->b[1];
 		if (!gpside)
-			gparent->l = sibling;
+			gparent->b[0] = sibling;
 		else
-			gparent->r = sibling;
+			gparent->b[1] = sibling;
 
 		if (lparent == node) {
 			/* we're removing the leaf and node together, nothing
@@ -353,11 +353,11 @@ struct cba_node *cba_delete_u32(struct cba_node **root, struct cba_node *node)
 			goto done;
 		}
 
-		if (node->l == node->r) {
+		if (node->b[0] == node->b[1]) {
 			/* we're removing the node-less item, the parent will
 			 * take this role.
 			 */
-			lparent->l = lparent->r = lparent;
+			lparent->b[0] = lparent->b[1] = lparent;
 			goto done;
 		}
 
@@ -365,13 +365,13 @@ struct cba_node *cba_delete_u32(struct cba_node **root, struct cba_node *node)
 		 * to find a spare one to switch it. The parent node is not
 		 * needed anymore so we can reuse it.
 		 */
-		lparent->l = node->l;
-		lparent->r = node->r;
+		lparent->b[0] = node->b[0];
+		lparent->b[1] = node->b[1];
 
 		if (!npside)
-			nparent->l = lparent;
+			nparent->b[0] = lparent;
 		else
-			nparent->r = lparent;
+			nparent->b[1] = lparent;
 	}
 done:
 	return ret;
@@ -584,32 +584,32 @@ void *cba_dump_tree_u32(struct cba_node *node, u32 pxor, void *last,
 	if (!node) /* empty tree */
 		return node;
 
-	fprintf(stderr, "node=%p level=%d key=%u l=%p r=%p\n", node, level, *(unsigned *)((char*)(node)+16), node->l, node->r);
+	fprintf(stderr, "node=%p level=%d key=%u l=%p r=%p\n", node, level, *(unsigned *)((char*)(node)+16), node->b[0], node->b[1]);
 
 	if (level < 0) {
 		/* we're inside a dup tree. Tagged pointers indicate nodes,
 		 * untagged ones leaves.
 		 */
 		level--;
-		if (__cba_tagged(node->l)) {
-			last = cba_dump_tree_u32(__cba_untag(node->l), 0, last, level, node_dump, leaf_dump);
+		if (__cba_tagged(node->b[0])) {
+			last = cba_dump_tree_u32(__cba_untag(node->b[0]), 0, last, level, node_dump, leaf_dump);
 			if (node_dump)
-				node_dump(__cba_untag(node->l), level);
+				node_dump(__cba_untag(node->b[0]), level);
 		} else if (leaf_dump)
-			leaf_dump(node->l, level);
+			leaf_dump(node->b[0], level);
 
-		if (__cba_tagged(node->r)) {
-			last = cba_dump_tree_u32(__cba_untag(node->r), 0, last, level, node_dump, leaf_dump);
+		if (__cba_tagged(node->b[1])) {
+			last = cba_dump_tree_u32(__cba_untag(node->b[1]), 0, last, level, node_dump, leaf_dump);
 			if (node_dump)
-				node_dump(__cba_untag(node->r), level);
+				node_dump(__cba_untag(node->b[1]), level);
 		} else if (leaf_dump)
-			leaf_dump(node->r, level);
+			leaf_dump(node->b[1], level);
 		return node;
 	}
 
 	/* regular nodes, all branches are canonical */
 
-	if (node->l == node->r) {
+	if (node->b[0] == node->b[1]) {
 		/* first inserted leaf */
 		if (leaf_dump)
 			leaf_dump(node, level);
@@ -622,7 +622,7 @@ void *cba_dump_tree_u32(struct cba_node *node, u32 pxor, void *last,
 		return cba_dump_tree_u32(node, 0, last, -1, node_dump, leaf_dump);
 	}
 
-	xor = ((struct cba_u32*)node->l)->key ^ ((struct cba_u32*)node->r)->key;
+	xor = ((struct cba_u32*)node->b[0])->key ^ ((struct cba_u32*)node->b[1])->key;
 	if (pxor && xor >= pxor) {
 		/* that's a leaf */
 		if (leaf_dump)
@@ -641,6 +641,6 @@ void *cba_dump_tree_u32(struct cba_node *node, u32 pxor, void *last,
 	if (node_dump)
 		node_dump(node, level);
 
-	last = cba_dump_tree_u32(node->l, xor, last, level + 1, node_dump, leaf_dump);
-	return cba_dump_tree_u32(node->r, xor, last, level + 1, node_dump, leaf_dump);
+	last = cba_dump_tree_u32(node->b[0], xor, last, level + 1, node_dump, leaf_dump);
+	return cba_dump_tree_u32(node->b[1], xor, last, level + 1, node_dump, leaf_dump);
 }

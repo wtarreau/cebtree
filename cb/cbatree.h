@@ -35,8 +35,7 @@ typedef struct cba_node * cba_tree_t;
 
 /* Standard node when using absolute pointers */
 struct cba_node {
-	struct cba_node *l;
-	struct cba_node *r;
+	struct cba_node *b[2]; /* branches: 0=left, 1=right */
 };
 
 /* tag an untagged pointer */
