@@ -115,7 +115,8 @@ struct cba_node *cbau_descend_u32(/*const*/ struct cba_node **root,
 	struct cba_node *lparent;
 	int gpside = 0; // side on the grand parent
 	int npside = 0;  // side on the node's parent
-	int lpside = 0;  // side on the leaf's parent
+	long lpside = 0;  // side on the leaf's parent
+	long brside = 0;  // branch side when descending
 
 	/* When exiting the loop, pxor will be zero for nodes and first leaf,
 	 * or non-zero for a leaf.
@@ -132,7 +133,14 @@ struct cba_node *cbau_descend_u32(/*const*/ struct cba_node **root,
 	 * it to detect a leaf vs node.
 	 */
 	while (1) {
+	//while (p != container_of(*root, struct cba_u32, node)) {
+		//u32 lkey, rkey;
+
 		p = container_of(*root, struct cba_u32, node);
+
+		/* let's prefetch the lower nodes for the keys */
+		__builtin_prefetch(p->node.b[0], 0);
+		__builtin_prefetch(p->node.b[1], 0);
 
 		/* neither pointer is tagged */
 		l = container_of(p->node.b[0], struct cba_u32, node);
@@ -143,6 +151,16 @@ struct cba_node *cbau_descend_u32(/*const*/ struct cba_node **root,
 			//fprintf(stderr, "key %u break at %d\n", key, __LINE__);
 			break;
 		}
+
+		//lkey = l->key;
+		//rkey = r->key;
+
+		/* we can compute this here for scalar types, it allows the
+		 * CPU to predict next branches. We can also xor lkey/rkey
+		 * with key and use it everywhere later but it doesn't save
+		 * much.
+		 */
+		brside = (key ^ l->key) >= (key ^ r->key);
 
 		/* so that's either a node or a leaf. Each leaf we visit had
 		 * its node part already visited. The only way to distinguish
@@ -187,15 +205,12 @@ struct cba_node *cbau_descend_u32(/*const*/ struct cba_node **root,
 		gparent = lparent;
 		gpside = lpside;
 		lparent = &p->node;
-
-		if ((key ^ l->key) < (key ^ r->key)) {
-			lpside = 0;
-			root = &p->node.b[0];
-		}
-		else {
-			lpside = 1;
+		lpside = brside;
+		//root = &p->node.b[brside];  // significantly slower on x86
+		if (brside)
 			root = &p->node.b[1];
-		}
+		else
+			root = &p->node.b[0];
 
 		if (p == container_of(*root, struct cba_u32, node)) {
 			//fprintf(stderr, "key %u break at %d\n", key, __LINE__);
@@ -282,14 +297,8 @@ struct cba_node *cba_insert_u32(struct cba_node **root, struct cba_node *node)
 	ret = cbau_descend_u32(root, node, &nside, &parent, NULL, NULL, NULL, NULL, NULL, NULL);
 
 	if (ret == node) {
-		if (!nside) {
-			node->b[0] = node;
-			node->b[1] = *parent;
-		}
-		else {
-			node->b[0] = *parent;
-			node->b[1] = node;
-		}
+		node->b[nside] = node;
+		node->b[!nside] = *parent;
 		*parent = ret;
 	}
 	return ret;
@@ -341,10 +350,7 @@ struct cba_node *cba_delete_u32(struct cba_node **root, struct cba_node *node)
 
 		/* then we necessarily have a gparent */
 		sibling = lpside ? lparent->b[0] : lparent->b[1];
-		if (!gpside)
-			gparent->b[0] = sibling;
-		else
-			gparent->b[1] = sibling;
+		gparent->b[gpside] = sibling;
 
 		if (lparent == node) {
 			/* we're removing the leaf and node together, nothing
@@ -367,11 +373,7 @@ struct cba_node *cba_delete_u32(struct cba_node **root, struct cba_node *node)
 		 */
 		lparent->b[0] = node->b[0];
 		lparent->b[1] = node->b[1];
-
-		if (!npside)
-			nparent->b[0] = lparent;
-		else
-			nparent->b[1] = lparent;
+		nparent->b[npside] = lparent;
 	}
 done:
 	return ret;
