@@ -196,9 +196,12 @@ struct cba_node *cbau_descend_u32(/*const*/ struct cba_node **root,
 		 * same node as the one we're looking for, let's store the
 		 * parent as the node's parent.
 		 */
-		if (node == &p->node) {
-			nparent = lparent;
-			npside  = lpside;
+		if (ret_npside || ret_nparent) {
+			//if (node == &p->node) {
+			if (key == p->key) {
+				nparent = lparent;
+				npside  = lpside;
+			}
 		}
 
 		/* shift all copies by one */
@@ -376,6 +379,82 @@ struct cba_node *cba_delete_u32(struct cba_node **root, struct cba_node *node)
 		nparent->b[npside] = lparent;
 	}
 done:
+	return ret;
+}
+
+/* look up the specified key, and detaches it and returns it if found, or NULL
+ * if not found.
+ */
+struct cba_node *cba_pick_u32(struct cba_node **root, u32 key)
+{
+	u32 key_back = key;
+	/*const*/ struct cba_node *node = &container_of(&key_back, struct cba_u32, key)->node;
+	struct cba_node *lparent, *nparent, *gparent/*, *sibling*/;
+	int lpside, npside, gpside;
+	struct cba_node *ret;
+
+	if (!*root)
+		return NULL;
+
+	//if (key == 425144) printf("%d: k=%u\n", __LINE__, key);
+
+	ret = cbau_descend_u32(root, node, NULL, NULL, &lparent, &lpside, &nparent, &npside, &gparent, &gpside);
+
+	//if (key == 425144) printf("%d: k=%u ret=%p\n", __LINE__, key, ret);
+
+	if (ret) {
+		struct cba_u32 *p = container_of(ret, struct cba_u32, node);
+
+		if (ret == node)
+			abort();
+
+		if (p->key != key)
+			abort();
+
+		//fprintf(stderr, "root=%p ret=%p l=%p[%d] n=%p[%d] g=%p[%d]\n", root, ret, lparent, lpside, nparent, npside, gparent, gpside);
+
+		if (&lparent->b[0] == root) {
+			/* there was a single entry, this one */
+			*root = NULL;
+			//if (key == 425144) printf("%d: k=%u ret=%p\n", __LINE__, key, ret);
+			goto done;
+		}
+		//printf("g=%p\n", gparent);
+
+		/* then we necessarily have a gparent */
+		//sibling = lpside ? lparent->b[0] : lparent->b[1];
+		//gparent->b[gpside] = sibling;
+
+		gparent->b[gpside] = lparent->b[!lpside];
+
+		if (lparent == ret) {
+			/* we're removing the leaf and node together, nothing
+			 * more to do.
+			 */
+			//if (key == 425144) printf("%d: k=%u ret=%p\n", __LINE__, key, ret);
+			goto done;
+		}
+
+		if (ret->b[0] == ret->b[1]) {
+			/* we're removing the node-less item, the parent will
+			 * take this role.
+			 */
+			lparent->b[0] = lparent->b[1] = lparent;
+			//if (key == 425144) printf("%d: k=%u ret=%p\n", __LINE__, key, ret);
+			goto done;
+		}
+
+		/* more complicated, the node was split from the leaf, we have
+		 * to find a spare one to switch it. The parent node is not
+		 * needed anymore so we can reuse it.
+		 */
+		//if (key == 425144) printf("%d: k=%u ret=%p lp=%p np=%p gp=%p\n", __LINE__, key, ret, lparent, nparent, gparent);
+		lparent->b[0] = ret->b[0];
+		lparent->b[1] = ret->b[1];
+		nparent->b[npside] = lparent;
+	}
+done:
+	//if (key == 425144) printf("%d: k=%u ret=%p\n", __LINE__, key, ret);
 	return ret;
 }
 
