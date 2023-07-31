@@ -122,38 +122,135 @@ static uint32_t rnd32()
 
 int main(int argc, char **argv)
 {
-	struct cba_node *old;
-	char *orig_argv = argv[1];
+	struct cba_node *old, *back;
+	char *orig_argv, *argv0 = *argv, *larg;
 	struct key *key;
 	char *p;
 	uint32_t v;
-
+	int test = 0;
 	uint32_t mask = 0xffffffff;
 	int count = 10;
+	int debug = 0;
+
+	argv++; argc--;
+
+	while (argc && **argv == '-') {
+		if (strcmp(*argv, "-d") == 0)
+			debug++;
+		else {
+			printf("Usage: %s [-d]* [test [cnt [mask [seed]]]]\n", argv0);
+			exit(1);
+		}
+		argc--; argv++;
+	}
+
+	orig_argv = larg = *argv;
+
+	if (argc > 0)
+		test = atoi(larg = *(argv++));
 
 	if (argc > 1)
-		count = atoi(argv[1]);
+		count = atoi(larg = *(argv++));
 
 	if (argc > 2)
-		mask = atol(argv[2]);
+		mask = atol(larg = *(argv++));
 
-	while (count--) {
-		v = rnd32() & mask;
-		old = cba_lookup_u32(&cba_root, v);
-		if (old) {
-			if (cba_delete_u32(&cba_root, old) != old)
-				abort();
-			free(container_of(old, struct key, node));
+	if (argc > 3)
+		rnd32seed = atol(larg = *(argv++));
+
+	/* rebuild non-debug args as a single string */
+	for (p = orig_argv; p < larg; *p++ = ' ')
+		p += strlen(p);
+
+	if (test == 0) {
+		while (count--) {
+			v = rnd32() & mask;
+			old = cba_lookup_u32(&cba_root, v);
+			if (old) {
+				if (cba_delete_u32(&cba_root, old) != old)
+					abort();
+				free(container_of(old, struct key, node));
+			}
+			else {
+				key = calloc(1, sizeof(*key));
+				key->key = v;
+				old = cba_insert_u32(&cba_root, &key->node);
+				if (old != &key->node)
+					abort();
+			}
 		}
-		else {
+	} else if (test == 1) {
+		while (count--) {
+			v = rnd32() & mask;
+			old = cba_lookup_u32(&cba_root, v);
+			if (old) {
+				if (cba_delete_u32(&cba_root, old) != old)
+					abort();
+				free(container_of(old, struct key, node));
+			}
+
 			key = calloc(1, sizeof(*key));
 			key->key = v;
 			old = cba_insert_u32(&cba_root, &key->node);
 			if (old != &key->node)
 				abort();
+
+			if (debug > 1) {
+				static int round;
+				char cmd[100];
+				int len;
+
+				len = snprintf(cmd, sizeof(cmd), "%s %d/%d : %p %d\n", orig_argv, round, round+count, old, v);
+				dump(&cba_root, len < sizeof(cmd) ? cmd : orig_argv);
+				round++;
+			}
+		}
+	} else if (test == 2) {
+		while (count--) {
+			v = rnd32() & mask;
+			if (!count && debug > 2)
+				dump(&cba_root, "step1");
+			old = cba_pick_u32(&cba_root, v);
+			if (!count && debug > 2)
+				dump(&cba_root, "step2");
+			back = old;
+			while (old) {
+				if (old && !count && debug > 2)
+					dump(&cba_root, "step3");
+				old = cba_pick_u32(&cba_root, v);
+				//if (old)
+				//	printf("count=%d v=%u back=%p old=%p\n", count, v, back, old);
+			}
+
+			if (!count && debug > 2)
+				dump(&cba_root, "step4");
+
+			//abort();
+			//memset(old, 0, sizeof(*key));
+			//if (old)
+			//	free(container_of(old, struct key, node));
+
+			key = calloc(1, sizeof(*key));
+			key->key = v;
+			old = cba_insert_u32(&cba_root, &key->node);
+			if (old != &key->node)
+				abort();
+
+			if (!count && debug > 2)
+				dump(&cba_root, "step5");
+			else if (debug > 1) {
+				static int round;
+				char cmd[100];
+				int len;
+
+				len = snprintf(cmd, sizeof(cmd), "%s %d/%d : %p %d\n", orig_argv, round, round+count, old, v);
+				dump(&cba_root, len < sizeof(cmd) ? cmd : orig_argv);
+				round++;
+			}
 		}
 	}
 
-	//dump(&cba_root, orig_argv);
+	if (debug == 1)
+		dump(&cba_root, orig_argv);
 	return 0;
 }
