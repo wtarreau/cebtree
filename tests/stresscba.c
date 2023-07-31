@@ -19,6 +19,7 @@ void *cba_dump_tree_u32(struct cba_node *node, u32 pxor, void *last,
 struct cba_node *cba_insert_u32(struct cba_node **root, struct cba_node *node);
 struct cba_node *cba_lookup_u32(struct cba_node **root, u32 key);
 struct cba_node *cba_delete_u32(struct cba_node **root, struct cba_node *node);
+struct cba_node *cba_pick_u32(struct cba_node **root, u32 key);
 
 struct cba_node *cba_root = NULL;
 
