@@ -78,6 +78,7 @@
 
 #include <stddef.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include "cbatree.h"
 
 /* this structure is aliased to the common cba node during u32 operations */
