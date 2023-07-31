@@ -111,14 +111,13 @@ void dump(struct cba_node **cba_root, const char *label)
 	printf("}\n");
 }
 
+static uint32_t rnd32seed = 2463534242U;
 static uint32_t rnd32()
 {
-	static uint32_t y = 2463534242U;
-
-	y ^= y << 13;
-	y ^= y >> 17;
-	y ^= y << 5;
-	return y;
+	rnd32seed ^= rnd32seed << 13;
+	rnd32seed ^= rnd32seed >> 17;
+	rnd32seed ^= rnd32seed << 5;
+	return rnd32seed;
 }
 
 int main(int argc, char **argv)
