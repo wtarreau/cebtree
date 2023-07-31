@@ -666,7 +666,7 @@ void *cba_dump_tree_u32(struct cba_node *node, u32 pxor, void *last,
 	if (!node) /* empty tree */
 		return node;
 
-	fprintf(stderr, "node=%p level=%d key=%u l=%p r=%p\n", node, level, *(unsigned *)((char*)(node)+16), node->b[0], node->b[1]);
+	//fprintf(stderr, "node=%p level=%d key=%u l=%p r=%p\n", node, level, *(unsigned *)((char*)(node)+16), node->b[0], node->b[1]);
 
 	if (level < 0) {
 		/* we're inside a dup tree. Tagged pointers indicate nodes,

@@ -28,41 +28,45 @@ struct key {
 	uint32_t key;
 };
 
-//static void dump_node(struct cba_node *node, int level)
-//{
-//	struct key *key = container_of(node, struct key, node);
-//	u32 pxor, lxor, rxor;
-//
-//	/* xor of the keys of the two lower branches */
-//	pxor = container_of(__cba_clrtag(node->l), struct key, node)->key ^
-//		container_of(__cba_clrtag(node->r), struct key, node)->key;
-//
-//	printf("  \"%lx_n\" [label=\"%lx\\nlev=%d\\nkey=%u\" fillcolor=\"lightskyblue1\"];\n",
-//	       (long)node, (long)node, level, key->key);
-//
-//	/* xor of the keys of the left branch's lower branches */
-//	lxor = container_of(__cba_clrtag(((struct cba_node*)__cba_clrtag(node->l))->l), struct key, node)->key ^
-//		container_of(__cba_clrtag(((struct cba_node*)__cba_clrtag(node->l))->r), struct key, node)->key;
-//
-//	printf("  \"%lx_n\" -> \"%lx_%c\" [taillabel=\"L\"];\n",
-//	       (long)node, (long)__cba_clrtag(node->l),
-//	       (((long)node->l & 1) || (lxor < pxor && ((struct cba_node*)node->l)->l != ((struct cba_node*)node->l)->r)) ? 'n' : 'l');
-//
-//	/* xor of the keys of the right branch's lower branches */
-//	rxor = container_of(__cba_clrtag(((struct cba_node*)__cba_clrtag(node->r))->l), struct key, node)->key ^
-//		container_of(__cba_clrtag(((struct cba_node*)__cba_clrtag(node->r))->r), struct key, node)->key;
-//
-//	printf("  \"%lx_n\" -> \"%lx_%c\" [taillabel=\"R\"];\n",
-//	       (long)node, (long)__cba_clrtag(node->r),
-//	       (((long)node->r & 1) || (rxor < pxor && ((struct cba_node*)node->r)->l != ((struct cba_node*)node->r)->r)) ? 'n' : 'l');
-//}
+static void dump_node(struct cba_node *node, int level)
+{
+	struct key *key = container_of(node, struct key, node);
+	u32 pxor, lxor, rxor;
+
+	/* xor of the keys of the two lower branches */
+	pxor = container_of(__cba_clrtag(node->b[0]), struct key, node)->key ^
+		container_of(__cba_clrtag(node->b[1]), struct key, node)->key;
+
+	printf("  \"%lx_n\" [label=\"%lx\\nlev=%d\\nkey=%u\" fillcolor=\"lightskyblue1\"];\n",
+	       (long)node, (long)node, level, key->key);
+
+	/* xor of the keys of the left branch's lower branches */
+	lxor = container_of(__cba_clrtag(((struct cba_node*)__cba_clrtag(node->b[0]))->b[0]), struct key, node)->key ^
+		container_of(__cba_clrtag(((struct cba_node*)__cba_clrtag(node->b[0]))->b[1]), struct key, node)->key;
+
+	printf("  \"%lx_n\" -> \"%lx_%c\" [taillabel=\"L\"];\n",
+	       (long)node, (long)__cba_clrtag(node->b[0]),
+	       (((long)node->b[0] & 1) || (lxor < pxor && ((struct cba_node*)node->b[0])->b[0] != ((struct cba_node*)node->b[0])->b[1])) ? 'n' : 'l');
+
+	/* xor of the keys of the right branch's lower branches */
+	rxor = container_of(__cba_clrtag(((struct cba_node*)__cba_clrtag(node->b[1]))->b[0]), struct key, node)->key ^
+		container_of(__cba_clrtag(((struct cba_node*)__cba_clrtag(node->b[1]))->b[1]), struct key, node)->key;
+
+	printf("  \"%lx_n\" -> \"%lx_%c\" [taillabel=\"R\"];\n",
+	       (long)node, (long)__cba_clrtag(node->b[1]),
+	       (((long)node->b[1] & 1) || (rxor < pxor && ((struct cba_node*)node->b[1])->b[0] != ((struct cba_node*)node->b[1])->b[1])) ? 'n' : 'l');
+}
 
 static void dump_leaf(struct cba_node *node, int level)
 {
 	struct key *key = container_of(node, struct key, node);
 
-	printf("  \"%lx_l\" [label=\"%lx\\nlev=%d\\nkey=%u\\n\" fillcolor=\"yellow\"];\n",
-	       (long)node, (long)node, level, key->key);
+	if (node->b[0] == node->b[1])
+		printf("  \"%lx_l\" [label=\"%lx\\nlev=%d\\nkey=%u\\n\" fillcolor=\"green\"];\n",
+		       (long)node, (long)node, level, key->key);
+	else
+		printf("  \"%lx_l\" [label=\"%lx\\nlev=%d\\nkey=%u\\n\" fillcolor=\"yellow\"];\n",
+		       (long)node, (long)node, level, key->key);
 }
 
 struct cba_node *add_value(struct cba_node **root, uint32_t value)
@@ -87,6 +91,24 @@ struct cba_node *add_value(struct cba_node **root, uint32_t value)
 		}
 		free(container_of(ret, struct key, node));
 	} while (1);
+}
+
+void dump(struct cba_node **cba_root, const char *label)
+{
+	printf("#########################\n");
+	printf("digraph cba_tree_u32 {\n"
+	       "  fontname=\"fixed\";\n"
+	       "  fontsize=8\n"
+	       "  label=\"%s\"\n"
+	       "", label);
+
+	printf("  node [fontname=\"fixed\" fontsize=8 shape=\"box\" style=\"filled\" color=\"black\" fillcolor=\"white\"];\n"
+	       "  edge [fontname=\"fixed\" fontsize=8 style=\"solid\" color=\"magenta\" dir=\"forward\"];\n"
+	       "  \"%lx_n\" [label=\"root\\n%lx\"]\n", (long)cba_root, (long)cba_root);
+
+	cba_dump_tree_u32(*cba_root, 0, NULL, 0, dump_node, dump_leaf);
+
+	printf("}\n");
 }
 
 static uint32_t rnd32()
@@ -133,22 +155,6 @@ int main(int argc, char **argv)
 		}
 	}
 
-//	/* rebuild args as a single string */
-//	for (p = orig_argv; p != *argv; *p++ = ' ')
-//		p += strlen(p);
-//
-//	printf("digraph cba_tree_u32 {\n"
-//	       "  fontname=\"fixed\";\n"
-//	       "  fontsize=8\n"
-//	       "  label=\"%s\"\n"
-//	       "", orig_argv);
-//
-//	printf("  node [fontname=\"fixed\" fontsize=8 shape=\"box\" style=\"filled\" color=\"black\" fillcolor=\"white\"];\n"
-//	       "  edge [fontname=\"fixed\" fontsize=8 style=\"solid\" color=\"magenta\" dir=\"forward\"];\n"
-//	       "  \"%lx_n\" [label=\"root\\n%lx\"]\n", (long)&cba_root, (long)&cba_root);
-//
-//	cba_dump_tree_u32(cba_root, 0, NULL, 0, dump_node, dump_leaf);
-//
-//	printf("}\n");
+	//dump(&cba_root, orig_argv);
 	return 0;
 }
