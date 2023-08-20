@@ -92,6 +92,34 @@ struct cba_node *add_value(struct cba_node **root, uint32_t value)
 	} while (1);
 }
 
+void dump(struct cba_node **cba_root, const char *label)
+{
+	struct cba_node *node;
+
+	printf("#########################\n");
+	printf("digraph cba_tree_u32 {\n"
+	       "  fontname=\"fixed\";\n"
+	       "  fontsize=8\n"
+	       "  label=\"%s\"\n"
+	       "", label);
+
+	printf("  node [fontname=\"fixed\" fontsize=8 shape=\"box\" style=\"filled\" color=\"black\" fillcolor=\"white\"];\n"
+	       "  edge [fontname=\"fixed\" fontsize=8 style=\"solid\" color=\"magenta\" dir=\"forward\"];\n"
+	       "  \"%lx_n\" [label=\"root\\n%lx\"]\n", (long)cba_root, (long)cba_root);
+
+	node = *cba_root;
+	if (node) {
+		/* under the root we've either a node or the first leaf */
+		printf("  \"%lx_n\" -> \"%lx_%c\" [taillabel=\"B\"];\n",
+		       (long)cba_root, (long)node,
+		       (node->b[0] == node->b[1]) ? 'l' : 'n');
+	}
+
+	cba_dump_tree_u32(*cba_root, 0, NULL, 0, dump_node, dump_leaf);
+
+	printf("}\n");
+}
+
 int main(int argc, char **argv)
 {
 	const struct cba_node *old;
@@ -114,25 +142,7 @@ int main(int argc, char **argv)
 	for (p = orig_argv; p != *argv; *p++ = ' ')
 		p += strlen(p);
 
-	printf("digraph cba_tree_u32 {\n"
-	       "  fontname=\"fixed\";\n"
-	       "  fontsize=8\n"
-	       "  label=\"%s\"\n"
-	       "", orig_argv);
+	dump(&cba_root, orig_argv);
 
-	printf("  node [fontname=\"fixed\" fontsize=8 shape=\"box\" style=\"filled\" color=\"black\" fillcolor=\"white\"];\n"
-	       "  edge [fontname=\"fixed\" fontsize=8 style=\"solid\" color=\"magenta\" dir=\"forward\"];\n"
-	       "  \"%lx_n\" [label=\"root\\n%lx\"]\n", (long)&cba_root, (long)&cba_root);
-
-	if (cba_root) {
-		/* under the root we've either a node or the first leaf */
-		printf("  \"%lx_n\" -> \"%lx_%c\" [taillabel=\"B\"];\n",
-		       (long)&cba_root, (long)cba_root,
-		       (cba_root->b[0] == cba_root->b[1]) ? 'l' : 'n');
-	}
-
-	cba_dump_tree_u32(cba_root, 0, NULL, 0, dump_node, dump_leaf);
-
-	printf("}\n");
 	return 0;
 }
