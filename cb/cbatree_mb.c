@@ -244,7 +244,7 @@ struct cba_node *cbau_descend_mb(/*const*/ struct cba_node **root,
 		 */
 		if (ret_npside || ret_nparent) {
 			//if (node == &p->node) {
-			if (memcmp(key, p->key, len) == 0) {
+			if (plen / 8 == len || memcmp(key + plen / 8, p->key + plen / 8, len - plen / 8) == 0) {
 				nparent = lparent;
 				npside  = lpside;
 			}
@@ -270,7 +270,7 @@ struct cba_node *cbau_descend_mb(/*const*/ struct cba_node **root,
 
 	/* update the pointers needed for modifications (insert, delete) */
 	if (ret_nside)
-		*ret_nside = memcmp(key, p->key, len) >= 0;
+		*ret_nside = plen / 8 == len || memcmp(key + plen / 8, p->key + plen / 8, len - plen / 8) >= 0;
 
 	if (ret_root)
 		*ret_root = root;
@@ -299,7 +299,7 @@ struct cba_node *cbau_descend_mb(/*const*/ struct cba_node **root,
 	 * that the caller can decide what to do. For deletion, we also want to
 	 * return the pointer that's about to be deleted.
 	 */
-	if (memcmp(key, p->key, len) == 0)
+	if (plen / 8 == len || memcmp(key + plen / 8, p->key + plen / 8, len - plen / 8) == 0)
 		return &p->node;//*root;  both are the same, but p->node should be cheaper
 
 //	/* We're going to insert <node> above leaf <p> and below <root>. It's
