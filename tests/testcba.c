@@ -123,26 +123,52 @@ void dump(struct cba_node **cba_root, const char *label)
 int main(int argc, char **argv)
 {
 	const struct cba_node *old;
-	char *orig_argv = argv[1];
+	char *argv0 = *argv, *larg;
+	char *orig_argv;
 	char *p;
 	uint32_t v;
+	int debug = 0;
 
+	argv++; argc--;
 
-	while (argc > 1) {
-		v = atoi(argv[1]);
+	while (argc && **argv == '-') {
+		if (strcmp(*argv, "-d") == 0)
+			debug++;
+		else {
+			printf("Usage: %s [-d]* [value]*\n", argv0);
+			exit(1);
+		}
+		argc--; argv++;
+	}
+
+	orig_argv = larg = *argv;
+	while (argc > 0) {
+		v = atoi(argv[0]);
 		old = cba_lookup_u32(&cba_root, v);
 		if (old)
 			fprintf(stderr, "Note: value %u already present at %p\n", v, old);
 		add_value(&cba_root, v);
+
+		if (debug) {
+			static int round;
+			char cmd[100];
+			int len;
+
+			len = snprintf(cmd, sizeof(cmd), "%s [%d] +%d", orig_argv, round, v);
+			dump(&cba_root, len < sizeof(cmd) ? cmd : orig_argv);
+			round++;
+		}
+
 		argv++;
 		argc--;
 	}
 
-	/* rebuild args as a single string */
-	for (p = orig_argv; p != *argv; *p++ = ' ')
+	/* rebuild non-debug args as a single string */
+	for (p = orig_argv; p < larg; *p++ = ' ')
 		p += strlen(p);
 
-	dump(&cba_root, orig_argv);
+	if (!debug)
+		dump(&cba_root, orig_argv);
 
 	return 0;
 }
