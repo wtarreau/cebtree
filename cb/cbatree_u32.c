@@ -665,6 +665,51 @@ done:
 //	return p;
 //}
 
+/* default node dump function */
+static void cbau32_default_dump_node(struct cba_node *node, int level, const void *ctx)
+{
+	struct cba_u32 *key = container_of(node, struct cba_u32, node);
+	u32 pxor, lxor, rxor;
+
+	/* xor of the keys of the two lower branches */
+	pxor = container_of(__cba_clrtag(node->b[0]), struct cba_u32, node)->key ^
+		container_of(__cba_clrtag(node->b[1]), struct cba_u32, node)->key;
+
+	printf("  \"%lx_n\" [label=\"%lx\\nlev=%d\\nkey=%u\" fillcolor=\"lightskyblue1\"%s];\n",
+	       (long)node, (long)node, level, key->key, (ctx == node) ? " color=red" : "");
+
+	/* xor of the keys of the left branch's lower branches */
+	lxor = container_of(__cba_clrtag(((struct cba_node*)__cba_clrtag(node->b[0]))->b[0]), struct cba_u32, node)->key ^
+		container_of(__cba_clrtag(((struct cba_node*)__cba_clrtag(node->b[0]))->b[1]), struct cba_u32, node)->key;
+
+	printf("  \"%lx_n\" -> \"%lx_%c\" [label=\"L\" arrowsize=0.66 %s];\n",
+	       (long)node, (long)__cba_clrtag(node->b[0]),
+	       (((long)node->b[0] & 1) || (lxor < pxor && ((struct cba_node*)node->b[0])->b[0] != ((struct cba_node*)node->b[0])->b[1])) ? 'n' : 'l',
+	       (node == __cba_clrtag(node->b[0])) ? " dir=both" : "");
+
+	/* xor of the keys of the right branch's lower branches */
+	rxor = container_of(__cba_clrtag(((struct cba_node*)__cba_clrtag(node->b[1]))->b[0]), struct cba_u32, node)->key ^
+		container_of(__cba_clrtag(((struct cba_node*)__cba_clrtag(node->b[1]))->b[1]), struct cba_u32, node)->key;
+
+	printf("  \"%lx_n\" -> \"%lx_%c\" [label=\"R\" arrowsize=0.66 %s];\n",
+	       (long)node, (long)__cba_clrtag(node->b[1]),
+	       (((long)node->b[1] & 1) || (rxor < pxor && ((struct cba_node*)node->b[1])->b[0] != ((struct cba_node*)node->b[1])->b[1])) ? 'n' : 'l',
+	       (node == __cba_clrtag(node->b[1])) ? " dir=both" : "");
+}
+
+/* default leaf dump function */
+static void cbau32_default_dump_leaf(struct cba_node *node, int level, const void *ctx)
+{
+	struct cba_u32 *key = container_of(node, struct cba_u32, node);
+
+	if (node->b[0] == node->b[1])
+		printf("  \"%lx_l\" [label=\"%lx\\nlev=%d\\nkey=%u\\n\" fillcolor=\"green\"%s];\n",
+		       (long)node, (long)node, level, key->key, (ctx == node) ? " color=red" : "");
+	else
+		printf("  \"%lx_l\" [label=\"%lx\\nlev=%d\\nkey=%u\\n\" fillcolor=\"yellow\"%s];\n",
+		       (long)node, (long)node, level, key->key, (ctx == node) ? " color=red" : "");
+}
+
 /* Dumps a tree through the specified callbacks. */
 void *cba_dump_tree_u32(struct cba_node *node, u32 pxor, void *last,
 			int level,
@@ -736,4 +781,34 @@ void *cba_dump_tree_u32(struct cba_node *node, u32 pxor, void *last,
 
 	last = cba_dump_tree_u32(node->b[0], xor, last, level + 1, node_dump, leaf_dump, ctx);
 	return cba_dump_tree_u32(node->b[1], xor, last, level + 1, node_dump, leaf_dump, ctx);
+}
+
+/* dumps a cba_u32 tree using the default functions above. If a node matches
+ * <ctx>, this one will be highlighted in red.
+ */
+void cbau32_default_dump(struct cba_node **cba_root, const char *label, const void *ctx)
+{
+	struct cba_node *node;
+
+	printf("\ndigraph cba_tree_u32 {\n"
+	       "  fontname=\"fixed\";\n"
+	       "  fontsize=8\n"
+	       "  label=\"%s\"\n"
+	       "", label);
+
+	printf("  node [fontname=\"fixed\" fontsize=8 shape=\"box\" style=\"filled\" color=\"black\" fillcolor=\"white\"];\n"
+	       "  edge [fontname=\"fixed\" fontsize=8 style=\"solid\" color=\"magenta\" dir=\"forward\"];\n"
+	       "  \"%lx_n\" [label=\"root\\n%lx\"]\n", (long)cba_root, (long)cba_root);
+
+	node = *cba_root;
+	if (node) {
+		/* under the root we've either a node or the first leaf */
+		printf("  \"%lx_n\" -> \"%lx_%c\" [label=\"B\" arrowsize=0.66];\n",
+		       (long)cba_root, (long)node,
+		       (node->b[0] == node->b[1]) ? 'l' : 'n');
+	}
+
+	cba_dump_tree_u32(*cba_root, 0, NULL, 0, cbau32_default_dump_node, cbau32_default_dump_leaf, ctx);
+
+	printf("}\n");
 }
