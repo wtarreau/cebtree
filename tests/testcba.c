@@ -120,6 +120,13 @@ int main(int argc, char **argv)
 	       "  edge [fontname=\"fixed\" fontsize=8 style=\"solid\" color=\"magenta\" dir=\"forward\"];\n"
 	       "  \"%lx_n\" [label=\"root\\n%lx\"]\n", (long)&cba_root, (long)&cba_root);
 
+	if (cba_root) {
+		/* under the root we've either a node or the first leaf */
+		printf("  \"%lx_n\" -> \"%lx_%c\" [taillabel=\"B\"];\n",
+		       (long)&cba_root, (long)cba_root,
+		       (cba_root->b[0] == cba_root->b[1]) ? 'l' : 'n');
+	}
+
 	cba_dump_tree_u32(cba_root, 0, NULL, 0, dump_node, dump_leaf);
 
 	printf("}\n");
