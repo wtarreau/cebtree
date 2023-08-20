@@ -60,8 +60,12 @@ static void dump_leaf(struct cba_node *node, int level)
 {
 	struct key *key = container_of(node, struct key, node);
 
-	printf("  \"%lx_l\" [label=\"%lx\\nlev=%d\\nkey=%u\\n\" fillcolor=\"yellow\"];\n",
-	       (long)node, (long)node, level, key->key);
+	if (node->b[0] == node->b[1])
+		printf("  \"%lx_l\" [label=\"%lx\\nlev=%d\\nkey=%u\\n\" fillcolor=\"green\"];\n",
+		       (long)node, (long)node, level, key->key);
+	else
+		printf("  \"%lx_l\" [label=\"%lx\\nlev=%d\\nkey=%u\\n\" fillcolor=\"yellow\"];\n",
+		       (long)node, (long)node, level, key->key);
 }
 
 struct cba_node *add_value(struct cba_node **root, uint32_t value)
