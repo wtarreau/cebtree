@@ -45,7 +45,7 @@ static void dump_node(struct cba_node *node, int level, const void *ctx)
 	lxor = container_of(__cba_clrtag(((struct cba_node*)__cba_clrtag(node->b[0]))->b[0]), struct key, node)->key ^
 		container_of(__cba_clrtag(((struct cba_node*)__cba_clrtag(node->b[0]))->b[1]), struct key, node)->key;
 
-	printf("  \"%lx_n\" -> \"%lx_%c\" [taillabel=\"L\" arrowsize=0.66 %s];\n",
+	printf("  \"%lx_n\" -> \"%lx_%c\" [label=\"L\" arrowsize=0.66 %s];\n",
 	       (long)node, (long)__cba_clrtag(node->b[0]),
 	       (((long)node->b[0] & 1) || (lxor < pxor && ((struct cba_node*)node->b[0])->b[0] != ((struct cba_node*)node->b[0])->b[1])) ? 'n' : 'l',
 	       (node == __cba_clrtag(node->b[0])) ? " dir=both" : "");
@@ -54,7 +54,7 @@ static void dump_node(struct cba_node *node, int level, const void *ctx)
 	rxor = container_of(__cba_clrtag(((struct cba_node*)__cba_clrtag(node->b[1]))->b[0]), struct key, node)->key ^
 		container_of(__cba_clrtag(((struct cba_node*)__cba_clrtag(node->b[1]))->b[1]), struct key, node)->key;
 
-	printf("  \"%lx_n\" -> \"%lx_%c\" [taillabel=\"R\" arrowsize=0.66 %s];\n",
+	printf("  \"%lx_n\" -> \"%lx_%c\" [label=\"R\" arrowsize=0.66 %s];\n",
 	       (long)node, (long)__cba_clrtag(node->b[1]),
 	       (((long)node->b[1] & 1) || (rxor < pxor && ((struct cba_node*)node->b[1])->b[0] != ((struct cba_node*)node->b[1])->b[1])) ? 'n' : 'l',
 	       (node == __cba_clrtag(node->b[1])) ? " dir=both" : "");
@@ -90,7 +90,7 @@ void dump(struct cba_node **cba_root, const char *label, const void *ctx)
 	node = *cba_root;
 	if (node) {
 		/* under the root we've either a node or the first leaf */
-		printf("  \"%lx_n\" -> \"%lx_%c\" [taillabel=\"B\" arrowsize=0.66];\n",
+		printf("  \"%lx_n\" -> \"%lx_%c\" [label=\"B\" arrowsize=0.66];\n",
 		       (long)cba_root, (long)node,
 		       (node->b[0] == node->b[1]) ? 'l' : 'n');
 	}
