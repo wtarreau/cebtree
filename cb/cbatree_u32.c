@@ -658,8 +658,9 @@ done:
 /* Dumps a tree through the specified callbacks. */
 void *cba_dump_tree_u32(struct cba_node *node, u32 pxor, void *last,
 			int level,
-			void (*node_dump)(struct cba_node *node, int level),
-			void (*leaf_dump)(struct cba_node *node, int level))
+			void (*node_dump)(struct cba_node *node, int level, const void *ctx),
+			void (*leaf_dump)(struct cba_node *node, int level, const void *ctx),
+			const void *ctx)
 {
 	u32 xor;
 
@@ -674,18 +675,18 @@ void *cba_dump_tree_u32(struct cba_node *node, u32 pxor, void *last,
 		 */
 		level--;
 		if (__cba_tagged(node->b[0])) {
-			last = cba_dump_tree_u32(__cba_untag(node->b[0]), 0, last, level, node_dump, leaf_dump);
+		  last = cba_dump_tree_u32(__cba_untag(node->b[0]), 0, last, level, node_dump, leaf_dump, ctx);
 			if (node_dump)
-				node_dump(__cba_untag(node->b[0]), level);
+			  node_dump(__cba_untag(node->b[0]), level, ctx);
 		} else if (leaf_dump)
-			leaf_dump(node->b[0], level);
+			leaf_dump(node->b[0], level, ctx);
 
 		if (__cba_tagged(node->b[1])) {
-			last = cba_dump_tree_u32(__cba_untag(node->b[1]), 0, last, level, node_dump, leaf_dump);
+			last = cba_dump_tree_u32(__cba_untag(node->b[1]), 0, last, level, node_dump, leaf_dump, ctx);
 			if (node_dump)
-				node_dump(__cba_untag(node->b[1]), level);
+				node_dump(__cba_untag(node->b[1]), level, ctx);
 		} else if (leaf_dump)
-			leaf_dump(node->b[1], level);
+			leaf_dump(node->b[1], level, ctx);
 		return node;
 	}
 
@@ -694,35 +695,35 @@ void *cba_dump_tree_u32(struct cba_node *node, u32 pxor, void *last,
 	if (node->b[0] == node->b[1]) {
 		/* first inserted leaf */
 		if (leaf_dump)
-			leaf_dump(node, level);
+			leaf_dump(node, level, ctx);
 		return node;
 	}
 
 	if (0/*__cba_is_dup(node)*/) {
 		if (node_dump)
-			node_dump(node, -1);
-		return cba_dump_tree_u32(node, 0, last, -1, node_dump, leaf_dump);
+			node_dump(node, -1, ctx);
+		return cba_dump_tree_u32(node, 0, last, -1, node_dump, leaf_dump, ctx);
 	}
 
 	xor = ((struct cba_u32*)node->b[0])->key ^ ((struct cba_u32*)node->b[1])->key;
 	if (pxor && xor >= pxor) {
 		/* that's a leaf */
 		if (leaf_dump)
-			leaf_dump(node, level);
+			leaf_dump(node, level, ctx);
 		return node;
 	}
 
 	if (!xor) {
 		/* start of a dup */
 		if (node_dump)
-			node_dump(node, -1);
-		return cba_dump_tree_u32(node, 0, last, -1, node_dump, leaf_dump);
+			node_dump(node, -1, ctx);
+		return cba_dump_tree_u32(node, 0, last, -1, node_dump, leaf_dump, ctx);
 	}
 
 	/* that's a regular node */
 	if (node_dump)
-		node_dump(node, level);
+		node_dump(node, level, ctx);
 
-	last = cba_dump_tree_u32(node->b[0], xor, last, level + 1, node_dump, leaf_dump);
-	return cba_dump_tree_u32(node->b[1], xor, last, level + 1, node_dump, leaf_dump);
+	last = cba_dump_tree_u32(node->b[0], xor, last, level + 1, node_dump, leaf_dump, ctx);
+	return cba_dump_tree_u32(node->b[1], xor, last, level + 1, node_dump, leaf_dump, ctx);
 }
