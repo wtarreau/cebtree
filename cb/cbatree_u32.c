@@ -87,6 +87,14 @@ struct cba_u32 {
 	u32 key;
 };
 
+/* returns the number of identical bits between a and b */
+static inline int samebits(u32 a, u32 b)
+{
+	if (a == b)
+		return sizeof(a) * 8;
+	return __builtin_clz(a ^ b);
+}
+
 /* Generic tree descent function. It must absolutely be inlined so that the
  * compiler can eliminate the tests related to the various return pointers,
  * which must either point to a local variable in the caller, or be NULL.
@@ -109,7 +117,6 @@ struct cba_node *cbau_descend_u32(/*const*/ struct cba_node **root,
 				  int *ret_gpside)
 {
 	struct cba_u32 *p, *l, *r;
-	u32 pxor = ~0; // make sure we don't run the first test.
 	u32 key = container_of(node, struct cba_u32, node)->key;
 	struct cba_node *gparent = NULL;
 	struct cba_node *nparent = NULL;
@@ -118,10 +125,7 @@ struct cba_node *cbau_descend_u32(/*const*/ struct cba_node **root,
 	int npside = 0;  // side on the node's parent
 	long lpside = 0;  // side on the leaf's parent
 	long brside = 0;  // branch side when descending
-
-	/* When exiting the loop, pxor will be zero for nodes and first leaf,
-	 * or non-zero for a leaf.
-	 */
+	int llen, rlen, xlen, plen = -1;
 
 	/* the parent will be the (possibly virtual) node so that
 	 * &lparent->l == root.
@@ -159,9 +163,14 @@ struct cba_node *cbau_descend_u32(/*const*/ struct cba_node **root,
 		/* we can compute this here for scalar types, it allows the
 		 * CPU to predict next branches. We can also xor lkey/rkey
 		 * with key and use it everywhere later but it doesn't save
-		 * much.
+		 * much. Alternately, like here, it's possible to measure
+		 * the length of identical bits. This is the solution that
+		 * will be needed on strings.
 		 */
-		brside = (key ^ l->key) >= (key ^ r->key);
+		//brside = (key ^ l->key) >= (key ^ r->key);
+		llen = samebits(key, l->key);
+		rlen = samebits(key, r->key);
+		brside = llen <= rlen;
 
 		/* so that's either a node or a leaf. Each leaf we visit had
 		 * its node part already visited. The only way to distinguish
@@ -173,16 +182,17 @@ struct cba_node *cbau_descend_u32(/*const*/ struct cba_node **root,
 		 * necessarily is the one of an upper node, so what we're
 		 * seeing cannot be the node, hence it's the leaf.
 		 */
-		if ((l->key ^ r->key) > pxor) { // test using 2 4 6 4
+		xlen = samebits(l->key, r->key);
+		if (xlen < plen) { // test using 2 4 6 4
 			/* this is a leaf */
 			//fprintf(stderr, "key %u break at %d\n", key, __LINE__);
 			break;
 		}
 
-		pxor = l->key ^ r->key;
+		plen = xlen;
 
 		/* check the split bit */
-		if ((key ^ l->key) > pxor && (key ^ r->key) > pxor) {
+		if (llen < plen && rlen < plen) {
 			/* can't go lower, the node must be inserted above p
 			 * (which is then necessarily a node). We also know
 			 * that (key != p->key) because p->key differs from at
