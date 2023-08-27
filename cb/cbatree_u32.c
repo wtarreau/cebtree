@@ -665,8 +665,8 @@ static void cbau32_default_dump_node(struct cba_node *node, int level, const voi
 	pxor = container_of(__cba_clrtag(node->b[0]), struct cba_u32, node)->key ^
 		container_of(__cba_clrtag(node->b[1]), struct cba_u32, node)->key;
 
-	printf("  \"%lx_n\" [label=\"%lx\\nlev=%d\\nkey=%u\" fillcolor=\"lightskyblue1\"%s];\n",
-	       (long)node, (long)node, level, key->key, (ctx == node) ? " color=red" : "");
+	printf("  \"%lx_n\" [label=\"%lx\\nlev=%d bit=%d\\nkey=%u\" fillcolor=\"lightskyblue1\"%s];\n",
+	       (long)node, (long)node, level, flsnz(pxor) - 1, key->key, (ctx == node) ? " color=red" : "");
 
 	/* xor of the keys of the left branch's lower branches */
 	lxor = container_of(__cba_clrtag(((struct cba_node*)__cba_clrtag(node->b[0]))->b[0]), struct cba_u32, node)->key ^
@@ -691,13 +691,18 @@ static void cbau32_default_dump_node(struct cba_node *node, int level, const voi
 static void cbau32_default_dump_leaf(struct cba_node *node, int level, const void *ctx)
 {
 	struct cba_u32 *key = container_of(node, struct cba_u32, node);
+	u32 pxor;
+
+	/* xor of the keys of the two lower branches */
+	pxor = container_of(__cba_clrtag(node->b[0]), struct cba_u32, node)->key ^
+		container_of(__cba_clrtag(node->b[1]), struct cba_u32, node)->key;
 
 	if (node->b[0] == node->b[1])
 		printf("  \"%lx_l\" [label=\"%lx\\nlev=%d\\nkey=%u\\n\" fillcolor=\"green\"%s];\n",
 		       (long)node, (long)node, level, key->key, (ctx == node) ? " color=red" : "");
 	else
-		printf("  \"%lx_l\" [label=\"%lx\\nlev=%d\\nkey=%u\\n\" fillcolor=\"yellow\"%s];\n",
-		       (long)node, (long)node, level, key->key, (ctx == node) ? " color=red" : "");
+		printf("  \"%lx_l\" [label=\"%lx\\nlev=%d bit=%d\\nkey=%u\\n\" fillcolor=\"yellow\"%s];\n",
+		       (long)node, (long)node, level, flsnz(pxor) - 1, key->key, (ctx == node) ? " color=red" : "");
 }
 
 /* Dumps a tree through the specified callbacks. */
