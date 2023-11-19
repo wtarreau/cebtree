@@ -88,20 +88,6 @@ struct cba_mb {
 	unsigned char key[0];
 };
 
-/* returns flx from 0 to 7 for 0x01 to 0xFF. Returns 0 for 0 as well. */
-unsigned int fls8(unsigned char c)
-{
-	unsigned int r = 0;
-
-	if (c & 0xf0) {
-		r += 4;
-		c >>= 4;
-	}
-	//return r + (0x4444444433332210ULL >> (c * 4));
-	//return r + (0x3333333322221100ULL >> (c * 4));
-	return r + ((0xffffaa50U >> (c * 2)) & 0x3);
-}
-
 /* returns clz from 7 to 0 for 0x01 to 0xFF. Returns 7 for 0 as well. */
 unsigned int clz8(unsigned char c)
 {
