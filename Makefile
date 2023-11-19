@@ -1,4 +1,4 @@
-CFLAGS = -O3 -W -Wall -Wdeclaration-after-statement -Wno-unused-parameter
+CFLAGS = -O3 -W -Wall -Wdeclaration-after-statement -Wno-unused-parameter -ggdb3
 
 COMMON_DIR = common
 
