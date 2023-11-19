@@ -42,6 +42,18 @@ typedef   signed long long s64;
  * bit manipulation functions *
 \******************************/
 
+/* returns clz from 7 to 0 for 0x01 to 0xFF. Returns 7 for 0 as well. */
+static inline unsigned int clz8(unsigned char c)
+{
+	unsigned int r = 4;
+
+	if (c & 0xf0) {
+		r = 0;
+		c >>= 4;
+	}
+	return r + ((0x000055afU >> (c * 2)) & 0x3);
+}
+
 #if (defined(__i386__) || defined(__x86_64__)) && !defined(__atom__)
 
 /* returns 1 to 32 for 1<<0 to 1<<31. Undefined for 0. DO NOT USE ON ATOM!
