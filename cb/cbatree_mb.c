@@ -88,33 +88,6 @@ struct cba_mb {
 	unsigned char key[0];
 };
 
-/* returns clz from 7 to 0 for 0x01 to 0xFF. Returns 7 for 0 as well. */
-unsigned int clz8(unsigned char c)
-{
-	unsigned int r = 4;
-
-	if (c & 0xf0) {
-		r = 0;
-		c >>= 4;
-	}
-	return r + ((0x000055afU >> (c * 2)) & 0x3);
-}
-
-/* returns the number of identical bits between a and b */
-static inline int samebits(const unsigned char *a, const unsigned char *b, size_t len)
-{
-	size_t ofs;
-	unsigned char c;
-
-	for (ofs = 0; ofs < len; ofs++) {
-		c = a[ofs] ^ b[ofs];
-		if (!c)
-			continue;
-		return ofs * 8 + clz8(c);
-	}
-	return ofs * 8;
-}
-
 /* Generic tree descent function. It must absolutely be inlined so that the
  * compiler can eliminate the tests related to the various return pointers,
  * which must either point to a local variable in the caller, or be NULL.
@@ -189,8 +162,8 @@ struct cba_node *cbau_descend_mb(/*const*/ struct cba_node **root,
 		 * will be needed on strings.
 		 */
 		//brside = (key ^ l->key) >= (key ^ r->key);
-		llen = samebits(key, l->key, len);
-		rlen = samebits(key, r->key, len);
+		llen = equal_bits(key, l->key, 0, len << 3);
+		rlen = equal_bits(key, r->key, 0, len << 3);
 		brside = llen <= rlen;
 
 		/* so that's either a node or a leaf. Each leaf we visit had
@@ -203,7 +176,7 @@ struct cba_node *cbau_descend_mb(/*const*/ struct cba_node **root,
 		 * necessarily is the one of an upper node, so what we're
 		 * seeing cannot be the node, hence it's the leaf.
 		 */
-		xlen = samebits(l->key, r->key, len);
+		xlen = equal_bits(l->key, r->key, 0, len << 3);
 		if (xlen < plen) { // test using 2 4 6 4
 			/* this is a leaf */
 			//fprintf(stderr, "key %u break at %d\n", key, __LINE__);
