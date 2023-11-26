@@ -119,6 +119,7 @@ struct cba_node *cbau_descend_st(/*const*/ struct cba_node **root,
 	long lpside = 0;  // side on the leaf's parent
 	long brside = 0;  // branch side when descending
 	int llen = 0, rlen = 0, xlen, plen = 0;
+	int found = 0;
 
 	/* the parent will be the (possibly virtual) node so that
 	 * &lparent->l == root.
@@ -170,6 +171,8 @@ struct cba_node *cbau_descend_st(/*const*/ struct cba_node **root,
 		llen = string_equal_bits(key, l->key, 0);
 		rlen = string_equal_bits(key, r->key, 0);
 		brside = (unsigned)llen <= (unsigned)rlen;
+		if (llen < 0 || rlen < 0)
+			found = 1;
 
 		/* so that's either a node or a leaf. Each leaf we visit had
 		 * its node part already visited. The only way to distinguish
@@ -225,6 +228,7 @@ struct cba_node *cbau_descend_st(/*const*/ struct cba_node **root,
 				/* we've found a match, so we know the node is there but
 				 * we still need to walk down to spot all parents.
 				 */
+				found = 1;
 			}
 		}
 
@@ -256,7 +260,7 @@ struct cba_node *cbau_descend_st(/*const*/ struct cba_node **root,
 	 * guarantees these bits exist. Test with "100", "10", "1" to see where
 	 * this is needed.
 	 */
-	if (llen < 0 || rlen < 0)
+	if (found)
 		plen = -1;
 	else
 		plen = (llen > rlen) ? llen : rlen;
