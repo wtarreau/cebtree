@@ -35,6 +35,7 @@ struct cba_node *add_value(struct cba_node **root, uint32_t value)
 		if (prev == &key->node)
 			return prev; // was properly inserted
 		/* otherwise was already there, let's try to remove it */
+		printf("Insert failed, removing node %p before inserting again.\n", prev);
 		ret = cba_delete_u32(root, prev);
 		if (ret != prev) {
 			/* was not properly removed either: THIS IS A BUG! */
