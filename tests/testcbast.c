@@ -185,8 +185,9 @@ int main(int argc, char **argv)
 
 	printf("inserting %d entries\n", entries);
 	for (i = 0; i < entries; i++) {
-		if (i < argc - 4)
-			ulltoa(atoll(argv[i + 4]), key->key);
+		if (i < argc - 4) {
+			strncpy(key->key, argv[i + 4], sizeof(key->key));
+		}
 		else
 			rnd64_to_str(key->key);
 		old = cba_lookup_st(&cba_root, (const void*)&key->key);
@@ -218,7 +219,7 @@ int main(int argc, char **argv)
 		found = 0;
 		for (i = 0; i < lookups; i++) {
 			if (i < argc - 4)
-				ulltoa(atoll(argv[i + 4]), key->key);
+				strncpy(key->key, argv[i + 4], sizeof(key->key));
 			else
 				rnd64_to_str(key->key);
 			old = cba_lookup_st(&cba_root, (const void*)&key->key);
