@@ -141,6 +141,7 @@ struct cba_st {
  */
 static inline __attribute__((always_inline))
 struct cba_node *cbau_descend_st(/*const*/ struct cba_node **root,
+				 enum cba_walk_meth meth,
 				 /*const*/ struct cba_node *node,
 				 int *ret_nside,
 				 struct cba_node ***ret_root,
@@ -210,11 +211,21 @@ struct cba_node *cbau_descend_st(/*const*/ struct cba_node **root,
 		//if (llen < 0 || rlen < 0)
 		//	printf("at %d llen=%d rlen=%d\n", __LINE__,  llen, rlen);
 
-		llen = string_equal_bits(key, l->key, 0);
-		rlen = string_equal_bits(key, r->key, 0);
-		brside = (unsigned)llen <= (unsigned)rlen;
-		if (llen < 0 || rlen < 0)
-			found = 1;
+		switch (meth) {
+		case CB_WM_KEY:
+			llen = string_equal_bits(key, l->key, 0);
+			rlen = string_equal_bits(key, r->key, 0);
+			brside = (unsigned)llen <= (unsigned)rlen;
+			if (llen < 0 || rlen < 0)
+				found = 1;
+			break;
+		case CB_WM_LEFT:
+			brside = 0;
+			break;
+		case CB_WM_RIGHT:
+			brside = 1;
+			break;
+		}
 
 		/* so that's either a node or a leaf. Each leaf we visit had
 		 * its node part already visited. The only way to distinguish
@@ -237,42 +248,44 @@ struct cba_node *cbau_descend_st(/*const*/ struct cba_node **root,
 
 		plen = xlen;
 
-		/* check the split bit */
-		if ((unsigned)llen < (unsigned)plen && (unsigned)rlen < (unsigned)plen) {
-			/* can't go lower, the node must be inserted above p
-			 * (which is then necessarily a node). We also know
-			 * that (key != p->key) because p->key differs from at
-			 * least one of its subkeys by a higher bit than the
-			 * split bit, so lookups must fail here.
-			 */
-			//fprintf(stderr, "key %s break at %d llen=%d rlen=%d plen=%d\n", key, __LINE__, llen, rlen, plen);
-			break;
-		}
-
-		/* here we're guaranteed to be above a node. If this is the
-		 * same node as the one we're looking for, let's store the
-		 * parent as the node's parent.
-		 */
-		if (ret_npside || ret_nparent) {
-			int mlen = llen > rlen ? llen : rlen;
-
-			if (mlen > plen)
-				mlen = plen;
-
-			//if (node == &p->node) { // seems to be OK, but not sure
-			//if (llen < 0 || rlen < 0) { // fails with 2 4 6 4
-			if (strcmp((const char *)key + mlen / 8, (const char *)p->key + mlen / 8) == 0) {
-				/* strcmp() still needed. E.g. 1 2 3 4 10 11 4 3 2 1 10 11 fails otherwise */
-				//fprintf(stderr, "key %s found at %d llen=%d rlen=%d plen=%d\n", key, __LINE__, llen, rlen, plen);
-				//printf("key=<%s> +p=<%s>, pkey=<%s> +p=<%s>\n",
-				//       (const char *)key, (const char *)key + plen / 8,
-				//       (const char *)p->key, (const char *)p->key + plen / 8);
-				nparent = lparent;
-				npside  = lpside;
-				/* we've found a match, so we know the node is there but
-				 * we still need to walk down to spot all parents.
+		if (meth == CB_WM_KEY) {
+			/* check the split bit */
+			if ((unsigned)llen < (unsigned)plen && (unsigned)rlen < (unsigned)plen) {
+				/* can't go lower, the node must be inserted above p
+				 * (which is then necessarily a node). We also know
+				 * that (key != p->key) because p->key differs from at
+				 * least one of its subkeys by a higher bit than the
+				 * split bit, so lookups must fail here.
 				 */
-				found = 1;
+				//fprintf(stderr, "key %s break at %d llen=%d rlen=%d plen=%d\n", key, __LINE__, llen, rlen, plen);
+				break;
+			}
+
+			/* here we're guaranteed to be above a node. If this is the
+			 * same node as the one we're looking for, let's store the
+			 * parent as the node's parent.
+			 */
+			if (ret_npside || ret_nparent) {
+				int mlen = llen > rlen ? llen : rlen;
+
+				if (mlen > plen)
+					mlen = plen;
+
+				//if (node == &p->node) { // seems to be OK, but not sure
+				//if (llen < 0 || rlen < 0) { // fails with 2 4 6 4
+				if (strcmp((const char *)key + mlen / 8, (const char *)p->key + mlen / 8) == 0) {
+					/* strcmp() still needed. E.g. 1 2 3 4 10 11 4 3 2 1 10 11 fails otherwise */
+					//fprintf(stderr, "key %s found at %d llen=%d rlen=%d plen=%d\n", key, __LINE__, llen, rlen, plen);
+					//printf("key=<%s> +p=<%s>, pkey=<%s> +p=<%s>\n",
+					//       (const char *)key, (const char *)key + plen / 8,
+					//       (const char *)p->key, (const char *)p->key + plen / 8);
+					nparent = lparent;
+					npside  = lpside;
+					/* we've found a match, so we know the node is there but
+					 * we still need to walk down to spot all parents.
+					 */
+					found = 1;
+				}
 			}
 		}
 
@@ -304,7 +317,7 @@ struct cba_node *cbau_descend_st(/*const*/ struct cba_node **root,
 	 * guarantees these bits exist. Test with "100", "10", "1" to see where
 	 * this is needed.
 	 */
-	if (found)
+	if (found || meth != CB_WM_KEY)
 		plen = -1;
 	else
 		plen = (llen > rlen) ? llen : rlen;
@@ -388,7 +401,7 @@ struct cba_node *cba_insert_st(struct cba_node **root, struct cba_node *node)
 		return node;
 	}
 
-	ret = cbau_descend_st(root, node, &nside, &parent, NULL, NULL, NULL, NULL, NULL, NULL);
+	ret = cbau_descend_st(root, CB_WM_KEY, node, &nside, &parent, NULL, NULL, NULL, NULL, NULL, NULL);
 
 	if (ret == node) {
 		node->b[nside] = node;
@@ -408,7 +421,7 @@ struct cba_node *cba_lookup_st(struct cba_node **root, const unsigned char *key)
 	if (!*root)
 		return NULL;
 
-	return cbau_descend_st(root, node, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	return cbau_descend_st(root, CB_WM_KEY, node, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 }
 
 /* look up the specified node with its key and deletes it if found, and in any
@@ -430,7 +443,7 @@ struct cba_node *cba_delete_st(struct cba_node **root, struct cba_node *node)
 		return node;
 	}
 
-	ret = cbau_descend_st(root, node, NULL, NULL, &lparent, &lpside, &nparent, &npside, &gparent, &gpside);
+	ret = cbau_descend_st(root, CB_WM_KEY, node, NULL, NULL, &lparent, &lpside, &nparent, &npside, &gparent, &gpside);
 	if (ret == node) {
 		//fprintf(stderr, "root=%p ret=%p l=%p[%d] n=%p[%d] g=%p[%d]\n", root, ret, lparent, lpside, nparent, npside, gparent, gpside);
 
@@ -487,7 +500,7 @@ struct cba_node *cba_pick_st(struct cba_node **root, const unsigned char *key)
 
 	//if (key == 425144) printf("%d: k=%u\n", __LINE__, key);
 
-	ret = cbau_descend_st(root, node, NULL, NULL, &lparent, &lpside, &nparent, &npside, &gparent, &gpside);
+	ret = cbau_descend_st(root, CB_WM_KEY, node, NULL, NULL, &lparent, &lpside, &nparent, &npside, &gparent, &gpside);
 
 	//if (key == 425144) printf("%d: k=%u ret=%p\n", __LINE__, key, ret);
 
