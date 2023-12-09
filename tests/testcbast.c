@@ -15,6 +15,11 @@ struct cba_node *cba_insert_st(struct cba_node **root, struct cba_node *node);
 struct cba_node *cba_lookup_st(struct cba_node **root, const unsigned char *key);
 struct cba_node *cba_delete_st(struct cba_node **root, struct cba_node *node);
 
+struct cba_node *cba_first_st(struct cba_node **root);
+struct cba_node *cba_last_st(struct cba_node **root);
+struct cba_node *cba_next_st(struct cba_node **root, struct cba_node *node);
+struct cba_node *cba_prev_st(struct cba_node **root, struct cba_node *node);
+
 struct cba_node *cba_root = NULL;
 
 struct key {
@@ -223,5 +228,21 @@ int main(int argc, char **argv)
 	}
 
 	printf("found=%d\n", found);
+
+	/* now count elements */
+	found = 0;
+	ret = cba_first_st(&cba_root);
+	if (debug)
+		printf("%d: ret=%p\n", __LINE__, ret);
+
+	while (ret) {
+		prev = cba_next_st(&cba_root, ret);
+		if (debug)
+			printf("   %4d: <%s>\n", found, ((const struct key *)ret)->key);
+		found++;
+		ret = prev;
+	}
+	printf("counted %d elements\n", found);
+
 	return 0;
 }
