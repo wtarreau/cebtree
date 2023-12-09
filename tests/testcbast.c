@@ -144,17 +144,32 @@ static void rnd64_to_str(char *dst)
 	ulltoa(rnd64(), dst);
 }
 
+void usage(const char *name)
+{
+	printf("Usage: %s [-d] entries lookups loops [first entries...]\n", name);
+	exit(1);
+}
+
 int main(int argc, char **argv)
 {
 	int entries, lookups, loops, found, i;
 	const struct cba_node *old;
 	struct cba_node *prev, *ret;
 	struct key *key;
+	int debug = 0;
 
-	if (argc < 4) {
-		printf("Usage: %s entries lookups loops [first entries...]\n", argv[0]);
-		exit(1);
+	while (argc > 1 && argv[1][0] == '-') {
+		if (argv[1][1] == 'd')
+			debug = 1;
+		else
+			usage(argv[0]);
+		argv[1] = argv[0];
+		argv++;
+		argc--;
 	}
+
+	if (argc < 4)
+		usage(argv[0]);
 
 	entries = atoi(argv[1]);
 	lookups = atoi(argv[2]);
