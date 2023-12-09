@@ -130,6 +130,12 @@ struct cba_st {
 //
 //}
 
+#ifdef DEBUG
+#define CBADBG(x, ...) fprintf(stderr, x, ##__VA_ARGS__)
+#else
+#define CBADBG(x, ...) do { } while (0)
+#endif
+
 /* Generic tree descent function. It must absolutely be inlined so that the
  * compiler can eliminate the tests related to the various return pointers,
  * which must either point to a local variable in the caller, or be NULL.
@@ -183,6 +189,8 @@ struct cba_node *cbau_descend_st(/*const*/ struct cba_node **root,
 
 		p = container_of(*root, struct cba_st, node);
 
+		CBADBG("key '%s' at %d llen=%d rlen=%d p=%p pkey=%s\n", (meth == CB_WM_KEY) ? (char*)key : "", __LINE__, llen, rlen, p, p->key);
+
 		/* let's prefetch the lower nodes for the keys */
 		__builtin_prefetch(p->node.b[0], 0);
 		__builtin_prefetch(p->node.b[1], 0);
@@ -193,7 +201,7 @@ struct cba_node *cbau_descend_st(/*const*/ struct cba_node **root,
 
 		/* two equal pointers identifies the nodeless leaf. */
 		if (l == r) {
-			//fprintf(stderr, "key %s break at %d llen=%d rlen=%d\n", key, __LINE__, llen, rlen);
+			CBADBG("key '%s' break at %d llen=%d rlen=%d p=%p pkey=%s\n", (meth == CB_WM_KEY) ? (char*)key : "", __LINE__, llen, rlen, p, p->key);
 			break;
 		}
 
@@ -251,7 +259,7 @@ struct cba_node *cbau_descend_st(/*const*/ struct cba_node **root,
 		xlen = string_equal_bits(l->key, r->key, 0);
 		if (xlen < plen) { // test using 2 4 6 4
 			/* this is a leaf */
-			//fprintf(stderr, "key %s break at %d llen=%d rlen=%d xlen=%d plen=%d\n", key, __LINE__, llen, rlen, xlen, plen);
+			CBADBG("key '%s' break at %d llen=%d rlen=%d xlen=%d plen=%d p=%p pkey=%s\n", (meth == CB_WM_KEY) ? (char*)key : "", __LINE__, llen, rlen, xlen, plen, p, p->key);
 			break;
 		}
 
@@ -266,7 +274,7 @@ struct cba_node *cbau_descend_st(/*const*/ struct cba_node **root,
 				 * least one of its subkeys by a higher bit than the
 				 * split bit, so lookups must fail here.
 				 */
-				//fprintf(stderr, "key %s break at %d llen=%d rlen=%d plen=%d\n", key, __LINE__, llen, rlen, plen);
+				CBADBG("key '%s' break at %d llen=%d rlen=%d plen=%d p=%p pkey=%s\n", (meth == CB_WM_KEY) ? (char*)key : "", __LINE__, llen, rlen, plen, p, p->key);
 				break;
 			}
 
@@ -284,7 +292,7 @@ struct cba_node *cbau_descend_st(/*const*/ struct cba_node **root,
 				//if (llen < 0 || rlen < 0) { // fails with 2 4 6 4
 				if (strcmp((const char *)key + mlen / 8, (const char *)p->key + mlen / 8) == 0) {
 					/* strcmp() still needed. E.g. 1 2 3 4 10 11 4 3 2 1 10 11 fails otherwise */
-					//fprintf(stderr, "key %s found at %d llen=%d rlen=%d plen=%d\n", key, __LINE__, llen, rlen, plen);
+					CBADBG("key '%s' found at %d llen=%d rlen=%d plen=%d p=%p pkey=%s\n", (meth == CB_WM_KEY) ? (char*)key : "", __LINE__, llen, rlen, plen, p, p->key);
 					//printf("key=<%s> +p=<%s>, pkey=<%s> +p=<%s>\n",
 					//       (const char *)key, (const char *)key + plen / 8,
 					//       (const char *)p->key, (const char *)p->key + plen / 8);
@@ -311,6 +319,7 @@ struct cba_node *cbau_descend_st(/*const*/ struct cba_node **root,
 					*alt_p = &gparent->b[gpside];
 			}
 			root = &p->node.b[1];
+			CBADBG("%d: turning right for %p (alt=%p altkey=%s)\n", __LINE__, p->node.b[1], p->node.b[0], container_of(p->node.b[0], struct cba_st, node)->key);
 		}
 		else {
 			if (alt_r) {
@@ -319,10 +328,11 @@ struct cba_node *cbau_descend_st(/*const*/ struct cba_node **root,
 					*alt_p = &gparent->b[gpside];
 			}
 			root = &p->node.b[0];
+			CBADBG("%d: turning left for %p (alt=%p altkey=%s)\n", __LINE__, p->node.b[0], p->node.b[1], container_of(p->node.b[1], struct cba_st, node)->key);
 		}
 
 		if (p == container_of(*root, struct cba_st, node)) {
-			//fprintf(stderr, "key %s break at %d llen=%d rlen=%d plen=%d\n", key, __LINE__, llen, rlen, plen);
+			CBADBG("key '%s' break at %d llen=%d rlen=%d plen=%d p=%p pkey=%s\n", (meth == CB_WM_KEY) ? (char*)key : "", __LINE__, llen, rlen, plen, p, p->key);
 			/* loops over itself, it's a leaf */
 			break;
 		}
@@ -522,7 +532,7 @@ struct cba_node *cba_delete_st(struct cba_node **root, struct cba_node *node)
 
 	ret = cbau_descend_st(root, CB_WM_KEY, node, NULL, NULL, &lparent, &lpside, &nparent, &npside, &gparent, &gpside, NULL, NULL, NULL);
 	if (ret == node) {
-		//fprintf(stderr, "root=%p ret=%p l=%p[%d] n=%p[%d] g=%p[%d]\n", root, ret, lparent, lpside, nparent, npside, gparent, gpside);
+		//CBADBG("root=%p ret=%p l=%p[%d] n=%p[%d] g=%p[%d]\n", root, ret, lparent, lpside, nparent, npside, gparent, gpside);
 
 		if (&lparent->b[0] == root) {
 			/* there was a single entry, this one */
@@ -590,7 +600,7 @@ struct cba_node *cba_pick_st(struct cba_node **root, const unsigned char *key)
 		if (p->key != key)
 			abort();
 
-		//fprintf(stderr, "root=%p ret=%p l=%p[%d] n=%p[%d] g=%p[%d]\n", root, ret, lparent, lpside, nparent, npside, gparent, gpside);
+		//CBADBG("root=%p ret=%p l=%p[%d] n=%p[%d] g=%p[%d]\n", root, ret, lparent, lpside, nparent, npside, gparent, gpside);
 
 		if (&lparent->b[0] == root) {
 			/* there was a single entry, this one */
@@ -695,7 +705,7 @@ void *cba_dump_tree_st(struct cba_node *node, mb pxor, void *last,
 	if (!node) /* empty tree */
 		return node;
 
-	//fprintf(stderr, "node=%p level=%d key=%u l=%p r=%p\n", node, level, *(unsigned *)((char*)(node)+16), node->b[0], node->b[1]);
+	//CBADBG("node=%p level=%d key=%u l=%p r=%p\n", node, level, *(unsigned *)((char*)(node)+16), node->b[0], node->b[1]);
 
 	if (level < 0) {
 		/* we're inside a dup tree. Tagged pointers indicate nodes,
