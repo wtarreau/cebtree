@@ -182,7 +182,9 @@ struct cba_node *cbau_descend_st(/*const*/ struct cba_node **root,
 		 * direct descendent below). Said differently, if an inter-
 		 * branch xor is strictly larger than the previous one, it
 		 * necessarily is the one of an upper node, so what we're
-		 * seeing cannot be the node, hence it's the leaf.
+		 * seeing cannot be the node, hence it's the leaf. The case
+		 * where they're equal was already dealt with by the test at
+		 * the end of the loop (node points to self).
 		 */
 		xlen = string_equal_bits(l->key, r->key, 0);
 		if (xlen < plen) { // test using 2 4 6 4
