@@ -88,6 +88,48 @@ struct cba_st {
 	unsigned char key[0];
 };
 
+// to be redone: compare the 3 strings as long as they match, then
+// fall back to different labels depending on the non-matching one.
+//static cmp3str(const unsigned char *k, const unsigned char *l, const unsigned char *r,
+//	       int *ret_llen, int *ret_rlen, int *ret_xlen)
+//{
+//	unsigned char kl, kr, lr;
+//
+//	int beg = 0;
+//	int llen = 0, rlen = 0, xlen = 0;
+//
+//	/* skip known and identical bits. We stop at the first different byte
+//	 * or at the first zero we encounter on either side.
+//	 */
+//	while (1) {
+//		unsigned char cl, cr, ck;
+//		cl = *l;
+//		cr = *r;
+//		ck = *k;
+//
+//		kl = cl ^ ck;
+//		kr = cr ^ ck;
+//		lr = cl ^ cr;
+//
+//		c = a[beg];
+//		d = b[beg];
+//		beg++;
+//
+//		c ^= d;
+//		if (c)
+//			break;
+//		if (!d)
+//			return -1;
+//	}
+//	/* OK now we know that a and b differ at byte <beg>, or that both are zero.
+//	 * We have to find what bit is differing and report it as the number of
+//	 * identical bits. Note that low bit numbers are assigned to high positions
+//	 * in the byte, as we compare them as strings.
+//	 */
+//	return (beg << 3) - flsnz8(c);
+//
+//}
+
 /* Generic tree descent function. It must absolutely be inlined so that the
  * compiler can eliminate the tests related to the various return pointers,
  * which must either point to a local variable in the caller, or be NULL.
