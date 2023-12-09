@@ -450,6 +450,42 @@ struct cba_node *cba_lookup_st(struct cba_node **root, const unsigned char *key)
 	return cbau_descend_st(root, CB_WM_KEY, node, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 }
 
+/* search for the next node after the specified one, and return it, or NULL if
+ * not found. The approach consists in looking up that node, recalling the last
+ * time a left turn was made, and returning the first node along the right
+ * branch at that fork.
+ */
+struct cba_node *cba_next_st(struct cba_node **root, struct cba_node *node)
+{
+	struct cba_node **right_branch = NULL;
+
+	if (!*root)
+		return NULL;
+
+	cbau_descend_st(root, CB_WM_KEY, node, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &right_branch);
+	if (!right_branch)
+		return NULL;
+	return cbau_descend_st(right_branch, CB_WM_LEFT, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+}
+
+/* search for the prev node before the specified one, and return it, or NULL if
+ * not found. The approach consists in looking up that node, recalling the last
+ * time a right turn was made, and returning the last node along the left
+ * branch at that fork.
+ */
+struct cba_node *cba_prev_st(struct cba_node **root, struct cba_node *node)
+{
+	struct cba_node **left_branch = NULL;
+
+	if (!*root)
+		return NULL;
+
+	cbau_descend_st(root, CB_WM_KEY, node, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &left_branch, NULL);
+	if (!left_branch)
+		return NULL;
+	return cbau_descend_st(left_branch, CB_WM_RIGHT, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+}
+
 /* look up the specified node with its key and deletes it if found, and in any
  * case, returns the node.
  */
