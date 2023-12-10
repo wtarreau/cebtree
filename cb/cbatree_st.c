@@ -173,14 +173,18 @@ struct cba_node *cbau_descend_st(/*const*/ struct cba_node **root,
 	long lpside = 0;  // side on the leaf's parent
 	long brside = 0;  // branch side when descending
 	int llen = 0, rlen = 0, xlen = 0, fork_plen = 0;
-	int plen = ret_plen ? *ret_plen : 0;
+	int plen = 0;//ret_plen ? *ret_plen : 0;
 	int found = 0;
+
+	CBADBG("<<< key '%s' meth=%d at %d plen=%d\n", (meth == CB_WM_KEY) ? (char*)key : "", meth, __LINE__, plen);
 
 	/* the parent will be the (possibly virtual) node so that
 	 * &lparent->l == root.
 	 */
 	lparent = container_of(root, struct cba_node, b[0]);
 	gparent = nparent = lparent;
+
+	xlen = -1;
 
 	/* the previous xor is initialized to the largest possible inter-branch
 	 * value so that it can never match on the first test as we want to use
@@ -235,13 +239,17 @@ struct cba_node *cbau_descend_st(/*const*/ struct cba_node **root,
 			break;
 		case CB_WM_LEFT:
 			brside = 0;
-			if (!xlen && plen)
+			if (xlen < 0 && ret_plen) {
+				CBADBG("#  taking right for first step\n");
 				brside = 1;
+			}
 			break;
 		case CB_WM_RIGHT:
 			brside = 1;
-			if (!xlen && plen)
+			if (xlen < 0 && ret_plen) {
+				CBADBG("#  taking left for first step\n");
 				brside = 0;
+			}
 			break;
 		}
 
@@ -313,7 +321,7 @@ struct cba_node *cbau_descend_st(/*const*/ struct cba_node **root,
 		//root = &p->node.b[brside];  // significantly slower on x86
 		if (brside) {
 			if (ret_alt_l) {
-				alt_l = &p->node.b[0];
+				alt_l = root;//&p->node;//&p->node.b[0];
 				fork_plen = plen;
 			}
 			root = &p->node.b[1];
@@ -321,7 +329,7 @@ struct cba_node *cbau_descend_st(/*const*/ struct cba_node **root,
 		}
 		else {
 			if (ret_alt_r) {
-				alt_r = &p->node.b[1];
+				alt_r = root;//&p->node;//.b[1];
 				fork_plen = plen;
 			}
 			root = &p->node.b[0];
@@ -389,6 +397,8 @@ struct cba_node *cbau_descend_st(/*const*/ struct cba_node **root,
 
 	if (ret_plen)
 		*ret_plen = fork_plen;
+
+	CBADBG(">>>    %d plen=%d xlen=%d\n", __LINE__, plen, xlen);
 
 	/* For lookups, an equal value means an instant return. For insertions,
 	 * it is the same, we want to return the previously existing value so
