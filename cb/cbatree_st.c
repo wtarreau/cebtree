@@ -101,12 +101,14 @@ struct cba_st {
  * deal with this special case. It returns in ret_root the location of the
  * pointer to the leaf (i.e. where we have to insert ourselves). The integer
  * pointed to by ret_nside will contain the side the leaf should occupy at
- * its own node, with the sibling being *ret_root.
+ * its own node, with the sibling being *ret_root. The node is only needed for
+ * inserts.
  */
 static inline __attribute__((always_inline))
 struct cba_node *cbau_descend_st(/*const*/ struct cba_node **root,
 				 enum cba_walk_meth meth,
 				 /*const*/ struct cba_node *node,
+				 const unsigned char *key,
 				 int *ret_nside,
 				 struct cba_node ***ret_root,
 				 struct cba_node **ret_lparent,
@@ -119,7 +121,6 @@ struct cba_node *cbau_descend_st(/*const*/ struct cba_node **root,
 				 struct cba_node ***ret_alt_r)
 {
 	struct cba_st *p, *l, *r;
-	const unsigned char *key = container_of(node, struct cba_st, node)->key;
 	struct cba_node *gparent = NULL;
 	struct cba_node *nparent = NULL;
 	struct cba_node **alt_l = NULL;
@@ -392,6 +393,7 @@ struct cba_node *cbau_descend_st(/*const*/ struct cba_node **root,
 
 struct cba_node *cba_insert_st(struct cba_node **root, struct cba_node *node)
 {
+	const unsigned char *key = container_of(node, struct cba_st, node)->key;
 	struct cba_node **parent;
 	struct cba_node *ret;
 	int nside;
@@ -403,7 +405,7 @@ struct cba_node *cba_insert_st(struct cba_node **root, struct cba_node *node)
 		return node;
 	}
 
-	ret = cbau_descend_st(root, CB_WM_KEY, node, &nside, &parent, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	ret = cbau_descend_st(root, CB_WM_KEY, node, key, &nside, &parent, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 
 	if (ret == node) {
 		node->b[nside] = node;
@@ -419,7 +421,7 @@ struct cba_node *cba_first_st(struct cba_node **root)
 	if (!*root)
 		return NULL;
 
-	return cbau_descend_st(root, CB_WM_FST, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	return cbau_descend_st(root, CB_WM_FST, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 }
 
 /* return the last node or NULL if not found. */
@@ -428,7 +430,7 @@ struct cba_node *cba_last_st(struct cba_node **root)
 	if (!*root)
 		return NULL;
 
-	return cbau_descend_st(root, CB_WM_LST, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	return cbau_descend_st(root, CB_WM_LST, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 }
 
 /* look up the specified key, and returns either the node containing it, or
@@ -436,12 +438,10 @@ struct cba_node *cba_last_st(struct cba_node **root)
  */
 struct cba_node *cba_lookup_st(struct cba_node **root, const unsigned char *key)
 {
-	/*const*/ struct cba_node *node = &container_of(key, struct cba_st, key)->node;
-
 	if (!*root)
 		return NULL;
 
-	return cbau_descend_st(root, CB_WM_KEY, node, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	return cbau_descend_st(root, CB_WM_KEY, NULL, key, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 }
 
 /* search for the next node after the specified one, and return it, or NULL if
@@ -451,15 +451,16 @@ struct cba_node *cba_lookup_st(struct cba_node **root, const unsigned char *key)
  */
 struct cba_node *cba_next_st(struct cba_node **root, struct cba_node *node)
 {
+	const unsigned char *key = container_of(node, struct cba_st, node)->key;
 	struct cba_node **right_branch = NULL;
 
 	if (!*root)
 		return NULL;
 
-	cbau_descend_st(root, CB_WM_KEY, node, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &right_branch);
+	cbau_descend_st(root, CB_WM_KEY, NULL, key, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &right_branch);
 	if (!right_branch)
 		return NULL;
-	return cbau_descend_st(right_branch, CB_WM_NXT, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	return cbau_descend_st(right_branch, CB_WM_NXT, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 }
 
 /* search for the prev node before the specified one, and return it, or NULL if
@@ -469,15 +470,16 @@ struct cba_node *cba_next_st(struct cba_node **root, struct cba_node *node)
  */
 struct cba_node *cba_prev_st(struct cba_node **root, struct cba_node *node)
 {
+	const unsigned char *key = container_of(node, struct cba_st, node)->key;
 	struct cba_node **left_branch = NULL;
 
 	if (!*root)
 		return NULL;
 
-	cbau_descend_st(root, CB_WM_KEY, node, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &left_branch, NULL);
+	cbau_descend_st(root, CB_WM_KEY, NULL, key, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &left_branch, NULL);
 	if (!left_branch)
 		return NULL;
-	return cbau_descend_st(left_branch, CB_WM_PRV, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	return cbau_descend_st(left_branch, CB_WM_PRV, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 }
 
 /* look up the specified node with its key and deletes it if found, and in any
@@ -485,6 +487,7 @@ struct cba_node *cba_prev_st(struct cba_node **root, struct cba_node *node)
  */
 struct cba_node *cba_delete_st(struct cba_node **root, struct cba_node *node)
 {
+	const unsigned char *key = container_of(node, struct cba_st, node)->key;
 	struct cba_node *lparent, *nparent, *gparent, *sibling;
 	int lpside, npside, gpside;
 	struct cba_node *ret;
@@ -499,7 +502,7 @@ struct cba_node *cba_delete_st(struct cba_node **root, struct cba_node *node)
 		return node;
 	}
 
-	ret = cbau_descend_st(root, CB_WM_KEY, node, NULL, NULL, &lparent, &lpside, &nparent, &npside, &gparent, &gpside, NULL, NULL);
+	ret = cbau_descend_st(root, CB_WM_KEY, NULL, key, NULL, NULL, &lparent, &lpside, &nparent, &npside, &gparent, &gpside, NULL, NULL);
 	if (ret == node) {
 		//CBADBG("root=%p ret=%p l=%p[%d] n=%p[%d] g=%p[%d]\n", root, ret, lparent, lpside, nparent, npside, gparent, gpside);
 
@@ -546,7 +549,6 @@ done:
  */
 struct cba_node *cba_pick_st(struct cba_node **root, const unsigned char *key)
 {
-	/*const*/ struct cba_node *node = &container_of(key, struct cba_st, key)->node;
 	struct cba_node *lparent, *nparent, *gparent/*, *sibling*/;
 	int lpside, npside, gpside;
 	struct cba_node *ret;
@@ -556,15 +558,12 @@ struct cba_node *cba_pick_st(struct cba_node **root, const unsigned char *key)
 
 	//if (key == 425144) printf("%d: k=%u\n", __LINE__, key);
 
-	ret = cbau_descend_st(root, CB_WM_KEY, node, NULL, NULL, &lparent, &lpside, &nparent, &npside, &gparent, &gpside, NULL, NULL);
+	ret = cbau_descend_st(root, CB_WM_KEY, NULL, key, NULL, NULL, &lparent, &lpside, &nparent, &npside, &gparent, &gpside, NULL, NULL);
 
 	//if (key == 425144) printf("%d: k=%u ret=%p\n", __LINE__, key, ret);
 
 	if (ret) {
 		struct cba_st *p = container_of(ret, struct cba_st, node);
-
-		if (ret == node)
-			abort();
 
 		if (p->key != key)
 			abort();
