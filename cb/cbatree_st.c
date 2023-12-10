@@ -197,19 +197,23 @@ struct cba_node *cbau_descend_st(/*const*/ struct cba_node **root,
 			break;
 		case CB_WM_FST:
 			brside = 0;
-			if (xlen < 0 && ret_plen) {
+			break;
+		case CB_WM_NXT:
+			brside = 0;
+			if (xlen < 0) {
 				CBADBG("#  taking right for first step\n");
 				brside = 1;
 			}
 			break;
-		case CB_WM_LST:
+		case CB_WM_PRV:
 			brside = 1;
-			if (xlen < 0 && ret_plen) {
+			if (xlen < 0) {
 				CBADBG("#  taking left for first step\n");
 				brside = 0;
 			}
 			break;
-		default:
+		case CB_WM_LST:
+			brside = 1;
 			break;
 		}
 
@@ -466,7 +470,7 @@ struct cba_node *cba_next_st(struct cba_node **root, struct cba_node *node)
 	cbau_descend_st(root, CB_WM_KEY, node, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &right_branch, &plen);
 	if (!right_branch)
 		return NULL;
-	return cbau_descend_st(right_branch, CB_WM_FST, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &plen);
+	return cbau_descend_st(right_branch, CB_WM_NXT, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &plen);
 }
 
 /* search for the prev node before the specified one, and return it, or NULL if
@@ -485,7 +489,7 @@ struct cba_node *cba_prev_st(struct cba_node **root, struct cba_node *node)
 	cbau_descend_st(root, CB_WM_KEY, node, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &left_branch, NULL, &plen);
 	if (!left_branch)
 		return NULL;
-	return cbau_descend_st(left_branch, CB_WM_LST, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &plen);
+	return cbau_descend_st(left_branch, CB_WM_PRV, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &plen);
 }
 
 /* look up the specified node with its key and deletes it if found, and in any
