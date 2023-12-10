@@ -36,8 +36,10 @@ typedef struct cba_node * cba_tree_t;
 /* tree walk method: key, left, right */
 enum cba_walk_meth {
 	CB_WM_KEY,     /* look up the node's key */
-	CB_WM_LEFT,    /* descend left */
-	CB_WM_RIGHT,   /* descend right */
+	CB_WM_FST,     /* look up "first" (walk left only) */
+	CB_WM_NXT,     /* look up "next" (walk right once then left) */
+	CB_WM_PRV,     /* look up "prev" (walk left once then right) */
+	CB_WM_LST,     /* look up "last" (walk right only) */
 };
 
 /* Standard node when using absolute pointers */
