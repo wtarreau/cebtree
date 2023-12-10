@@ -115,27 +115,34 @@ struct cba_node *cbau_descend_st(/*const*/ struct cba_node **root,
 				 int *ret_npside,
 				 struct cba_node **ret_gparent,
 				 int *ret_gpside,
-				 struct cba_node ***alt_p,
-				 struct cba_node ***alt_l,
-				 struct cba_node ***alt_r)
+				 struct cba_node ***ret_alt_l,
+				 struct cba_node ***ret_alt_r,
+				 int *ret_plen)
 {
 	struct cba_st *p, *l, *r;
 	const unsigned char *key = container_of(node, struct cba_st, node)->key;
 	struct cba_node *gparent = NULL;
 	struct cba_node *nparent = NULL;
+	struct cba_node **alt_l = NULL;
+	struct cba_node **alt_r = NULL;
 	struct cba_node *lparent;
 	int gpside = 0; // side on the grand parent
 	int npside = 0;  // side on the node's parent
 	long lpside = 0;  // side on the leaf's parent
 	long brside = 0;  // branch side when descending
-	int llen = 0, rlen = 0, xlen, plen = 0;
+	int llen = 0, rlen = 0, xlen = 0, fork_plen = 0;
+	int plen = 0;//ret_plen ? *ret_plen : 0;
 	int found = 0;
+
+	CBADBG("<<< key '%s' meth=%d at %d plen=%d\n", (meth == CB_WM_KEY) ? (char*)key : "", meth, __LINE__, plen);
 
 	/* the parent will be the (possibly virtual) node so that
 	 * &lparent->l == root.
 	 */
 	lparent = container_of(root, struct cba_node, b[0]);
 	gparent = nparent = lparent;
+
+	xlen = -1;
 
 	/* the previous xor is initialized to the largest possible inter-branch
 	 * value so that it can never match on the first test as we want to use
@@ -147,7 +154,7 @@ struct cba_node *cbau_descend_st(/*const*/ struct cba_node **root,
 
 		p = container_of(*root, struct cba_st, node);
 
-		CBADBG("key '%s' at %d llen=%d rlen=%d p=%p pkey=%s\n", (meth == CB_WM_KEY) ? (char*)key : "", __LINE__, llen, rlen, p, p->key);
+		CBADBG("key '%s' at %d llen=%d rlen=%d plen=%d xlen=%d p=%p pkey=%s\n", (meth == CB_WM_KEY) ? (char*)key : "", __LINE__, llen, rlen, plen, xlen, p, p->key);
 
 		/* let's prefetch the lower nodes for the keys */
 		__builtin_prefetch(p->node.b[0], 0);
@@ -159,7 +166,7 @@ struct cba_node *cbau_descend_st(/*const*/ struct cba_node **root,
 
 		/* two equal pointers identifies the nodeless leaf. */
 		if (l == r) {
-			CBADBG("key '%s' break at %d llen=%d rlen=%d p=%p pkey=%s\n", (meth == CB_WM_KEY) ? (char*)key : "", __LINE__, llen, rlen, p, p->key);
+			CBADBG("key '%s' break at %d llen=%d rlen=%d plen=%d p=%p pkey=%s\n", (meth == CB_WM_KEY) ? (char*)key : "", __LINE__, llen, rlen, plen, p, p->key);
 			break;
 		}
 
@@ -189,16 +196,18 @@ struct cba_node *cbau_descend_st(/*const*/ struct cba_node **root,
 				found = 1;
 			break;
 		case CB_WM_FST:
-			/* go down left unless we're on the fork node */
 			brside = 0;
-			if (alt_r && *alt_r == &p->node.b[1])
+			if (xlen < 0 && ret_plen) {
+				CBADBG("#  taking right for first step\n");
 				brside = 1;
+			}
 			break;
 		case CB_WM_LST:
-			/* go down right unless we're on the fork node */
 			brside = 1;
-			if (alt_l && *alt_l == &p->node.b[0])
+			if (xlen < 0 && ret_plen) {
+				CBADBG("#  taking left for first step\n");
 				brside = 0;
+			}
 			break;
 		default:
 			break;
@@ -223,18 +232,16 @@ struct cba_node *cbau_descend_st(/*const*/ struct cba_node **root,
 			break;
 		}
 
-		plen = xlen;
-
 		if (meth == CB_WM_KEY) {
 			/* check the split bit */
-			if ((unsigned)llen < (unsigned)plen && (unsigned)rlen < (unsigned)plen) {
+			if ((unsigned)llen < (unsigned)xlen && (unsigned)rlen < (unsigned)xlen) {
 				/* can't go lower, the node must be inserted above p
 				 * (which is then necessarily a node). We also know
 				 * that (key != p->key) because p->key differs from at
 				 * least one of its subkeys by a higher bit than the
 				 * split bit, so lookups must fail here.
 				 */
-				CBADBG("key '%s' break at %d llen=%d rlen=%d plen=%d p=%p pkey=%s\n", (meth == CB_WM_KEY) ? (char*)key : "", __LINE__, llen, rlen, plen, p, p->key);
+				CBADBG("key '%s' break at %d llen=%d rlen=%d xlen=%d p=%p pkey=%s\n", (meth == CB_WM_KEY) ? (char*)key : "", __LINE__, llen, rlen, xlen, p, p->key);
 				break;
 			}
 
@@ -245,17 +252,17 @@ struct cba_node *cbau_descend_st(/*const*/ struct cba_node **root,
 			if (ret_npside || ret_nparent) {
 				int mlen = llen > rlen ? llen : rlen;
 
-				if (mlen > plen)
-					mlen = plen;
+				if (mlen > xlen)
+					mlen = xlen;
 
 				//if (node == &p->node) { // seems to be OK, but not sure
 				//if (llen < 0 || rlen < 0) { // fails with 2 4 6 4
 				if (strcmp((const char *)key + mlen / 8, (const char *)p->key + mlen / 8) == 0) {
 					/* strcmp() still needed. E.g. 1 2 3 4 10 11 4 3 2 1 10 11 fails otherwise */
-					CBADBG("key '%s' found at %d llen=%d rlen=%d plen=%d p=%p pkey=%s\n", (meth == CB_WM_KEY) ? (char*)key : "", __LINE__, llen, rlen, plen, p, p->key);
+					CBADBG("key '%s' found at %d llen=%d rlen=%d xlen=%d p=%p pkey=%s\n", (meth == CB_WM_KEY) ? (char*)key : "", __LINE__, llen, rlen, xlen, p, p->key);
 					//printf("key=<%s> +p=<%s>, pkey=<%s> +p=<%s>\n",
-					//       (const char *)key, (const char *)key + plen / 8,
-					//       (const char *)p->key, (const char *)p->key + plen / 8);
+					//       (const char *)key, (const char *)key + xlen / 8,
+					//       (const char *)p->key, (const char *)p->key + xlen / 8);
 					nparent = lparent;
 					npside  = lpside;
 					/* we've found a match, so we know the node is there but
@@ -273,31 +280,30 @@ struct cba_node *cbau_descend_st(/*const*/ struct cba_node **root,
 		lpside = brside;
 		//root = &p->node.b[brside];  // significantly slower on x86
 		if (brside) {
-			if (alt_l) {
-				*alt_l = &p->node.b[0];
-				if (alt_p)
-					*alt_p = &gparent->b[gpside];
+			if (ret_alt_l) {
+				alt_l = root;//&p->node;//&p->node.b[0];
+				fork_plen = plen;
 			}
 			root = &p->node.b[1];
 			CBADBG("%d: turning right for %p (alt=%p altkey=%s)\n", __LINE__, p->node.b[1], p->node.b[0], container_of(p->node.b[0], struct cba_st, node)->key);
 		}
 		else {
-			if (alt_r) {
-				*alt_r = &p->node.b[1];
-				if (alt_p)
-					*alt_p = &gparent->b[gpside];
+			if (ret_alt_r) {
+				alt_r = root;//&p->node;//.b[1];
+				fork_plen = plen;
 			}
 			root = &p->node.b[0];
 			CBADBG("%d: turning left for %p (alt=%p altkey=%s)\n", __LINE__, p->node.b[0], p->node.b[1], container_of(p->node.b[1], struct cba_st, node)->key);
 		}
 
 		if (p == container_of(*root, struct cba_st, node)) {
-			CBADBG("key '%s' break at %d llen=%d rlen=%d plen=%d p=%p pkey=%s\n", (meth == CB_WM_KEY) ? (char*)key : "", __LINE__, llen, rlen, plen, p, p->key);
+			CBADBG("key '%s' break at %d llen=%d rlen=%d xlen=%d p=%p pkey=%s\n", (meth == CB_WM_KEY) ? (char*)key : "", __LINE__, llen, rlen, xlen, p, p->key);
 			/* loops over itself, it's a leaf */
 			break;
 		}
 		//if (llen < 0 || rlen < 0)
 		//	printf("at %d llen=%d rlen=%d\n", __LINE__,  llen, rlen);
+		plen = xlen;
 	}
 
 	/* if we've exited on an exact match after visiting a regular node
@@ -342,6 +348,17 @@ struct cba_node *cbau_descend_st(/*const*/ struct cba_node **root,
 
 	if (ret_gparent)
 		*ret_gparent = gparent;
+
+	if (ret_alt_l)
+		*ret_alt_l = alt_l;
+
+	if (ret_alt_r)
+		*ret_alt_r = alt_r;
+
+	if (ret_plen)
+		*ret_plen = fork_plen;
+
+	CBADBG(">>>    %d plen=%d xlen=%d\n", __LINE__, plen, xlen);
 
 	/* For lookups, an equal value means an instant return. For insertions,
 	 * it is the same, we want to return the previously existing value so
@@ -441,15 +458,15 @@ struct cba_node *cba_lookup_st(struct cba_node **root, const unsigned char *key)
 struct cba_node *cba_next_st(struct cba_node **root, struct cba_node *node)
 {
 	struct cba_node **right_branch = NULL;
-	struct cba_node **fork = NULL;
+	int plen = 0;
 
 	if (!*root)
 		return NULL;
 
-	cbau_descend_st(root, CB_WM_KEY, node, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &fork, NULL, &right_branch);
+	cbau_descend_st(root, CB_WM_KEY, node, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &right_branch, &plen);
 	if (!right_branch)
 		return NULL;
-	return cbau_descend_st(fork, CB_WM_FST, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &right_branch);
+	return cbau_descend_st(right_branch, CB_WM_FST, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &plen);
 }
 
 /* search for the prev node before the specified one, and return it, or NULL if
@@ -460,15 +477,15 @@ struct cba_node *cba_next_st(struct cba_node **root, struct cba_node *node)
 struct cba_node *cba_prev_st(struct cba_node **root, struct cba_node *node)
 {
 	struct cba_node **left_branch = NULL;
-	struct cba_node **fork = NULL;
+	int plen = 0;
 
 	if (!*root)
 		return NULL;
 
-	cbau_descend_st(root, CB_WM_KEY, node, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &fork, &left_branch, NULL);
+	cbau_descend_st(root, CB_WM_KEY, node, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &left_branch, NULL, &plen);
 	if (!left_branch)
 		return NULL;
-	return cbau_descend_st(fork, CB_WM_LST, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &left_branch, NULL);
+	return cbau_descend_st(left_branch, CB_WM_LST, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &plen);
 }
 
 /* look up the specified node with its key and deletes it if found, and in any
