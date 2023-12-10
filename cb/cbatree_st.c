@@ -116,8 +116,7 @@ struct cba_node *cbau_descend_st(/*const*/ struct cba_node **root,
 				 struct cba_node **ret_gparent,
 				 int *ret_gpside,
 				 struct cba_node ***ret_alt_l,
-				 struct cba_node ***ret_alt_r,
-				 int *ret_plen)
+				 struct cba_node ***ret_alt_r)
 {
 	struct cba_st *p, *l, *r;
 	const unsigned char *key = container_of(node, struct cba_st, node)->key;
@@ -130,7 +129,7 @@ struct cba_node *cbau_descend_st(/*const*/ struct cba_node **root,
 	int npside = 0;  // side on the node's parent
 	long lpside = 0;  // side on the leaf's parent
 	long brside = 0;  // branch side when descending
-	int llen = 0, rlen = 0, xlen = 0, fork_plen = 0;
+	int llen = 0, rlen = 0, xlen = 0;
 	int plen = 0;//ret_plen ? *ret_plen : 0;
 	int found = 0;
 
@@ -274,10 +273,8 @@ struct cba_node *cbau_descend_st(/*const*/ struct cba_node **root,
 		lpside = brside;
 		//root = &p->node.b[brside];  // significantly slower on x86
 		if (brside) {
-			if (ret_alt_l) {
-				alt_l = root;//&p->node;//&p->node.b[0];
-				fork_plen = plen;
-			}
+			if (ret_alt_l)
+				alt_l = root;
 			root = &p->node.b[1];
 
 			/* change branch for key-less walks */
@@ -286,10 +283,8 @@ struct cba_node *cbau_descend_st(/*const*/ struct cba_node **root,
 			CBADBG("%d: turning right for %p (alt=%p altkey=%s)\n", __LINE__, p->node.b[1], p->node.b[0], container_of(p->node.b[0], struct cba_st, node)->key);
 		}
 		else {
-			if (ret_alt_r) {
-				alt_r = root;//&p->node;//.b[1];
-				fork_plen = plen;
-			}
+			if (ret_alt_r)
+				alt_r = root;
 			root = &p->node.b[0];
 
 			/* change branch for key-less walks */
@@ -357,9 +352,6 @@ struct cba_node *cbau_descend_st(/*const*/ struct cba_node **root,
 	if (ret_alt_r)
 		*ret_alt_r = alt_r;
 
-	if (ret_plen)
-		*ret_plen = fork_plen;
-
 	CBADBG(">>>    %d plen=%d xlen=%d\n", __LINE__, plen, xlen);
 
 	/* For lookups, an equal value means an instant return. For insertions,
@@ -411,7 +403,7 @@ struct cba_node *cba_insert_st(struct cba_node **root, struct cba_node *node)
 		return node;
 	}
 
-	ret = cbau_descend_st(root, CB_WM_KEY, node, &nside, &parent, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	ret = cbau_descend_st(root, CB_WM_KEY, node, &nside, &parent, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 
 	if (ret == node) {
 		node->b[nside] = node;
@@ -427,7 +419,7 @@ struct cba_node *cba_first_st(struct cba_node **root)
 	if (!*root)
 		return NULL;
 
-	return cbau_descend_st(root, CB_WM_FST, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	return cbau_descend_st(root, CB_WM_FST, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 }
 
 /* return the last node or NULL if not found. */
@@ -436,7 +428,7 @@ struct cba_node *cba_last_st(struct cba_node **root)
 	if (!*root)
 		return NULL;
 
-	return cbau_descend_st(root, CB_WM_LST, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	return cbau_descend_st(root, CB_WM_LST, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 }
 
 /* look up the specified key, and returns either the node containing it, or
@@ -449,7 +441,7 @@ struct cba_node *cba_lookup_st(struct cba_node **root, const unsigned char *key)
 	if (!*root)
 		return NULL;
 
-	return cbau_descend_st(root, CB_WM_KEY, node, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	return cbau_descend_st(root, CB_WM_KEY, node, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 }
 
 /* search for the next node after the specified one, and return it, or NULL if
@@ -460,15 +452,14 @@ struct cba_node *cba_lookup_st(struct cba_node **root, const unsigned char *key)
 struct cba_node *cba_next_st(struct cba_node **root, struct cba_node *node)
 {
 	struct cba_node **right_branch = NULL;
-	int plen = 0;
 
 	if (!*root)
 		return NULL;
 
-	cbau_descend_st(root, CB_WM_KEY, node, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &right_branch, &plen);
+	cbau_descend_st(root, CB_WM_KEY, node, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &right_branch);
 	if (!right_branch)
 		return NULL;
-	return cbau_descend_st(right_branch, CB_WM_NXT, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &plen);
+	return cbau_descend_st(right_branch, CB_WM_NXT, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 }
 
 /* search for the prev node before the specified one, and return it, or NULL if
@@ -479,15 +470,14 @@ struct cba_node *cba_next_st(struct cba_node **root, struct cba_node *node)
 struct cba_node *cba_prev_st(struct cba_node **root, struct cba_node *node)
 {
 	struct cba_node **left_branch = NULL;
-	int plen = 0;
 
 	if (!*root)
 		return NULL;
 
-	cbau_descend_st(root, CB_WM_KEY, node, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &left_branch, NULL, &plen);
+	cbau_descend_st(root, CB_WM_KEY, node, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &left_branch, NULL);
 	if (!left_branch)
 		return NULL;
-	return cbau_descend_st(left_branch, CB_WM_PRV, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &plen);
+	return cbau_descend_st(left_branch, CB_WM_PRV, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 }
 
 /* look up the specified node with its key and deletes it if found, and in any
@@ -509,7 +499,7 @@ struct cba_node *cba_delete_st(struct cba_node **root, struct cba_node *node)
 		return node;
 	}
 
-	ret = cbau_descend_st(root, CB_WM_KEY, node, NULL, NULL, &lparent, &lpside, &nparent, &npside, &gparent, &gpside, NULL, NULL, NULL);
+	ret = cbau_descend_st(root, CB_WM_KEY, node, NULL, NULL, &lparent, &lpside, &nparent, &npside, &gparent, &gpside, NULL, NULL);
 	if (ret == node) {
 		//CBADBG("root=%p ret=%p l=%p[%d] n=%p[%d] g=%p[%d]\n", root, ret, lparent, lpside, nparent, npside, gparent, gpside);
 
@@ -566,7 +556,7 @@ struct cba_node *cba_pick_st(struct cba_node **root, const unsigned char *key)
 
 	//if (key == 425144) printf("%d: k=%u\n", __LINE__, key);
 
-	ret = cbau_descend_st(root, CB_WM_KEY, node, NULL, NULL, &lparent, &lpside, &nparent, &npside, &gparent, &gpside, NULL, NULL, NULL);
+	ret = cbau_descend_st(root, CB_WM_KEY, node, NULL, NULL, &lparent, &lpside, &nparent, &npside, &gparent, &gpside, NULL, NULL);
 
 	//if (key == 425144) printf("%d: k=%u ret=%p\n", __LINE__, key, ret);
 
