@@ -184,7 +184,18 @@ struct cba_node *cbau_descend_st(/*const*/ struct cba_node **root,
 	lparent = container_of(root, struct cba_node, b[0]);
 	gparent = nparent = lparent;
 
-	xlen = -1;
+	/* for key-less descents we need to set the initial branch to take */
+	switch (meth) {
+	case CB_WM_NXT:
+	case CB_WM_LST:
+		brside = 1; // start right for next/last
+		break;
+	case CB_WM_FST:
+	case CB_WM_PRV:
+	default:
+		brside = 0; // start left for first/prev
+		break;
+	}
 
 	/* the previous xor is initialized to the largest possible inter-branch
 	 * value so that it can never match on the first test as we want to use
@@ -229,34 +240,13 @@ struct cba_node *cbau_descend_st(/*const*/ struct cba_node **root,
 		//if (llen < 0 || rlen < 0)
 		//	printf("at %d llen=%d rlen=%d\n", __LINE__,  llen, rlen);
 
-		switch (meth) {
-		case CB_WM_KEY:
+		/* next branch is calculated here when having a key */
+		if (meth == CB_WM_KEY) {
 			llen = string_equal_bits(key, l->key, 0);
 			rlen = string_equal_bits(key, r->key, 0);
 			brside = (unsigned)llen <= (unsigned)rlen;
 			if (llen < 0 || rlen < 0)
 				found = 1;
-			break;
-		case CB_WM_FST:
-			brside = 0;
-			break;
-		case CB_WM_NXT:
-			brside = 0;
-			if (xlen < 0) {
-				CBADBG("#  taking right for first step\n");
-				brside = 1;
-			}
-			break;
-		case CB_WM_PRV:
-			brside = 1;
-			if (xlen < 0) {
-				CBADBG("#  taking left for first step\n");
-				brside = 0;
-			}
-			break;
-		case CB_WM_LST:
-			brside = 1;
-			break;
 		}
 
 		/* so that's either a node or a leaf. Each leaf we visit had
@@ -331,6 +321,10 @@ struct cba_node *cbau_descend_st(/*const*/ struct cba_node **root,
 				fork_plen = plen;
 			}
 			root = &p->node.b[1];
+
+			/* change branch for key-less walks */
+			if (meth == CB_WM_NXT)
+				brside = 0;
 			CBADBG("%d: turning right for %p (alt=%p altkey=%s)\n", __LINE__, p->node.b[1], p->node.b[0], container_of(p->node.b[0], struct cba_st, node)->key);
 		}
 		else {
@@ -339,6 +333,10 @@ struct cba_node *cbau_descend_st(/*const*/ struct cba_node **root,
 				fork_plen = plen;
 			}
 			root = &p->node.b[0];
+
+			/* change branch for key-less walks */
+			if (meth == CB_WM_PRV)
+				brside = 1;
 			CBADBG("%d: turning left for %p (alt=%p altkey=%s)\n", __LINE__, p->node.b[0], p->node.b[1], container_of(p->node.b[1], struct cba_st, node)->key);
 		}
 
