@@ -218,11 +218,15 @@ int main(int argc, char **argv)
 		rnd32seed = RND32SEED;
 		found = 0;
 		for (i = 0; i < lookups; i++) {
+			const void *kptr;
+
 			if (i < argc - 4)
-				strncpy(key->key, argv[i + 4], sizeof(key->key));
-			else
+				kptr = argv[i + 4];
+			else {
 				rnd64_to_str(key->key);
-			old = cba_lookup_st(&cba_root, (const void*)&key->key);
+				kptr = key->key;
+			}
+			old = cba_lookup_st(&cba_root, kptr);
 			if (old)
 				found++;
 		}
