@@ -12,7 +12,7 @@
 #include "cbatree.h"
 
 struct cba_node *cba_insert_st(struct cba_node **root, struct cba_node *node);
-struct cba_node *cba_lookup_st(struct cba_node **root, const unsigned char *key);
+struct cba_node *cba_lookup_st(struct cba_node **root, const void *key);
 struct cba_node *cba_delete_st(struct cba_node **root, struct cba_node *node);
 
 struct cba_node *cba_root = NULL;
@@ -165,7 +165,7 @@ int main(int argc, char **argv)
 
 	for (i = 0; i < entries; i++) {
 		rnd64_to_str(key->key);
-		old = cba_lookup_st(&cba_root, (const void*)&key->key);
+		old = cba_lookup_st(&cba_root, &key->key);
 		if (old)
 			fprintf(stderr, "Note: value %s already present at %p\n", key->key, old);
 
@@ -193,7 +193,7 @@ int main(int argc, char **argv)
 		found = 0;
 		for (i = 0; i < lookups; i++) {
 			rnd64_to_str(key->key);
-			old = cba_lookup_st(&cba_root, (const void*)&key->key);
+			old = cba_lookup_st(&cba_root, &key->key);
 			if (old)
 				found++;
 		}
