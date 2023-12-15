@@ -150,7 +150,7 @@ static inline __attribute__((always_inline))
 struct cba_node *cbau_descend_st(/*const*/ struct cba_node **root,
 				 enum cba_walk_meth meth,
 				 /*const*/ struct cba_node *node,
-				 const unsigned char *key,
+				 const void *key,
 				 int *ret_nside,
 				 struct cba_node ***ret_root,
 				 struct cba_node **ret_lparent,
@@ -293,7 +293,7 @@ struct cba_node *cbau_descend_st(/*const*/ struct cba_node **root,
 
 				//if (node == &p->node) { // seems to be OK, but not sure
 				//if (llen < 0 || rlen < 0) { // fails with 2 4 6 4
-				if (strcmp((const char *)key + mlen / 8, (const char *)p->key + mlen / 8) == 0) {
+				if (strcmp(key + mlen / 8, (const void *)p->key + mlen / 8) == 0) {
 					/* strcmp() still needed. E.g. 1 2 3 4 10 11 4 3 2 1 10 11 fails otherwise */
 					CBADBG("key '%s' found at %d llen=%d rlen=%d xlen=%d p=%p pkey=%s\n", (meth == CB_WM_KEY) ? (char*)key : "", __LINE__, llen, rlen, xlen, p, p->key);
 					//printf("key=<%s> +p=<%s>, pkey=<%s> +p=<%s>\n",
@@ -365,7 +365,7 @@ struct cba_node *cbau_descend_st(/*const*/ struct cba_node **root,
 
 	/* update the pointers needed for modifications (insert, delete) */
 	if (ret_nside)
-		*ret_nside = (plen < 0) || strcmp((const char *)key + plen / 8, (const char *)p->key + plen / 8) >= 0;
+		*ret_nside = (plen < 0) || strcmp(key + plen / 8, (const void *)p->key + plen / 8) >= 0;
 
 	if (ret_root)
 		*ret_root = root;
@@ -402,7 +402,7 @@ struct cba_node *cbau_descend_st(/*const*/ struct cba_node **root,
 	 * that the caller can decide what to do. For deletion, we also want to
 	 * return the pointer that's about to be deleted.
 	 */
-	if (plen < 0 || strcmp((const char *)key + plen / 8, (const char *)p->key + plen / 8) == 0)
+	if (plen < 0 || strcmp(key + plen / 8, (const void *)p->key + plen / 8) == 0)
 		return &p->node;
 
 //	/* We're going to insert <node> above leaf <p> and below <root>. It's
@@ -478,7 +478,7 @@ struct cba_node *cba_last_st(struct cba_node **root)
 /* look up the specified key, and returns either the node containing it, or
  * NULL if not found.
  */
-struct cba_node *cba_lookup_st(struct cba_node **root, const unsigned char *key)
+struct cba_node *cba_lookup_st(struct cba_node **root, const void *key)
 {
 	if (!*root)
 		return NULL;
@@ -589,7 +589,7 @@ done:
 /* look up the specified key, and detaches it and returns it if found, or NULL
  * if not found.
  */
-struct cba_node *cba_pick_st(struct cba_node **root, const unsigned char *key)
+struct cba_node *cba_pick_st(struct cba_node **root, const void *key)
 {
 	struct cba_node *lparent, *nparent, *gparent/*, *sibling*/;
 	int lpside, npside, gpside;
