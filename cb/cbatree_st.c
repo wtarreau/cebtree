@@ -435,7 +435,7 @@ struct cba_node *cbau_descend_st(/*const*/ struct cba_node **root,
 
 struct cba_node *cba_insert_st(struct cba_node **root, struct cba_node *node)
 {
-	const unsigned char *key = container_of(node, struct cba_st, node)->key;
+	const typeof(((struct cba_st*)0)->key) *key = &container_of(node, struct cba_st, node)->key;
 	struct cba_node **parent;
 	struct cba_node *ret;
 	int nside;
@@ -493,7 +493,7 @@ struct cba_node *cba_lookup_st(struct cba_node **root, const unsigned char *key)
  */
 struct cba_node *cba_next_st(struct cba_node **root, struct cba_node *node)
 {
-	const unsigned char *key = container_of(node, struct cba_st, node)->key;
+	const typeof(((struct cba_st*)0)->key) *key = &container_of(node, struct cba_st, node)->key;
 	struct cba_node **right_branch = NULL;
 
 	if (!*root)
@@ -512,7 +512,7 @@ struct cba_node *cba_next_st(struct cba_node **root, struct cba_node *node)
  */
 struct cba_node *cba_prev_st(struct cba_node **root, struct cba_node *node)
 {
-	const unsigned char *key = container_of(node, struct cba_st, node)->key;
+	const typeof(((struct cba_st*)0)->key) *key = &container_of(node, struct cba_st, node)->key;
 	struct cba_node **left_branch = NULL;
 
 	if (!*root)
@@ -529,7 +529,7 @@ struct cba_node *cba_prev_st(struct cba_node **root, struct cba_node *node)
  */
 struct cba_node *cba_delete_st(struct cba_node **root, struct cba_node *node)
 {
-	const unsigned char *key = container_of(node, struct cba_st, node)->key;
+	const typeof(((struct cba_st*)0)->key) *key = &container_of(node, struct cba_st, node)->key;
 	struct cba_node *lparent, *nparent, *gparent, *sibling;
 	int lpside, npside, gpside;
 	struct cba_node *ret;
