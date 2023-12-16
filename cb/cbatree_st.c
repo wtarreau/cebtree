@@ -153,10 +153,7 @@ struct cba_node *cba_last_st(struct cba_node **root)
  */
 struct cba_node *cba_lookup_st(struct cba_node **root, const void *key)
 {
-	if (!*root)
-		return NULL;
-
-	return _cbau_descend(root, CB_WM_KEY, NULL, CB_KT_ST, key, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	return _cbau_lookup(root, CB_KT_ST, key);
 }
 
 /* search for the next node after the specified one, and return it, or NULL if

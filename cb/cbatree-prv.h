@@ -575,5 +575,19 @@ struct cba_node *_cbau_prev(struct cba_node **root,
 	return _cbau_descend(left_branch, CB_WM_PRV, NULL, key_type, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 }
 
+/* Searches in the tree <root> made of keys of type <key_type>, for the node
+ * containing the key <key_ptr>. Returns NULL if not found.
+ */
+static inline __attribute__((always_inline))
+struct cba_node *_cbau_lookup(struct cba_node **root,
+			      enum cba_key_type key_type,
+			      const void *key_ptr)
+{
+	if (!*root)
+		return NULL;
+
+	return _cbau_descend(root, CB_WM_KEY, NULL, key_type, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+}
+
 
 #endif /* _CBATREE_PRV_H */
