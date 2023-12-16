@@ -72,16 +72,9 @@ struct cba_node *cba_lookup_st(struct cba_node **root, const void *key)
  */
 struct cba_node *cba_next_st(struct cba_node **root, struct cba_node *node)
 {
-	const typeof(((struct cba_st*)0)->key) *key = &container_of(node, struct cba_st, node)->key;
-	struct cba_node **right_branch = NULL;
+	const void *key = &container_of(node, struct cba_st, node)->key;
 
-	if (!*root)
-		return NULL;
-
-	_cbau_descend(root, CB_WM_KEY, NULL, CB_KT_ST, key, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &right_branch);
-	if (!right_branch)
-		return NULL;
-	return _cbau_descend(right_branch, CB_WM_NXT, NULL, CB_KT_ST, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	return _cbau_next(root, CB_KT_ST, key);
 }
 
 /* search for the prev node before the specified one, and return it, or NULL if
@@ -91,16 +84,9 @@ struct cba_node *cba_next_st(struct cba_node **root, struct cba_node *node)
  */
 struct cba_node *cba_prev_st(struct cba_node **root, struct cba_node *node)
 {
-	const typeof(((struct cba_st*)0)->key) *key = &container_of(node, struct cba_st, node)->key;
-	struct cba_node **left_branch = NULL;
+	const void *key = &container_of(node, struct cba_st, node)->key;
 
-	if (!*root)
-		return NULL;
-
-	_cbau_descend(root, CB_WM_KEY, NULL, CB_KT_ST, key, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &left_branch, NULL);
-	if (!left_branch)
-		return NULL;
-	return _cbau_descend(left_branch, CB_WM_PRV, NULL, CB_KT_ST, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	return _cbau_prev(root, CB_KT_ST, key);
 }
 
 /* look up the specified node with its key and deletes it if found, and in any
