@@ -87,19 +87,13 @@ struct cba_node *cba_insert_st(struct cba_node **root, struct cba_node *node)
 /* return the first node or NULL if not found. */
 struct cba_node *cba_first_st(struct cba_node **root)
 {
-	if (!*root)
-		return NULL;
-
-	return _cbau_descend(root, CB_WM_FST, NULL, CB_KT_ST, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	return _cbau_first(root, CB_KT_ST);
 }
 
 /* return the last node or NULL if not found. */
 struct cba_node *cba_last_st(struct cba_node **root)
 {
-	if (!*root)
-		return NULL;
-
-	return _cbau_descend(root, CB_WM_LST, NULL, CB_KT_ST, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	return _cbau_last(root, CB_KT_ST);
 }
 
 /* look up the specified key, and returns either the node containing it, or
