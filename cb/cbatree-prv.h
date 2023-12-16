@@ -452,5 +452,31 @@ struct cba_node *_cbau_insert(struct cba_node **root,
 	return ret;
 }
 
+/* Returns the first node or NULL if not found, assuming a tree made of keys of
+ * type <key_type>.
+ */
+static inline __attribute__((always_inline))
+struct cba_node *_cbau_first(struct cba_node **root,
+			     enum cba_key_type key_type)
+{
+	if (!*root)
+		return NULL;
+
+	return _cbau_descend(root, CB_WM_FST, NULL, key_type, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+}
+
+/* Returns the last node or NULL if not found, assuming a tree made of keys of
+ * type <key_type>.
+ */
+static inline __attribute__((always_inline))
+struct cba_node *_cbau_last(struct cba_node **root,
+			    enum cba_key_type key_type)
+{
+	if (!*root)
+		return NULL;
+
+	return _cbau_descend(root, CB_WM_LST, NULL, key_type, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+}
+
 
 #endif /* _CBATREE_PRV_H */
