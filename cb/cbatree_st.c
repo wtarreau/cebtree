@@ -125,28 +125,15 @@
 //
 //}
 
+/* Inserts node <node> into unique tree <tree> based on its key that
+ * immediately follows the node. Returns the inserted node or the one
+ * that already contains the same key.
+ */
 struct cba_node *cba_insert_st(struct cba_node **root, struct cba_node *node)
 {
-	const typeof(((struct cba_st*)0)->key) *key = &container_of(node, struct cba_st, node)->key;
-	struct cba_node **parent;
-	struct cba_node *ret;
-	int nside;
+	const void *key = &container_of(node, struct cba_st, node)->key;
 
-	if (!*root) {
-		/* empty tree, insert a leaf only */
-		node->b[0] = node->b[1] = node;
-		*root = node;
-		return node;
-	}
-
-	ret = _cbau_descend(root, CB_WM_KEY, node, CB_KT_ST, key, &nside, &parent, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
-
-	if (ret == node) {
-		node->b[nside] = node;
-		node->b[!nside] = *parent;
-		*parent = ret;
-	}
-	return ret;
+	return _cbau_insert(root, node, CB_KT_ST, key);
 }
 
 /* return the first node or NULL if not found. */
