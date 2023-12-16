@@ -462,4 +462,46 @@ struct cba_node *_cbau_descend(struct cba_node **root,
 	return node;
 }
 
+
+/* Generic tree insertion function for trees with unique keys. Inserts node
+ * <node> into tree <tree>, with key type <key_type> and key <key_ptr>.
+ * Returns the inserted node or the one that already contains the same key.
+ */
+static inline __attribute__((always_inline))
+struct cba_node *_cbau_insert(struct cba_node **root,
+			      struct cba_node *node,
+			      enum cba_key_type key_type,
+			      const void *key_ptr)
+{
+	struct cba_node **parent;
+	struct cba_node *ret;
+	int nside;
+
+	if (!*root) {
+		/* empty tree, insert a leaf only */
+		node->b[0] = node->b[1] = node;
+		*root = node;
+		return node;
+	}
+
+	ret = _cbau_descend(root, CB_WM_KEY, node, key_type, key_ptr, &nside, &parent, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+
+	if (ret == node) {
+		/* better use an "if" like this because the inline function
+		 * above already has quite identifiable code paths. This
+		 * reduces the code and optimizes it a bit.
+		 */
+		if (nside) {
+			node->b[1] = node;
+			node->b[0] = *parent;
+		} else {
+			node->b[0] = node;
+			node->b[1] = *parent;
+		}
+		*parent = ret;
+	}
+	return ret;
+}
+
+
 #endif /* _CBATREE_PRV_H */
