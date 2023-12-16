@@ -50,6 +50,11 @@ enum cba_walk_meth {
 	CB_WM_LST,     /* look up "last" (walk right only) */
 };
 
+enum cba_key_type {
+	CB_KT_NONE,    /* no key */
+	CB_KT_ST,      /* NUL-terminated string in key_ptr */
+};
+
 /* this structure is aliased to the common cba node during st operations */
 struct cba_st {
 	struct cba_node node;
@@ -67,20 +72,21 @@ struct cba_st {
  * inserts.
  */
 static inline __attribute__((always_inline))
-struct cba_node *cbau_descend_st(struct cba_node **root,
-				 enum cba_walk_meth meth,
-				 struct cba_node *node,
-				 const void *key,
-				 int *ret_nside,
-				 struct cba_node ***ret_root,
-				 struct cba_node **ret_lparent,
-				 int *ret_lpside,
-				 struct cba_node **ret_nparent,
-				 int *ret_npside,
-				 struct cba_node **ret_gparent,
-				 int *ret_gpside,
-				 struct cba_node ***ret_alt_l,
-				 struct cba_node ***ret_alt_r)
+struct cba_node *_cbau_descend(struct cba_node **root,
+			       enum cba_walk_meth meth,
+			       struct cba_node *node,
+			       enum cba_key_type key_type,
+			       const void *key_ptr,
+			       int *ret_nside,
+			       struct cba_node ***ret_root,
+			       struct cba_node **ret_lparent,
+			       int *ret_lpside,
+			       struct cba_node **ret_nparent,
+			       int *ret_npside,
+			       struct cba_node **ret_gparent,
+			       int *ret_gpside,
+			       struct cba_node ***ret_alt_l,
+			       struct cba_node ***ret_alt_r)
 {
 	struct cba_st *p, *l, *r;
 	struct cba_node *gparent = NULL;
@@ -98,7 +104,7 @@ struct cba_node *cbau_descend_st(struct cba_node **root,
 	int plen = 0;     // previous xlen
 	int found = 0;    // key was found
 
-	CBADBG("<<< key '%s' meth=%d at %d plen=%d\n", (meth == CB_WM_KEY) ? (char*)key : "", meth, __LINE__, plen);
+	CBADBG("<<< key '%s' meth=%d at %d plen=%d\n", (meth == CB_WM_KEY) ? (char*)key_ptr : "", meth, __LINE__, plen);
 
 	/* the parent will be the (possibly virtual) node so that
 	 * &lparent->l == root.
@@ -126,7 +132,7 @@ struct cba_node *cbau_descend_st(struct cba_node **root,
 	while (1) {
 		p = container_of(*root, struct cba_st, node);
 
-		CBADBG("key '%s' at %d llen=%d rlen=%d plen=%d xlen=%d p=%p pkey=%s\n", (meth == CB_WM_KEY) ? (char*)key : "", __LINE__, llen, rlen, plen, xlen, p, p->key);
+		CBADBG("key '%s' at %d llen=%d rlen=%d plen=%d xlen=%d p=%p pkey=%s\n", (meth == CB_WM_KEY) ? (char*)key_ptr : "", __LINE__, llen, rlen, plen, xlen, p, p->key);
 
 		/* let's prefetch the lower nodes for the keys */
 		__builtin_prefetch(p->node.b[0], 0);
@@ -138,7 +144,7 @@ struct cba_node *cbau_descend_st(struct cba_node **root,
 
 		/* two equal pointers identifies the nodeless leaf. */
 		if (l == r) {
-			CBADBG("key '%s' break at %d llen=%d rlen=%d plen=%d p=%p pkey=%s\n", (meth == CB_WM_KEY) ? (char*)key : "", __LINE__, llen, rlen, plen, p, p->key);
+			CBADBG("key '%s' break at %d llen=%d rlen=%d plen=%d p=%p pkey=%s\n", (meth == CB_WM_KEY) ? (char*)key_ptr : "", __LINE__, llen, rlen, plen, p, p->key);
 			break;
 		}
 
@@ -155,11 +161,13 @@ struct cba_node *cbau_descend_st(struct cba_node **root,
 
 		/* next branch is calculated here when having a key */
 		if (meth == CB_WM_KEY) {
-			llen = string_equal_bits(key, l->key, 0);
-			rlen = string_equal_bits(key, r->key, 0);
-			brside = (unsigned)llen <= (unsigned)rlen;
-			if (llen < 0 || rlen < 0)
-				found = 1;
+			if (key_type == CB_KT_ST) {
+				llen = string_equal_bits(key_ptr, l->key, 0);
+				rlen = string_equal_bits(key_ptr, r->key, 0);
+				brside = (unsigned)llen <= (unsigned)rlen;
+				if (llen < 0 || rlen < 0)
+					found = 1;
+			}
 		}
 
 		/* so that's either a node or a leaf. Each leaf we visit had
@@ -174,10 +182,17 @@ struct cba_node *cbau_descend_st(struct cba_node **root,
 		 * where they're equal was already dealt with by the test at
 		 * the end of the loop (node points to self).
 		 */
-		xlen = string_equal_bits(l->key, r->key, 0);
+		switch (key_type) {
+		case CB_KT_ST:
+			xlen = string_equal_bits(l->key, r->key, 0);
+			break;
+		default:
+			break;
+		}
+
 		if (xlen < plen) { // triggered using 2 4 6 4
 			/* this is a leaf */
-			CBADBG("key '%s' break at %d llen=%d rlen=%d xlen=%d plen=%d p=%p pkey=%s\n", (meth == CB_WM_KEY) ? (char*)key : "", __LINE__, llen, rlen, xlen, plen, p, p->key);
+			CBADBG("key '%s' break at %d llen=%d rlen=%d xlen=%d plen=%d p=%p pkey=%s\n", (meth == CB_WM_KEY) ? (char*)key_ptr : "", __LINE__, llen, rlen, xlen, plen, p, p->key);
 			break;
 		}
 
@@ -190,7 +205,7 @@ struct cba_node *cbau_descend_st(struct cba_node **root,
 				 * least one of its subkeys by a higher bit than the
 				 * split bit, so lookups must fail here.
 				 */
-				CBADBG("key '%s' break at %d llen=%d rlen=%d xlen=%d p=%p pkey=%s\n", (meth == CB_WM_KEY) ? (char*)key : "", __LINE__, llen, rlen, xlen, p, p->key);
+				CBADBG("key '%s' break at %d llen=%d rlen=%d xlen=%d p=%p pkey=%s\n", (meth == CB_WM_KEY) ? (char*)key_ptr : "", __LINE__, llen, rlen, xlen, p, p->key);
 				break;
 			}
 
@@ -204,9 +219,10 @@ struct cba_node *cbau_descend_st(struct cba_node **root,
 				if (mlen > xlen)
 					mlen = xlen;
 
-				if (strcmp(key + mlen / 8, (const void *)p->key + mlen / 8) == 0) {
+				if (key_type == CB_KT_ST &&
+				    strcmp(key_ptr + mlen / 8, (const void *)p->key + mlen / 8) == 0) {
 					/* strcmp() still needed. E.g. 1 2 3 4 10 11 4 3 2 1 10 11 fails otherwise */
-					CBADBG("key '%s' found at %d llen=%d rlen=%d xlen=%d p=%p pkey=%s\n", (meth == CB_WM_KEY) ? (char*)key : "", __LINE__, llen, rlen, xlen, p, p->key);
+					CBADBG("key '%s' found at %d llen=%d rlen=%d xlen=%d p=%p pkey=%s\n", (meth == CB_WM_KEY) ? (char*)key_ptr : "", __LINE__, llen, rlen, xlen, p, p->key);
 					nparent = lparent;
 					npside  = lpside;
 					/* we've found a match, so we know the node is there but
@@ -244,7 +260,7 @@ struct cba_node *cbau_descend_st(struct cba_node **root,
 		}
 
 		if (p == container_of(*root, struct cba_st, node)) {
-			CBADBG("key '%s' break at %d llen=%d rlen=%d xlen=%d p=%p pkey=%s\n", (meth == CB_WM_KEY) ? (char*)key : "", __LINE__, llen, rlen, xlen, p, p->key);
+			CBADBG("key '%s' break at %d llen=%d rlen=%d xlen=%d p=%p pkey=%s\n", (meth == CB_WM_KEY) ? (char*)key_ptr : "", __LINE__, llen, rlen, xlen, p, p->key);
 			/* loops over itself, it's a leaf */
 			break;
 		}
@@ -268,7 +284,7 @@ struct cba_node *cbau_descend_st(struct cba_node **root,
 
 	/* update the pointers needed for modifications (insert, delete) */
 	if (ret_nside)
-		*ret_nside = (plen < 0) || strcmp(key + plen / 8, (const void *)p->key + plen / 8) >= 0;
+		*ret_nside = (plen < 0) || strcmp(key_ptr + plen / 8, (const void *)p->key + plen / 8) >= 0;
 
 	if (ret_root)
 		*ret_root = root;
@@ -305,7 +321,7 @@ struct cba_node *cbau_descend_st(struct cba_node **root,
 	 * that the caller can decide what to do. For deletion, we also want to
 	 * return the pointer that's about to be deleted.
 	 */
-	if (plen < 0 || strcmp(key + plen / 8, (const void *)p->key + plen / 8) == 0)
+	if (plen < 0 || strcmp(key_ptr + plen / 8, (const void *)p->key + plen / 8) == 0)
 		return &p->node;
 
 	/* lookups and deletes fail here */
