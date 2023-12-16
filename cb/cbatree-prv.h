@@ -478,5 +478,51 @@ struct cba_node *_cbau_last(struct cba_node **root,
 	return _cbau_descend(root, CB_WM_LST, NULL, key_type, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 }
 
+/* Searches in the tree <root> made of keys of type <key_type>, for the next
+ * node after the one containing the key <key_ptr>. Returns NULL if not found.
+ * It's up to the caller to pass the current node's key in <key_ptr>. The
+ * approach consists in looking up that node first, recalling the last time a
+ * left turn was made, and returning the first node along the right branch at
+ * that fork.
+ */
+static inline __attribute__((always_inline))
+struct cba_node *_cbau_next(struct cba_node **root,
+			    enum cba_key_type key_type,
+			    const void *key_ptr)
+{
+	struct cba_node **right_branch = NULL;
+
+	if (!*root)
+		return NULL;
+
+	_cbau_descend(root, CB_WM_KEY, NULL, key_type, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &right_branch);
+	if (!right_branch)
+		return NULL;
+	return _cbau_descend(right_branch, CB_WM_NXT, NULL, key_type, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+}
+
+/* Searches in the tree <root> made of keys of type <key_type>, for the prev
+ * node before the one containing the key <key_ptr>. Returns NULL if not found.
+ * It's up to the caller to pass the current node's key in <key_ptr>. The
+ * approach consists in looking up that node first, recalling the last time a
+ * right turn was made, and returning the last node along the left branch at
+ * that fork.
+ */
+static inline __attribute__((always_inline))
+struct cba_node *_cbau_prev(struct cba_node **root,
+			    enum cba_key_type key_type,
+			    const void *key_ptr)
+{
+	struct cba_node **left_branch = NULL;
+
+	if (!*root)
+		return NULL;
+
+	_cbau_descend(root, CB_WM_KEY, NULL, key_type, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &left_branch, NULL);
+	if (!left_branch)
+		return NULL;
+	return _cbau_descend(left_branch, CB_WM_PRV, NULL, key_type, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+}
+
 
 #endif /* _CBATREE_PRV_H */
