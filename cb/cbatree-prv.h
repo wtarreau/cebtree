@@ -403,12 +403,11 @@ struct cba_node *_cbau_descend(struct cba_node **root,
 
 	/* lookups and deletes fail here */
 
-	/* plain lookups just stop here */
-	if (!ret_root)
-		return NULL;
-
-	/* inserts return the node we expect to insert */
-	return node;
+	/* let's return NULL to indicate the key was not found. For a lookup or
+	 * a delete, it's a failure. For an insert, it's an invitation to the
+	 * caller to proceed since the element is not there.
+	 */
+	return NULL;
 }
 
 
@@ -433,12 +432,13 @@ struct cba_node *_cbau_insert(struct cba_node **root,
 		return node;
 	}
 
-	ret = _cbau_descend(root, CB_WM_KEY, node, key_type, key_ptr, &nside, &parent, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	ret = _cbau_descend(root, CB_WM_KEY, NULL, key_type, key_ptr, &nside, &parent, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 
-	if (ret == node) {
-		/* better use an "if" like this because the inline function
-		 * above already has quite identifiable code paths. This
-		 * reduces the code and optimizes it a bit.
+	if (!ret) {
+		/* The key was not in the tree, we can insert it. Better use an
+		 * "if" like this because the inline function above already has
+		 * quite identifiable code paths. This reduces the code and
+		 * optimizes it a bit.
 		 */
 		if (nside) {
 			node->b[1] = node;
@@ -447,7 +447,8 @@ struct cba_node *_cbau_insert(struct cba_node **root,
 			node->b[0] = node;
 			node->b[1] = *parent;
 		}
-		*parent = ret;
+		*parent = node;
+		ret = node;
 	}
 	return ret;
 }
