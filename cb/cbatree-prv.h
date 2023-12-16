@@ -32,6 +32,15 @@
 #ifndef _CBATREE_PRV_H
 #define _CBATREE_PRV_H
 
+
+/* If DEBUG is set, we'll print additional debugging info during the descent */
+#ifdef DEBUG
+#define CBADBG(x, ...) fprintf(stderr, x, ##__VA_ARGS__)
+#else
+#define CBADBG(x, ...) do { } while (0)
+#endif
+
+
 /* tree walk method: key, left, right */
 enum cba_walk_meth {
 	CB_WM_KEY,     /* look up the node's key */
@@ -40,5 +49,273 @@ enum cba_walk_meth {
 	CB_WM_PRV,     /* look up "prev" (walk left once then right) */
 	CB_WM_LST,     /* look up "last" (walk right only) */
 };
+
+/* this structure is aliased to the common cba node during st operations */
+struct cba_st {
+	struct cba_node node;
+	unsigned char key[0];
+};
+
+/* Generic tree descent function. It must absolutely be inlined so that the
+ * compiler can eliminate the tests related to the various return pointers,
+ * which must either point to a local variable in the caller, or be NULL.
+ * It must not be called with an empty tree, it's the caller business to
+ * deal with this special case. It returns in ret_root the location of the
+ * pointer to the leaf (i.e. where we have to insert ourselves). The integer
+ * pointed to by ret_nside will contain the side the leaf should occupy at
+ * its own node, with the sibling being *ret_root. The node is only needed for
+ * inserts.
+ */
+static inline __attribute__((always_inline))
+struct cba_node *cbau_descend_st(struct cba_node **root,
+				 enum cba_walk_meth meth,
+				 struct cba_node *node,
+				 const void *key,
+				 int *ret_nside,
+				 struct cba_node ***ret_root,
+				 struct cba_node **ret_lparent,
+				 int *ret_lpside,
+				 struct cba_node **ret_nparent,
+				 int *ret_npside,
+				 struct cba_node **ret_gparent,
+				 int *ret_gpside,
+				 struct cba_node ***ret_alt_l,
+				 struct cba_node ***ret_alt_r)
+{
+	struct cba_st *p, *l, *r;
+	struct cba_node *gparent = NULL;
+	struct cba_node *nparent = NULL;
+	struct cba_node **alt_l = NULL;
+	struct cba_node **alt_r = NULL;
+	struct cba_node *lparent;
+	int gpside = 0;   // side on the grand parent
+	int npside = 0;   // side on the node's parent
+	long lpside = 0;  // side on the leaf's parent
+	long brside = 0;  // branch side when descending
+	int llen = 0;     // left vs key matching length
+	int rlen = 0;     // right vs key matching length
+	int xlen = 0;     // left vs right matching length
+	int plen = 0;     // previous xlen
+	int found = 0;    // key was found
+
+	CBADBG("<<< key '%s' meth=%d at %d plen=%d\n", (meth == CB_WM_KEY) ? (char*)key : "", meth, __LINE__, plen);
+
+	/* the parent will be the (possibly virtual) node so that
+	 * &lparent->l == root.
+	 */
+	lparent = container_of(root, struct cba_node, b[0]);
+	gparent = nparent = lparent;
+
+	/* for key-less descents we need to set the initial branch to take */
+	switch (meth) {
+	case CB_WM_NXT:
+	case CB_WM_LST:
+		brside = 1; // start right for next/last
+		break;
+	case CB_WM_FST:
+	case CB_WM_PRV:
+	default:
+		brside = 0; // start left for first/prev
+		break;
+	}
+
+	/* the previous xor is initialized to the largest possible inter-branch
+	 * value so that it can never match on the first test as we want to use
+	 * it to detect a leaf vs node.
+	 */
+	while (1) {
+		p = container_of(*root, struct cba_st, node);
+
+		CBADBG("key '%s' at %d llen=%d rlen=%d plen=%d xlen=%d p=%p pkey=%s\n", (meth == CB_WM_KEY) ? (char*)key : "", __LINE__, llen, rlen, plen, xlen, p, p->key);
+
+		/* let's prefetch the lower nodes for the keys */
+		__builtin_prefetch(p->node.b[0], 0);
+		__builtin_prefetch(p->node.b[1], 0);
+
+		/* neither pointer is tagged */
+		l = container_of(p->node.b[0], struct cba_st, node);
+		r = container_of(p->node.b[1], struct cba_st, node);
+
+		/* two equal pointers identifies the nodeless leaf. */
+		if (l == r) {
+			CBADBG("key '%s' break at %d llen=%d rlen=%d plen=%d p=%p pkey=%s\n", (meth == CB_WM_KEY) ? (char*)key : "", __LINE__, llen, rlen, plen, p, p->key);
+			break;
+		}
+
+		/* we can compute this here for scalar types, it allows the
+		 * CPU to predict next branches. We can also xor lkey/rkey
+		 * with key and use it everywhere later but it doesn't save
+		 * much. Alternately, like here, it's possible to measure
+		 * the length of identical bits. This is the solution that
+		 * will be needed on strings. Note that a negative length
+		 * indicates an equal value with the final zero reached, but it
+		 * is still needed to descend to find the leaf. We take that
+		 * negative length for an infinite one, hence the uint cast.
+		 */
+
+		/* next branch is calculated here when having a key */
+		if (meth == CB_WM_KEY) {
+			llen = string_equal_bits(key, l->key, 0);
+			rlen = string_equal_bits(key, r->key, 0);
+			brside = (unsigned)llen <= (unsigned)rlen;
+			if (llen < 0 || rlen < 0)
+				found = 1;
+		}
+
+		/* so that's either a node or a leaf. Each leaf we visit had
+		 * its node part already visited. The only way to distinguish
+		 * them is that the inter-branch xor of the leaf will be the
+		 * node's one, and will necessarily be larger than the previous
+		 * node's xor if the node is above (we've already checked for
+		 * direct descendent below). Said differently, if an inter-
+		 * branch xor is strictly larger than the previous one, it
+		 * necessarily is the one of an upper node, so what we're
+		 * seeing cannot be the node, hence it's the leaf. The case
+		 * where they're equal was already dealt with by the test at
+		 * the end of the loop (node points to self).
+		 */
+		xlen = string_equal_bits(l->key, r->key, 0);
+		if (xlen < plen) { // triggered using 2 4 6 4
+			/* this is a leaf */
+			CBADBG("key '%s' break at %d llen=%d rlen=%d xlen=%d plen=%d p=%p pkey=%s\n", (meth == CB_WM_KEY) ? (char*)key : "", __LINE__, llen, rlen, xlen, plen, p, p->key);
+			break;
+		}
+
+		if (meth == CB_WM_KEY) {
+			/* check the split bit */
+			if ((unsigned)llen < (unsigned)xlen && (unsigned)rlen < (unsigned)xlen) {
+				/* can't go lower, the node must be inserted above p
+				 * (which is then necessarily a node). We also know
+				 * that (key != p->key) because p->key differs from at
+				 * least one of its subkeys by a higher bit than the
+				 * split bit, so lookups must fail here.
+				 */
+				CBADBG("key '%s' break at %d llen=%d rlen=%d xlen=%d p=%p pkey=%s\n", (meth == CB_WM_KEY) ? (char*)key : "", __LINE__, llen, rlen, xlen, p, p->key);
+				break;
+			}
+
+			/* here we're guaranteed to be above a node. If this is the
+			 * same node as the one we're looking for, let's store the
+			 * parent as the node's parent.
+			 */
+			if (ret_npside || ret_nparent) {
+				int mlen = llen > rlen ? llen : rlen;
+
+				if (mlen > xlen)
+					mlen = xlen;
+
+				if (strcmp(key + mlen / 8, (const void *)p->key + mlen / 8) == 0) {
+					/* strcmp() still needed. E.g. 1 2 3 4 10 11 4 3 2 1 10 11 fails otherwise */
+					CBADBG("key '%s' found at %d llen=%d rlen=%d xlen=%d p=%p pkey=%s\n", (meth == CB_WM_KEY) ? (char*)key : "", __LINE__, llen, rlen, xlen, p, p->key);
+					nparent = lparent;
+					npside  = lpside;
+					/* we've found a match, so we know the node is there but
+					 * we still need to walk down to spot all parents.
+					 */
+					found = 1;
+				}
+			}
+		}
+
+		/* shift all copies by one */
+		gparent = lparent;
+		gpside = lpside;
+		lparent = &p->node;
+		lpside = brside;
+		if (brside) {
+			if (ret_alt_l)
+				alt_l = root;
+			root = &p->node.b[1];
+
+			/* change branch for key-less walks */
+			if (meth == CB_WM_NXT)
+				brside = 0;
+			CBADBG("%d: turning right for %p (alt=%p altkey=%s)\n", __LINE__, p->node.b[1], p->node.b[0], container_of(p->node.b[0], struct cba_st, node)->key);
+		}
+		else {
+			if (ret_alt_r)
+				alt_r = root;
+			root = &p->node.b[0];
+
+			/* change branch for key-less walks */
+			if (meth == CB_WM_PRV)
+				brside = 1;
+			CBADBG("%d: turning left for %p (alt=%p altkey=%s)\n", __LINE__, p->node.b[0], p->node.b[1], container_of(p->node.b[1], struct cba_st, node)->key);
+		}
+
+		if (p == container_of(*root, struct cba_st, node)) {
+			CBADBG("key '%s' break at %d llen=%d rlen=%d xlen=%d p=%p pkey=%s\n", (meth == CB_WM_KEY) ? (char*)key : "", __LINE__, llen, rlen, xlen, p, p->key);
+			/* loops over itself, it's a leaf */
+			break;
+		}
+		plen = xlen;
+	}
+
+	/* if we've exited on an exact match after visiting a regular node
+	 * (i.e. not the nodeless leaf), avoid checking the string again.
+	 * However if it doesn't match, we must make sure to compare from
+	 * within the key (which can be shorter than the ones already there),
+	 * so we restart the check with the longest of the two lengths, which
+	 * guarantees these bits exist. Test with "100", "10", "1" to see where
+	 * this is needed.
+	 */
+	if (found || meth != CB_WM_KEY)
+		plen = -1;
+	else
+		plen = (llen > rlen) ? llen : rlen;
+
+	/* we may have plen==-1 if we've got an exact match over the whole key length above */
+
+	/* update the pointers needed for modifications (insert, delete) */
+	if (ret_nside)
+		*ret_nside = (plen < 0) || strcmp(key + plen / 8, (const void *)p->key + plen / 8) >= 0;
+
+	if (ret_root)
+		*ret_root = root;
+
+	/* info needed by delete */
+	if (ret_lpside)
+		*ret_lpside = lpside;
+
+	if (ret_lparent)
+		*ret_lparent = lparent;
+
+	if (ret_npside)
+		*ret_npside = npside;
+
+	if (ret_nparent)
+		*ret_nparent = nparent;
+
+	if (ret_gpside)
+		*ret_gpside = gpside;
+
+	if (ret_gparent)
+		*ret_gparent = gparent;
+
+	if (ret_alt_l)
+		*ret_alt_l = alt_l;
+
+	if (ret_alt_r)
+		*ret_alt_r = alt_r;
+
+	CBADBG(">>>    %d plen=%d xlen=%d\n", __LINE__, plen, xlen);
+
+	/* For lookups, an equal value means an instant return. For insertions,
+	 * it is the same, we want to return the previously existing value so
+	 * that the caller can decide what to do. For deletion, we also want to
+	 * return the pointer that's about to be deleted.
+	 */
+	if (plen < 0 || strcmp(key + plen / 8, (const void *)p->key + plen / 8) == 0)
+		return &p->node;
+
+	/* lookups and deletes fail here */
+
+	/* plain lookups just stop here */
+	if (!ret_root)
+		return NULL;
+
+	/* inserts return the node we expect to insert */
+	return node;
+}
 
 #endif /* _CBATREE_PRV_H */
