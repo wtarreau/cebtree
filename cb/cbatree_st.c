@@ -91,61 +91,9 @@ struct cba_node *cba_prev_st(struct cba_node **root, struct cba_node *node)
  */
 struct cba_node *cba_delete_st(struct cba_node **root, struct cba_node *node)
 {
-	const typeof(((struct cba_st*)0)->key) *key = &container_of(node, struct cba_st, node)->key;
-	struct cba_node *lparent, *nparent, *gparent, *sibling;
-	int lpside, npside, gpside;
-	struct cba_node *ret;
+	const void *key = &container_of(node, struct cba_st, node)->key;
 
-	if (!node->b[0]) {
-		/* NULL on a branch means the node is not in the tree */
-		return node;
-	}
-
-	if (!*root) {
-		/* empty tree, the node cannot be there */
-		return node;
-	}
-
-	ret = _cbau_descend(root, CB_WM_KEY, NULL, CB_KT_ST, key, NULL, NULL, &lparent, &lpside, &nparent, &npside, &gparent, &gpside, NULL, NULL);
-	if (ret == node) {
-		//CBADBG("root=%p ret=%p l=%p[%d] n=%p[%d] g=%p[%d]\n", root, ret, lparent, lpside, nparent, npside, gparent, gpside);
-
-		if (&lparent->b[0] == root) {
-			/* there was a single entry, this one */
-			*root = NULL;
-			goto done;
-		}
-		//printf("g=%p\n", gparent);
-
-		/* then we necessarily have a gparent */
-		sibling = lpside ? lparent->b[0] : lparent->b[1];
-		gparent->b[gpside] = sibling;
-
-		if (lparent == node) {
-			/* we're removing the leaf and node together, nothing
-			 * more to do.
-			 */
-			goto done;
-		}
-
-		if (node->b[0] == node->b[1]) {
-			/* we're removing the node-less item, the parent will
-			 * take this role.
-			 */
-			lparent->b[0] = lparent->b[1] = lparent;
-			goto done;
-		}
-
-		/* more complicated, the node was split from the leaf, we have
-		 * to find a spare one to switch it. The parent node is not
-		 * needed anymore so we can reuse it.
-		 */
-		lparent->b[0] = node->b[0];
-		lparent->b[1] = node->b[1];
-		nparent->b[npside] = lparent;
-	}
-done:
-	return ret;
+	return _cbau_delete(root, node, CB_KT_ST, key);
 }
 
 /* look up the specified key, and detaches it and returns it if found, or NULL
