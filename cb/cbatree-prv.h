@@ -538,5 +538,77 @@ struct cba_node *_cbau_lookup(struct cba_node **root,
 	return _cbau_descend(root, CB_WM_KEY, NULL, key_type, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 }
 
+/* Searches in the tree <root> made of keys of type <key_type>, for the node
+ * that contains the key <key_ptr>, and deletes it. If <node> is non-NULL, a
+ * check is performed and the node found is deleted only if it matches. The
+ * found node is returned in any case, otherwise NULL if not found.
+ */
+static inline __attribute__((always_inline))
+struct cba_node *_cbau_delete(struct cba_node **root,
+			      struct cba_node *node,
+			      enum cba_key_type key_type,
+			      const void *key_ptr)
+{
+	struct cba_node *lparent, *nparent, *gparent;
+	int lpside, npside, gpside;
+	struct cba_node *ret = NULL;
+
+	if (node && !node->b[0]) {
+		/* NULL on a branch means the node is not in the tree */
+		return node;
+	}
+
+	if (!*root) {
+		/* empty tree, the node cannot be there */
+		goto done;
+	}
+
+	ret = _cbau_descend(root, CB_WM_KEY, NULL, key_type, key_ptr, NULL, NULL,
+			    &lparent, &lpside, &nparent, &npside, &gparent, &gpside, NULL, NULL);
+
+	if (!ret) {
+		/* key not found */
+		goto done;
+	}
+
+	if (ret == node || !node) {
+		if (&lparent->b[0] == root) {
+			/* there was a single entry, this one, so we're just
+			 * deleting the nodeless leaf.
+			 */
+			*root = NULL;
+			goto done;
+		}
+
+		/* then we necessarily have a gparent */
+		gparent->b[gpside] = lparent->b[!lpside];
+
+		if (lparent == ret) {
+			/* we're removing the leaf and node together, nothing
+			 * more to do.
+			 */
+			goto done;
+		}
+
+		if (ret->b[0] == ret->b[1]) {
+			/* we're removing the node-less item, the parent will
+			 * take this role.
+			 */
+			lparent->b[0] = lparent->b[1] = lparent;
+			goto done;
+		}
+
+		/* more complicated, the node was split from the leaf, we have
+		 * to find a spare one to switch it. The parent node is not
+		 * needed anymore so we can reuse it.
+		 */
+		lparent->b[0] = ret->b[0];
+		lparent->b[1] = ret->b[1];
+		nparent->b[npside] = lparent;
+	}
+done:
+	return ret;
+}
+
 
 #endif /* _CBATREE_PRV_H */
