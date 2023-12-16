@@ -81,6 +81,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "cbatree.h"
+#include "cbatree-prv.h"
 
 /* this structure is aliased to the common cba node during st operations */
 struct cba_st {
