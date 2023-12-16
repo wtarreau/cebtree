@@ -139,7 +139,7 @@ struct cba_node *cba_insert_st(struct cba_node **root, struct cba_node *node)
 		return node;
 	}
 
-	ret = cbau_descend_st(root, CB_WM_KEY, node, key, &nside, &parent, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	ret = _cbau_descend(root, CB_WM_KEY, node, CB_KT_ST, key, &nside, &parent, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 
 	if (ret == node) {
 		node->b[nside] = node;
@@ -155,7 +155,7 @@ struct cba_node *cba_first_st(struct cba_node **root)
 	if (!*root)
 		return NULL;
 
-	return cbau_descend_st(root, CB_WM_FST, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	return _cbau_descend(root, CB_WM_FST, NULL, CB_KT_ST, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 }
 
 /* return the last node or NULL if not found. */
@@ -164,7 +164,7 @@ struct cba_node *cba_last_st(struct cba_node **root)
 	if (!*root)
 		return NULL;
 
-	return cbau_descend_st(root, CB_WM_LST, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	return _cbau_descend(root, CB_WM_LST, NULL, CB_KT_ST, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 }
 
 /* look up the specified key, and returns either the node containing it, or
@@ -175,7 +175,7 @@ struct cba_node *cba_lookup_st(struct cba_node **root, const void *key)
 	if (!*root)
 		return NULL;
 
-	return cbau_descend_st(root, CB_WM_KEY, NULL, key, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	return _cbau_descend(root, CB_WM_KEY, NULL, CB_KT_ST, key, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 }
 
 /* search for the next node after the specified one, and return it, or NULL if
@@ -191,10 +191,10 @@ struct cba_node *cba_next_st(struct cba_node **root, struct cba_node *node)
 	if (!*root)
 		return NULL;
 
-	cbau_descend_st(root, CB_WM_KEY, NULL, key, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &right_branch);
+	_cbau_descend(root, CB_WM_KEY, NULL, CB_KT_ST, key, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &right_branch);
 	if (!right_branch)
 		return NULL;
-	return cbau_descend_st(right_branch, CB_WM_NXT, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	return _cbau_descend(right_branch, CB_WM_NXT, NULL, CB_KT_ST, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 }
 
 /* search for the prev node before the specified one, and return it, or NULL if
@@ -210,10 +210,10 @@ struct cba_node *cba_prev_st(struct cba_node **root, struct cba_node *node)
 	if (!*root)
 		return NULL;
 
-	cbau_descend_st(root, CB_WM_KEY, NULL, key, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &left_branch, NULL);
+	_cbau_descend(root, CB_WM_KEY, NULL, CB_KT_ST, key, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &left_branch, NULL);
 	if (!left_branch)
 		return NULL;
-	return cbau_descend_st(left_branch, CB_WM_PRV, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	return _cbau_descend(left_branch, CB_WM_PRV, NULL, CB_KT_ST, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 }
 
 /* look up the specified node with its key and deletes it if found, and in any
@@ -236,7 +236,7 @@ struct cba_node *cba_delete_st(struct cba_node **root, struct cba_node *node)
 		return node;
 	}
 
-	ret = cbau_descend_st(root, CB_WM_KEY, NULL, key, NULL, NULL, &lparent, &lpside, &nparent, &npside, &gparent, &gpside, NULL, NULL);
+	ret = _cbau_descend(root, CB_WM_KEY, NULL, CB_KT_ST, key, NULL, NULL, &lparent, &lpside, &nparent, &npside, &gparent, &gpside, NULL, NULL);
 	if (ret == node) {
 		//CBADBG("root=%p ret=%p l=%p[%d] n=%p[%d] g=%p[%d]\n", root, ret, lparent, lpside, nparent, npside, gparent, gpside);
 
@@ -292,7 +292,7 @@ struct cba_node *cba_pick_st(struct cba_node **root, const void *key)
 
 	//if (key == 425144) printf("%d: k=%u\n", __LINE__, key);
 
-	ret = cbau_descend_st(root, CB_WM_KEY, NULL, key, NULL, NULL, &lparent, &lpside, &nparent, &npside, &gparent, &gpside, NULL, NULL);
+	ret = _cbau_descend(root, CB_WM_KEY, NULL, CB_KT_ST, key, NULL, NULL, &lparent, &lpside, &nparent, &npside, &gparent, &gpside, NULL, NULL);
 
 	//if (key == 425144) printf("%d: k=%u ret=%p\n", __LINE__, key, ret);
 
