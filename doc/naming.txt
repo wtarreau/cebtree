@@ -11,10 +11,10 @@ Tree architecture can be one of :
   - compact binary tree
 
 Node addressing models :
-  - absolute (pointers are locations in memory)
-  - large relative (pointers are 64-bit relative to the pointer)
-  - medium relative (pointers are 32-bit relative to the pointer)
-  - small relative (pointers are 16-bit relative to the pointer)
+  - none for absolute (pointers are locations in memory)
+  - "l" for large relative (pointers are 64-bit relative to the pointer)
+  - "m" for medium relative (pointers are 32-bit relative to the pointer)
+  - "s" for small relative (pointers are 16-bit relative to the pointer)
   - other variants might be useful, e.g. 2x16 bits for page+offset
 
 Unicity:
@@ -40,38 +40,39 @@ Key sign (for integers) :
 
 That gives :
 
-  {eb,cb}{a,l,m,s}{u,}{a,i,}{16,32,64,b,s,}{i,}
-     \       \      \    \         \         \_ signed int y/n
-      \       \      \    \         \_ key type/size
-       \       \      \    \_ access mode (abs/dir/indir)
-        \       \      \_ unique y/n
-         \       \_ addressing: abs/large/medium/small
+  {eb,cb}{,l,m,s}{u,}{,a,i}{,16,32,64,b,s}{i,}
+     \       \     \    \         \         \_ signed int y/n
+      \       \     \    \         \_ key type/size
+       \       \     \    \_ access mode ((dir)/abs/indir)
+        \       \     \_ unique y/n
+         \       \_ addressing: (abs)/large/medium/small
           \_ tree architecture
 
 Not all combinations are necessarily valid. Only integers may have the "i"
 suffix, nodes storing their own address (suffixed with "a") have no type size.
 Note that there is always at least one of "a" or a type name in the name, i.e.
 it's not possible to have no letter on the access mode and no letter on the key
-size or type.
+size or type. In addition the signed extension can only appear after a valid
+key size.
 
 Maybe future extensions will come to index case insensitive strings (possibly
 with an "i" suffix as well). Existing ebtree-v6 types and functions are mapped
 this way :
 
-  eb32  ---> eba32
-  eb32i ---> eba32i
-  eb64  ---> eba64
-  eb64i ---> eba64i
-  ebmb  ---> ebab
-  ebst  ---> ebas
-  ebpt  ---> ebai
-  ebim  ---> ebaib
-  ebis  ---> ebais
+  eb32  ---> eb32
+  eb32i ---> eb32i
+  eb64  ---> eb64
+  eb64i ---> eb64i
+  ebmb  ---> ebb
+  ebst  ---> ebs
+  ebpt  ---> ebi
+  ebim  ---> ebib
+  ebis  ---> ebis
 
 New useful types should appear quickly :
 
-  ebaa / cbaa : only carry the node's address, useful for pointer-based lookups
-                (eg: "show sess 0x12345678" in haproxy)
+  eba / cba : only carry the node's address, useful for pointer-based lookups
+              (eg: "show sess 0x12345678" in haproxy)
 
 Some implementations might disappear over the long term :
 
