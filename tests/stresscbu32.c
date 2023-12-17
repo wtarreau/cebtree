@@ -53,7 +53,7 @@ static uint32_t rnd32()
 
 int main(int argc, char **argv)
 {
-	struct cb_node *old, *back;
+	struct cb_node *old, *back __attribute__((unused));
 	char *orig_argv, *argv0 = *argv, *larg;
 	struct key *key;
 	char *p;
@@ -129,7 +129,7 @@ int main(int argc, char **argv)
 			if (debug > 1) {
 				static int round;
 				char cmd[100];
-				int len;
+				size_t len;
 
 				len = snprintf(cmd, sizeof(cmd), "%s %d/%d : %p %d\n", orig_argv, round, round+count, old, v);
 				cbu32_default_dump(&cb_root, len < sizeof(cmd) ? cmd : orig_argv, old);
@@ -172,7 +172,7 @@ int main(int argc, char **argv)
 			else if (debug > 1) {
 				static int round;
 				char cmd[100];
-				int len;
+				size_t len;
 
 				len = snprintf(cmd, sizeof(cmd), "%s %d/%d : %p %d\n", orig_argv, round, round+count, old, v);
 				cbu32_default_dump(&cb_root, len < sizeof(cmd) ? cmd : orig_argv, old);

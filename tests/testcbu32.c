@@ -75,7 +75,7 @@ int main(int argc, char **argv)
 		if (debug) {
 			static int round;
 			char cmd[100];
-			int len;
+			size_t len;
 
 			len = snprintf(cmd, sizeof(cmd), "%s [%d] +%d", orig_argv, round, v);
 			cbu32_default_dump(&cb_root, len < sizeof(cmd) ? cmd : orig_argv, old);
