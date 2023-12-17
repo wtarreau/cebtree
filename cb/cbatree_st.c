@@ -79,7 +79,7 @@
  */
 struct cba_node *cba_insert_st(struct cba_node **root, struct cba_node *node)
 {
-	const void *key = &container_of(node, struct cba_st, node)->key;
+	const void *key = &container_of(node, struct cba_node_key, node)->key.str;
 
 	return _cbau_insert(root, node, CB_KT_ST, key);
 }
@@ -111,7 +111,7 @@ struct cba_node *cba_lookup_st(struct cba_node **root, const void *key)
  */
 struct cba_node *cba_next_st(struct cba_node **root, struct cba_node *node)
 {
-	const void *key = &container_of(node, struct cba_st, node)->key;
+	const void *key = &container_of(node, struct cba_node_key, node)->key.str;
 
 	return _cbau_next(root, CB_KT_ST, key);
 }
@@ -123,7 +123,7 @@ struct cba_node *cba_next_st(struct cba_node **root, struct cba_node *node)
  */
 struct cba_node *cba_prev_st(struct cba_node **root, struct cba_node *node)
 {
-	const void *key = &container_of(node, struct cba_st, node)->key;
+	const void *key = &container_of(node, struct cba_node_key, node)->key.str;
 
 	return _cbau_prev(root, CB_KT_ST, key);
 }
@@ -133,7 +133,7 @@ struct cba_node *cba_prev_st(struct cba_node **root, struct cba_node *node)
  */
 struct cba_node *cba_delete_st(struct cba_node **root, struct cba_node *node)
 {
-	const void *key = &container_of(node, struct cba_st, node)->key;
+	const void *key = &container_of(node, struct cba_node_key, node)->key.str;
 
 	return _cbau_delete(root, node, CB_KT_ST, key);
 }
