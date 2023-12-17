@@ -35,6 +35,12 @@ struct cb_node {
 	struct cb_node *b[2]; /* branches: 0=left, 1=right */
 };
 
+/* indicates whether a valid node is in a tree or not */
+static inline int cb_intree(const struct cb_node *node)
+{
+	return !!node->b[0];
+}
+
 /* tag an untagged pointer */
 static inline struct cb_node *__cba_dotag(const struct cb_node *node)
 {

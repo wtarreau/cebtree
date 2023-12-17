@@ -792,7 +792,11 @@ struct cb_node *_cbu_lookup(struct cb_node **root,
 /* Searches in the tree <root> made of keys of type <key_type>, for the node
  * that contains the key <key_*>, and deletes it. If <node> is non-NULL, a
  * check is performed and the node found is deleted only if it matches. The
- * found node is returned in any case, otherwise NULL if not found.
+ * found node is returned in any case, otherwise NULL if not found. A deleted
+ * node is detected since it has b[0]==NULL, which this functions also clears
+ * after operation. The function is idempotent, so it's safe to attempt to
+ * delete an already deleted node (NULL is returned in this case since the node
+ * was not in the tree).
  */
 static inline __attribute__((always_inline))
 struct cb_node *_cbu_delete(struct cb_node **root,
@@ -808,7 +812,7 @@ struct cb_node *_cbu_delete(struct cb_node **root,
 
 	if (node && !node->b[0]) {
 		/* NULL on a branch means the node is not in the tree */
-		return node;
+		return NULL;
 	}
 
 	if (!*root) {
@@ -858,6 +862,9 @@ struct cb_node *_cbu_delete(struct cb_node **root,
 		lparent->b[0] = ret->b[0];
 		lparent->b[1] = ret->b[1];
 		nparent->b[npside] = lparent;
+
+		/* now mark the node as deleted */
+		ret->b[0] = NULL;
 	}
 done:
 	return ret;
