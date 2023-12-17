@@ -1,5 +1,5 @@
-2014/07/26 - ebtree naming conventions
---------------------------------------
+2023-12-17 - tree naming conventions
+------------------------------------
 
 Ebtree is being extended to support more addressing types, more data types, and
 a new storage model relying on a new space-efficient tree architecture. For
@@ -15,13 +15,18 @@ Node addressing models :
   - large relative (pointers are 64-bit relative to the pointer)
   - medium relative (pointers are 32-bit relative to the pointer)
   - small relative (pointers are 16-bit relative to the pointer)
+  - other variants might be useful, e.g. 2x16 bits for page+offset
+
+Unicity:
+  - "u" for unique keys (each key appears at most once in the tree)
+  - none for multiple keys (dups are permitted by default)
 
 Key access mode :
-  - address of the node (no data attached to the node)
-  - direct access (key immediately follows the node)
-  - indirect access (a pointer to the key follows the node). This pointer is
-    then of the same type as all other pointers and follows the addressing
-    model.
+  - "a" for address of the node (no data attached to the node)
+  - "d" for direct access (key immediately follows the node)
+  - "i" for indirect access (a pointer to the key follows the node). This
+    pointer is then of the same type as all other pointers and follows the
+    addressing model.
 
 Key type and size (for both direct/indirect) :
   - 16 / 32 / 64 for fixed integer key sizes
@@ -35,11 +40,19 @@ Key sign (for integers) :
 
 That gives :
 
-  {eb,cb}{a,l,m,s}{a,d,i}{16,32,64,b,s,}{i,}
+  {eb,cb}{a,l,m,s}{u,}{a,d,i}{16,32,64,b,s,}{i,}
+     \       \      \     \         \         \_ signed int y/n
+      \       \      \     \         \_ key type/size
+       \       \      \     \_ access mode (abs/dir/indir)
+        \       \      \_ unique y/n
+         \       \_ addressing: abs/large/medium/small
+          \_ tree architecture
 
 Not all combinations are necessarily valid. Only integers may have the "i"
-suffix, nodes storing their own address (suffixed with "a") have no type
-size. Existing ebtree-v6 types and functions are mapped this way :
+suffix, nodes storing their own address (suffixed with "a") have no type size.
+Maybe future extensions will come to index case insensitive strings (possibly
+with an "i" suffix as well). Existing ebtree-v6 types and functions are mapped
+this way :
 
   eb32  ---> ebad32
   eb32i ---> ebad32i
@@ -53,8 +66,8 @@ size. Existing ebtree-v6 types and functions are mapped this way :
 
 New useful types should appear quickly :
 
-  ebaa : only carry the node's address, useful for pointer-based lookups
-         (eg: "show sess 0x12345678" in haproxy)
+  ebaa / cbaa : only carry the node's address, useful for pointer-based lookups
+                (eg: "show sess 0x12345678" in haproxy)
 
 Some implementations might disappear over the long term :
 
@@ -72,9 +85,13 @@ Later an extension might come (locked/unlocked or shared/private use).
 
 It is uncertain yet whether it would make sense to also split the code into
 unique/non-unique trees. The nodes are the same, but it could make sense to
-have different insertion functions. Unique trees do not have dup trees so
-that could even save a test during lookups. The following cases have to be
-handled for key occurrences :
+have different insertion functions. That's what is currently done for CB trees.
+Also experience has shown that the code calling the tree manipulation functions
+always knows whether it expects unique entries or not and that from such places
+it's not always easy to know how the tree was configured, so having distinct
+sets of functions could often help. Unique trees do not have dup trees so that
+could even save a test during lookups. The following cases have to be handled
+for key occurrences :
   - unique
   - multiple
       - sorted by insertion order
@@ -90,8 +107,10 @@ Properties :
     solution against this. Space efficient trees will typically have their
     root at position zero and no up pointer so a NULL is unambiguous.
 
-  - CB trees do not offer provisions for duplicates, unless the tree is
-    built using the node's address as the discriminant for nodes whose
-    XOR is null. In this case, insertion ordering is not preserved, the
-    memory location is used instead. This is interesting for memory
-    allocators.
+  - In their simplest form, CB trees do not offer provisions for duplicates,
+    though it was demonstrated that these can be built by arranging an almost
+    doubly-linked list with the duplicate nodes and that preserves insertion
+    ordering. However the algorithm has lots of special cases both for walking,
+    inserting and deleting nodes. Regardless, CB trees in unique mode remain
+    interesting for read-mostly data where storage size matters (LRU caches
+    and memory management).
