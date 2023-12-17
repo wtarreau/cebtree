@@ -35,7 +35,7 @@
  * immediately follows the node and for <len> bytes. Returns the
  * inserted node or the one that already contains the same key.
  */
-struct cba_node *cba_insert_mb(struct cba_node **root, struct cba_node *node, size_t len)
+struct cba_node *cbub_insert(struct cba_node **root, struct cba_node *node, size_t len)
 {
 	const void *key = &container_of(node, struct cba_node_key, node)->key.mb;
 
@@ -43,13 +43,13 @@ struct cba_node *cba_insert_mb(struct cba_node **root, struct cba_node *node, si
 }
 
 /* return the first node or NULL if not found. */
-struct cba_node *cba_first_mb(struct cba_node **root)
+struct cba_node *cbub_first(struct cba_node **root)
 {
 	return _cbau_first(root, CB_KT_MB);
 }
 
 /* return the last node or NULL if not found. */
-struct cba_node *cba_last_mb(struct cba_node **root)
+struct cba_node *cbub_last(struct cba_node **root)
 {
 	return _cbau_last(root, CB_KT_MB);
 }
@@ -57,7 +57,7 @@ struct cba_node *cba_last_mb(struct cba_node **root)
 /* look up the specified key <key> of length <len>, and returns either the node
  * containing it, or NULL if not found.
  */
-struct cba_node *cba_lookup_mb(struct cba_node **root, const void *key, size_t len)
+struct cba_node *cbub_lookup(struct cba_node **root, const void *key, size_t len)
 {
 	return _cbau_lookup(root, CB_KT_MB, 0, len, key);
 }
@@ -68,7 +68,7 @@ struct cba_node *cba_lookup_mb(struct cba_node **root, const void *key, size_t l
  * branch at that fork. The <len> field must correspond to the key length in
  * bytes.
  */
-struct cba_node *cba_next_mb(struct cba_node **root, struct cba_node *node, size_t len)
+struct cba_node *cbub_next(struct cba_node **root, struct cba_node *node, size_t len)
 {
 	const void *key = &container_of(node, struct cba_node_key, node)->key.mb;
 
@@ -81,7 +81,7 @@ struct cba_node *cba_next_mb(struct cba_node **root, struct cba_node *node, size
  * branch at that fork. The <len> field must correspond to the key length in
  * bytes.
  */
-struct cba_node *cba_prev_mb(struct cba_node **root, struct cba_node *node, size_t len)
+struct cba_node *cbub_prev(struct cba_node **root, struct cba_node *node, size_t len)
 {
 	const void *key = &container_of(node, struct cba_node_key, node)->key.mb;
 
@@ -92,7 +92,7 @@ struct cba_node *cba_prev_mb(struct cba_node **root, struct cba_node *node, size
  * case, returns the node. The <len> field must correspond to the key length in
  * bytes.
  */
-struct cba_node *cba_delete_mb(struct cba_node **root, struct cba_node *node, size_t len)
+struct cba_node *cbub_delete(struct cba_node **root, struct cba_node *node, size_t len)
 {
 	const void *key = &container_of(node, struct cba_node_key, node)->key.mb;
 
@@ -102,7 +102,7 @@ struct cba_node *cba_delete_mb(struct cba_node **root, struct cba_node *node, si
 /* look up the specified key, and detaches it and returns it if found, or NULL
  * if not found. The <len> field must correspond to the key length in bytes.
  */
-struct cba_node *cba_pick_mb(struct cba_node **root, const void *key, size_t len)
+struct cba_node *cbub_pick(struct cba_node **root, const void *key, size_t len)
 {
 	return _cbau_delete(root, NULL, CB_KT_MB, 0, len, key);
 }
