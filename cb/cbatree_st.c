@@ -81,19 +81,19 @@ struct cba_node *cbus_insert(struct cba_node **root, struct cba_node *node)
 {
 	const void *key = &container_of(node, struct cba_node_key, node)->key.str;
 
-	return _cbau_insert(root, node, CB_KT_ST, 0, 0, key);
+	return _cbu_insert(root, node, CB_KT_ST, 0, 0, key);
 }
 
 /* return the first node or NULL if not found. */
 struct cba_node *cbus_first(struct cba_node **root)
 {
-	return _cbau_first(root, CB_KT_ST);
+	return _cbu_first(root, CB_KT_ST);
 }
 
 /* return the last node or NULL if not found. */
 struct cba_node *cbus_last(struct cba_node **root)
 {
-	return _cbau_last(root, CB_KT_ST);
+	return _cbu_last(root, CB_KT_ST);
 }
 
 /* look up the specified key, and returns either the node containing it, or
@@ -101,7 +101,7 @@ struct cba_node *cbus_last(struct cba_node **root)
  */
 struct cba_node *cbus_lookup(struct cba_node **root, const void *key)
 {
-	return _cbau_lookup(root, CB_KT_ST, 0, 0, key);
+	return _cbu_lookup(root, CB_KT_ST, 0, 0, key);
 }
 
 /* search for the next node after the specified one, and return it, or NULL if
@@ -113,7 +113,7 @@ struct cba_node *cbus_next(struct cba_node **root, struct cba_node *node)
 {
 	const void *key = &container_of(node, struct cba_node_key, node)->key.str;
 
-	return _cbau_next(root, CB_KT_ST, 0, 0, key);
+	return _cbu_next(root, CB_KT_ST, 0, 0, key);
 }
 
 /* search for the prev node before the specified one, and return it, or NULL if
@@ -125,7 +125,7 @@ struct cba_node *cbus_prev(struct cba_node **root, struct cba_node *node)
 {
 	const void *key = &container_of(node, struct cba_node_key, node)->key.str;
 
-	return _cbau_prev(root, CB_KT_ST, 0, 0, key);
+	return _cbu_prev(root, CB_KT_ST, 0, 0, key);
 }
 
 /* look up the specified node with its key and deletes it if found, and in any
@@ -135,7 +135,7 @@ struct cba_node *cbus_delete(struct cba_node **root, struct cba_node *node)
 {
 	const void *key = &container_of(node, struct cba_node_key, node)->key.str;
 
-	return _cbau_delete(root, node, CB_KT_ST, 0, 0, key);
+	return _cbu_delete(root, node, CB_KT_ST, 0, 0, key);
 }
 
 /* look up the specified key, and detaches it and returns it if found, or NULL
@@ -143,5 +143,5 @@ struct cba_node *cbus_delete(struct cba_node **root, struct cba_node *node)
  */
 struct cba_node *cbus_pick(struct cba_node **root, const void *key)
 {
-	return _cbau_delete(root, NULL, CB_KT_ST, 0, 0, key);
+	return _cbu_delete(root, NULL, CB_KT_ST, 0, 0, key);
 }
