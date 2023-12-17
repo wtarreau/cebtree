@@ -22,15 +22,15 @@ Unicity:
   - none for multiple keys (dups are permitted by default)
 
 Key access mode :
+  - none for direct access (key immediately follows the node)
   - "a" for address of the node (no data attached to the node)
-  - "d" for direct access (key immediately follows the node)
   - "i" for indirect access (a pointer to the key follows the node). This
     pointer is then of the same type as all other pointers and follows the
     addressing model.
 
 Key type and size (for both direct/indirect) :
   - 16 / 32 / 64 for fixed integer key sizes
-  - "b" for fixed size memory block
+  - "b" for fixed size memory block ("binary")
   - "s" for null-terminated string
   - none for node's address only
 
@@ -40,26 +40,30 @@ Key sign (for integers) :
 
 That gives :
 
-  {eb,cb}{a,l,m,s}{u,}{a,d,i}{16,32,64,b,s,}{i,}
-     \       \      \     \         \         \_ signed int y/n
-      \       \      \     \         \_ key type/size
-       \       \      \     \_ access mode (abs/dir/indir)
+  {eb,cb}{a,l,m,s}{u,}{a,i,}{16,32,64,b,s,}{i,}
+     \       \      \    \         \         \_ signed int y/n
+      \       \      \    \         \_ key type/size
+       \       \      \    \_ access mode (abs/dir/indir)
         \       \      \_ unique y/n
          \       \_ addressing: abs/large/medium/small
           \_ tree architecture
 
 Not all combinations are necessarily valid. Only integers may have the "i"
 suffix, nodes storing their own address (suffixed with "a") have no type size.
+Note that there is always at least one of "a" or a type name in the name, i.e.
+it's not possible to have no letter on the access mode and no letter on the key
+size or type.
+
 Maybe future extensions will come to index case insensitive strings (possibly
 with an "i" suffix as well). Existing ebtree-v6 types and functions are mapped
 this way :
 
-  eb32  ---> ebad32
-  eb32i ---> ebad32i
-  eb64  ---> ebad64
-  eb64i ---> ebad64i
-  ebmb  ---> ebadb
-  ebst  ---> ebads
+  eb32  ---> eba32
+  eb32i ---> eba32i
+  eb64  ---> eba64
+  eb64i ---> eba64i
+  ebmb  ---> ebab
+  ebst  ---> ebas
   ebpt  ---> ebai
   ebim  ---> ebaib
   ebis  ---> ebais
