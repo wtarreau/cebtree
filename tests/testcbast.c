@@ -11,14 +11,14 @@
 
 #include "cbatree.h"
 
-struct cba_node *cba_insert_st(struct cba_node **root, struct cba_node *node);
-struct cba_node *cba_lookup_st(struct cba_node **root, const void *key);
-struct cba_node *cba_delete_st(struct cba_node **root, struct cba_node *node);
+struct cba_node *cbus_insert(struct cba_node **root, struct cba_node *node);
+struct cba_node *cbus_lookup(struct cba_node **root, const void *key);
+struct cba_node *cbus_delete(struct cba_node **root, struct cba_node *node);
 
-struct cba_node *cba_first_st(struct cba_node **root);
-struct cba_node *cba_last_st(struct cba_node **root);
-struct cba_node *cba_next_st(struct cba_node **root, struct cba_node *node);
-struct cba_node *cba_prev_st(struct cba_node **root, struct cba_node *node);
+struct cba_node *cbus_first(struct cba_node **root);
+struct cba_node *cbus_last(struct cba_node **root);
+struct cba_node *cbus_next(struct cba_node **root, struct cba_node *node);
+struct cba_node *cbus_prev(struct cba_node **root, struct cba_node *node);
 
 struct cba_node *cba_root = NULL;
 
@@ -190,16 +190,16 @@ int main(int argc, char **argv)
 		}
 		else
 			rnd64_to_str(key->key);
-		old = cba_lookup_st(&cba_root, &key->key);
+		old = cbus_lookup(&cba_root, &key->key);
 		if (old)
 			fprintf(stderr, "Note: value %s already present at %p\n", key->key, old);
 
 	try_again:
-		prev = cba_insert_st(&cba_root, &key->node);
+		prev = cbus_insert(&cba_root, &key->node);
 		if (prev != &key->node) {
 			fprintf(stderr, "Note: failed to insert %p('%s'), previous was at %p('%s')\n", &key->node, key->key, prev, ((const struct key*)prev)->key);
 
-			ret = cba_delete_st(&cba_root, prev);
+			ret = cbus_delete(&cba_root, prev);
 			if (ret != prev) {
 				/* was not properly removed either: THIS IS A BUG! */
 				fprintf(stderr, "failed to remove %p (returned %p)\n", prev, ret);
@@ -226,7 +226,7 @@ int main(int argc, char **argv)
 				rnd64_to_str(key->key);
 				kptr = key->key;
 			}
-			old = cba_lookup_st(&cba_root, kptr);
+			old = cbus_lookup(&cba_root, kptr);
 			if (old)
 				found++;
 		}
@@ -236,12 +236,12 @@ int main(int argc, char **argv)
 
 	/* now count elements */
 	found = 0;
-	ret = cba_first_st(&cba_root);
+	ret = cbus_first(&cba_root);
 	if (debug)
 		printf("%d: ret=%p\n", __LINE__, ret);
 
 	while (ret) {
-		prev = cba_next_st(&cba_root, ret);
+		prev = cbus_next(&cba_root, ret);
 		if (debug)
 			printf("   %4d: <%s>\n", found, ((const struct key *)ret)->key);
 		found++;

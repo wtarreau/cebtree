@@ -35,7 +35,7 @@
  * immediately follows the node. Returns the inserted node or the one
  * that already contains the same key.
  */
-struct cba_node *cba_insert_st(struct cba_node **root, struct cba_node *node)
+struct cba_node *cbus_insert(struct cba_node **root, struct cba_node *node)
 {
 	const void *key = &container_of(node, struct cba_node_key, node)->key.str;
 
@@ -43,13 +43,13 @@ struct cba_node *cba_insert_st(struct cba_node **root, struct cba_node *node)
 }
 
 /* return the first node or NULL if not found. */
-struct cba_node *cba_first_st(struct cba_node **root)
+struct cba_node *cbus_first(struct cba_node **root)
 {
 	return _cbau_first(root, CB_KT_ST);
 }
 
 /* return the last node or NULL if not found. */
-struct cba_node *cba_last_st(struct cba_node **root)
+struct cba_node *cbus_last(struct cba_node **root)
 {
 	return _cbau_last(root, CB_KT_ST);
 }
@@ -57,7 +57,7 @@ struct cba_node *cba_last_st(struct cba_node **root)
 /* look up the specified key, and returns either the node containing it, or
  * NULL if not found.
  */
-struct cba_node *cba_lookup_st(struct cba_node **root, const void *key)
+struct cba_node *cbus_lookup(struct cba_node **root, const void *key)
 {
 	return _cbau_lookup(root, CB_KT_ST, 0, 0, key);
 }
@@ -67,7 +67,7 @@ struct cba_node *cba_lookup_st(struct cba_node **root, const void *key)
  * time a left turn was made, and returning the first node along the right
  * branch at that fork.
  */
-struct cba_node *cba_next_st(struct cba_node **root, struct cba_node *node)
+struct cba_node *cbus_next(struct cba_node **root, struct cba_node *node)
 {
 	const void *key = &container_of(node, struct cba_node_key, node)->key.str;
 
@@ -79,7 +79,7 @@ struct cba_node *cba_next_st(struct cba_node **root, struct cba_node *node)
  * time a right turn was made, and returning the last node along the left
  * branch at that fork.
  */
-struct cba_node *cba_prev_st(struct cba_node **root, struct cba_node *node)
+struct cba_node *cbus_prev(struct cba_node **root, struct cba_node *node)
 {
 	const void *key = &container_of(node, struct cba_node_key, node)->key.str;
 
@@ -89,7 +89,7 @@ struct cba_node *cba_prev_st(struct cba_node **root, struct cba_node *node)
 /* look up the specified node with its key and deletes it if found, and in any
  * case, returns the node.
  */
-struct cba_node *cba_delete_st(struct cba_node **root, struct cba_node *node)
+struct cba_node *cbus_delete(struct cba_node **root, struct cba_node *node)
 {
 	const void *key = &container_of(node, struct cba_node_key, node)->key.str;
 
@@ -99,7 +99,7 @@ struct cba_node *cba_delete_st(struct cba_node **root, struct cba_node *node)
 /* look up the specified key, and detaches it and returns it if found, or NULL
  * if not found.
  */
-struct cba_node *cba_pick_st(struct cba_node **root, const void *key)
+struct cba_node *cbus_pick(struct cba_node **root, const void *key)
 {
 	return _cbau_delete(root, NULL, CB_KT_ST, 0, 0, key);
 }
