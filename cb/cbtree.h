@@ -30,9 +30,6 @@
 #include <stddef.h>
 #include "../common/tools.h"
 
-/* Tree pointers are tagged absolute pointers to the next cb_node */
-typedef struct cb_node * cba_tree_t;
-
 /* Standard node when using absolute pointers */
 struct cb_node {
 	struct cb_node *b[2]; /* branches: 0=left, 1=right */
