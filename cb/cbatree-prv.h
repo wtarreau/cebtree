@@ -525,13 +525,14 @@ struct cba_node *_cbau_descend(struct cba_node **root,
 
 
 /* Generic tree insertion function for trees with unique keys. Inserts node
- * <node> into tree <tree>, with key type <key_type> and key <key_ptr>.
+ * <node> into tree <tree>, with key type <key_type> and key <key_*>.
  * Returns the inserted node or the one that already contains the same key.
  */
 static inline __attribute__((always_inline))
 struct cba_node *_cbau_insert(struct cba_node **root,
 			      struct cba_node *node,
 			      enum cba_key_type key_type,
+			      uint32_t key_u32,
 			      const void *key_ptr)
 {
 	struct cba_node **parent;
@@ -545,7 +546,7 @@ struct cba_node *_cbau_insert(struct cba_node **root,
 		return node;
 	}
 
-	ret = _cbau_descend(root, CB_WM_KEY, key_type, 0, key_ptr, &nside, &parent, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	ret = _cbau_descend(root, CB_WM_KEY, key_type, key_u32, key_ptr, &nside, &parent, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 
 	if (!ret) {
 		/* The key was not in the tree, we can insert it. Better use an
@@ -593,8 +594,8 @@ struct cba_node *_cbau_last(struct cba_node **root,
 }
 
 /* Searches in the tree <root> made of keys of type <key_type>, for the next
- * node after the one containing the key <key_ptr>. Returns NULL if not found.
- * It's up to the caller to pass the current node's key in <key_ptr>. The
+ * node after the one containing the key <key_*>. Returns NULL if not found.
+ * It's up to the caller to pass the current node's key in <key_*>. The
  * approach consists in looking up that node first, recalling the last time a
  * left turn was made, and returning the first node along the right branch at
  * that fork.
@@ -602,6 +603,7 @@ struct cba_node *_cbau_last(struct cba_node **root,
 static inline __attribute__((always_inline))
 struct cba_node *_cbau_next(struct cba_node **root,
 			    enum cba_key_type key_type,
+			    uint32_t key_u32,
 			    const void *key_ptr)
 {
 	struct cba_node **right_branch = NULL;
@@ -609,15 +611,15 @@ struct cba_node *_cbau_next(struct cba_node **root,
 	if (!*root)
 		return NULL;
 
-	_cbau_descend(root, CB_WM_KEY, key_type, 0, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &right_branch);
+	_cbau_descend(root, CB_WM_KEY, key_type, key_u32, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &right_branch);
 	if (!right_branch)
 		return NULL;
 	return _cbau_descend(right_branch, CB_WM_NXT, key_type, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 }
 
 /* Searches in the tree <root> made of keys of type <key_type>, for the prev
- * node before the one containing the key <key_ptr>. Returns NULL if not found.
- * It's up to the caller to pass the current node's key in <key_ptr>. The
+ * node before the one containing the key <key_*>. Returns NULL if not found.
+ * It's up to the caller to pass the current node's key in <key_*>. The
  * approach consists in looking up that node first, recalling the last time a
  * right turn was made, and returning the last node along the left branch at
  * that fork.
@@ -625,6 +627,7 @@ struct cba_node *_cbau_next(struct cba_node **root,
 static inline __attribute__((always_inline))
 struct cba_node *_cbau_prev(struct cba_node **root,
 			    enum cba_key_type key_type,
+			    uint32_t key_u32,
 			    const void *key_ptr)
 {
 	struct cba_node **left_branch = NULL;
@@ -632,28 +635,29 @@ struct cba_node *_cbau_prev(struct cba_node **root,
 	if (!*root)
 		return NULL;
 
-	_cbau_descend(root, CB_WM_KEY, key_type, 0, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &left_branch, NULL);
+	_cbau_descend(root, CB_WM_KEY, key_type, key_u32, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &left_branch, NULL);
 	if (!left_branch)
 		return NULL;
 	return _cbau_descend(left_branch, CB_WM_PRV, key_type, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 }
 
 /* Searches in the tree <root> made of keys of type <key_type>, for the node
- * containing the key <key_ptr>. Returns NULL if not found.
+ * containing the key <key_*>. Returns NULL if not found.
  */
 static inline __attribute__((always_inline))
 struct cba_node *_cbau_lookup(struct cba_node **root,
 			      enum cba_key_type key_type,
+			      uint32_t key_u32,
 			      const void *key_ptr)
 {
 	if (!*root)
 		return NULL;
 
-	return _cbau_descend(root, CB_WM_KEY, key_type, 0, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	return _cbau_descend(root, CB_WM_KEY, key_type, key_u32, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 }
 
 /* Searches in the tree <root> made of keys of type <key_type>, for the node
- * that contains the key <key_ptr>, and deletes it. If <node> is non-NULL, a
+ * that contains the key <key_*>, and deletes it. If <node> is non-NULL, a
  * check is performed and the node found is deleted only if it matches. The
  * found node is returned in any case, otherwise NULL if not found.
  */
@@ -661,6 +665,7 @@ static inline __attribute__((always_inline))
 struct cba_node *_cbau_delete(struct cba_node **root,
 			      struct cba_node *node,
 			      enum cba_key_type key_type,
+			      uint32_t key_u32,
 			      const void *key_ptr)
 {
 	struct cba_node *lparent, *nparent, *gparent;
@@ -677,7 +682,7 @@ struct cba_node *_cbau_delete(struct cba_node **root,
 		goto done;
 	}
 
-	ret = _cbau_descend(root, CB_WM_KEY, key_type, 0, key_ptr, NULL, NULL,
+	ret = _cbau_descend(root, CB_WM_KEY, key_type, key_u32, key_ptr, NULL, NULL,
 			    &lparent, &lpside, &nparent, &npside, &gparent, &gpside, NULL, NULL);
 
 	if (!ret) {
