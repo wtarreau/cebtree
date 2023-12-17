@@ -11,10 +11,10 @@
 
 #include "cbatree.h"
 
-void cbau32_default_dump(struct cba_node **cba_root, const char *label, const void *ctx);
-struct cba_node *cba_insert_u32(struct cba_node **root, struct cba_node *node);
-struct cba_node *cba_lookup_u32(struct cba_node **root, u32 key);
-struct cba_node *cba_delete_u32(struct cba_node **root, struct cba_node *node);
+void cbu32_default_dump(struct cba_node **cba_root, const char *label, const void *ctx);
+struct cba_node *cbu32_insert(struct cba_node **root, struct cba_node *node);
+struct cba_node *cbu32_lookup(struct cba_node **root, u32 key);
+struct cba_node *cbu32_delete(struct cba_node **root, struct cba_node *node);
 
 struct cba_node *cba_root = NULL;
 
@@ -31,12 +31,12 @@ struct cba_node *add_value(struct cba_node **root, uint32_t value)
 	key = calloc(1, sizeof(*key));
 	key->key = value;
 	do {
-		prev = cba_insert_u32(root, &key->node);
+		prev = cbu32_insert(root, &key->node);
 		if (prev == &key->node)
 			return prev; // was properly inserted
 		/* otherwise was already there, let's try to remove it */
 		printf("Insert failed, removing node %p before inserting again.\n", prev);
-		ret = cba_delete_u32(root, prev);
+		ret = cbu32_delete(root, prev);
 		if (ret != prev) {
 			/* was not properly removed either: THIS IS A BUG! */
 			printf("failed to insert %p(%u) because %p has the same key and could not be removed because returns %p\n",
@@ -72,7 +72,7 @@ int main(int argc, char **argv)
 	orig_argv = larg = *argv;
 	while (argc > 0) {
 		v = atoi(argv[0]);
-		old = cba_lookup_u32(&cba_root, v);
+		old = cbu32_lookup(&cba_root, v);
 		if (old)
 			fprintf(stderr, "Note: value %u already present at %p\n", v, old);
 		old = add_value(&cba_root, v);
@@ -83,7 +83,7 @@ int main(int argc, char **argv)
 			int len;
 
 			len = snprintf(cmd, sizeof(cmd), "%s [%d] +%d", orig_argv, round, v);
-			cbau32_default_dump(&cba_root, len < sizeof(cmd) ? cmd : orig_argv, old);
+			cbu32_default_dump(&cba_root, len < sizeof(cmd) ? cmd : orig_argv, old);
 			round++;
 		}
 
@@ -96,7 +96,7 @@ int main(int argc, char **argv)
 		p += strlen(p);
 
 	if (!debug)
-		cbau32_default_dump(&cba_root, orig_argv, 0);
+		cbu32_default_dump(&cba_root, orig_argv, 0);
 
 	return 0;
 }
