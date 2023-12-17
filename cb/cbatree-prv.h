@@ -95,7 +95,7 @@
 
 
 /* tree walk method: key, left, right */
-enum cba_walk_meth {
+enum cb_walk_meth {
 	CB_WM_KEY,     /* look up the node's key */
 	CB_WM_FST,     /* look up "first" (walk left only) */
 	CB_WM_NXT,     /* look up "next" (walk right once then left) */
@@ -103,7 +103,7 @@ enum cba_walk_meth {
 	CB_WM_LST,     /* look up "last" (walk right only) */
 };
 
-enum cba_key_type {
+enum cb_key_type {
 	CB_KT_NONE,    /* no key */
 	CB_KT_U32,     /* 32-bit unsigned word in key_u32 */
 	CB_KT_U64,     /* 64-bit unsigned word in key_u64 */
@@ -111,7 +111,7 @@ enum cba_key_type {
 	CB_KT_ST,      /* NUL-terminated string in key_ptr */
 };
 
-union cba_key_storage {
+union cb_key_storage {
 	uint32_t u32;
 	uint64_t u64;
 	unsigned char mb[0];
@@ -119,9 +119,9 @@ union cba_key_storage {
 };
 
 /* this structure is aliased to the common cba node during st operations */
-struct cba_node_key {
-	struct cba_node node;
-	union cba_key_storage key;
+struct cb_node_key {
+	struct cb_node node;
+	union cb_key_storage key;
 };
 
 /* Generic tree descent function. It must absolutely be inlined so that the
@@ -135,29 +135,29 @@ struct cba_node_key {
  * size arrays are passed in key_ptr with their length in key_u64.
  */
 static inline __attribute__((always_inline))
-struct cba_node *_cbu_descend(struct cba_node **root,
-			      enum cba_walk_meth meth,
-			      enum cba_key_type key_type,
-			      uint32_t key_u32,
-			      uint32_t key_u64,
-			      const void *key_ptr,
-			      int *ret_nside,
-			      struct cba_node ***ret_root,
-			      struct cba_node **ret_lparent,
-			      int *ret_lpside,
-			      struct cba_node **ret_nparent,
-			      int *ret_npside,
-			      struct cba_node **ret_gparent,
-			      int *ret_gpside,
-			      struct cba_node ***ret_alt_l,
-			      struct cba_node ***ret_alt_r)
+struct cb_node *_cbu_descend(struct cb_node **root,
+			     enum cb_walk_meth meth,
+			     enum cb_key_type key_type,
+			     uint32_t key_u32,
+			     uint32_t key_u64,
+			     const void *key_ptr,
+			     int *ret_nside,
+			     struct cb_node ***ret_root,
+			     struct cb_node **ret_lparent,
+			     int *ret_lpside,
+			     struct cb_node **ret_nparent,
+			     int *ret_npside,
+			     struct cb_node **ret_gparent,
+			     int *ret_gpside,
+			     struct cb_node ***ret_alt_l,
+			     struct cb_node ***ret_alt_r)
 {
-	struct cba_node_key *p, *l, *r;
-	struct cba_node *gparent = NULL;
-	struct cba_node *nparent = NULL;
-	struct cba_node **alt_l = NULL;
-	struct cba_node **alt_r = NULL;
-	struct cba_node *lparent;
+	struct cb_node_key *p, *l, *r;
+	struct cb_node *gparent = NULL;
+	struct cb_node *nparent = NULL;
+	struct cb_node **alt_l = NULL;
+	struct cb_node **alt_r = NULL;
+	struct cb_node *lparent;
 	uint32_t pxor32 = ~0; // previous xor between branches
 	uint64_t pxor64 = ~0ULL; // previous xor between branches
 	int gpside = 0;   // side on the grand parent
@@ -191,7 +191,7 @@ struct cba_node *_cbu_descend(struct cba_node **root,
 	/* the parent will be the (possibly virtual) node so that
 	 * &lparent->l == root.
 	 */
-	lparent = container_of(root, struct cba_node, b[0]);
+	lparent = container_of(root, struct cb_node, b[0]);
 	gparent = nparent = lparent;
 
 	/* for key-less descents we need to set the initial branch to take */
@@ -213,15 +213,15 @@ struct cba_node *_cbu_descend(struct cba_node **root,
 	 * and pxorXX==~0 for scalars.
 	 */
 	while (1) {
-		p = container_of(*root, struct cba_node_key, node);
+		p = container_of(*root, struct cb_node_key, node);
 
 		/* let's prefetch the lower nodes for the keys */
 		__builtin_prefetch(p->node.b[0], 0);
 		__builtin_prefetch(p->node.b[1], 0);
 
 		/* neither pointer is tagged */
-		l = container_of(p->node.b[0], struct cba_node_key, node);
-		r = container_of(p->node.b[1], struct cba_node_key, node);
+		l = container_of(p->node.b[0], struct cb_node_key, node);
+		r = container_of(p->node.b[1], struct cb_node_key, node);
 
 		switch (key_type) {
 		case CB_KT_U32:
@@ -458,23 +458,23 @@ struct cba_node *_cbu_descend(struct cba_node **root,
 			switch (key_type) {
 			case CB_KT_U32:
 				CBADBG(" -> [%04d] meth=%d pxor=%#x lft=%p,u32(%#x) rgt=%p,u32(%#x)\n", __LINE__, meth, pxor32,
-				       p->node.b[0], container_of(p->node.b[0], struct cba_node_key, node)->key.u32,
-				       p->node.b[1], container_of(p->node.b[1], struct cba_node_key, node)->key.u32);
+				       p->node.b[0], container_of(p->node.b[0], struct cb_node_key, node)->key.u32,
+				       p->node.b[1], container_of(p->node.b[1], struct cb_node_key, node)->key.u32);
 				break;
 			case CB_KT_U64:
 				CBADBG(" -> [%04d] meth=%d pxor=%#llx lft=%p,u64(%#llx) rgt=%p,u64(%#llx)\n", __LINE__, meth, (unsigned long long)pxor64,
-				       p->node.b[0], (unsigned long long)container_of(p->node.b[0], struct cba_node_key, node)->key.u64,
-				       p->node.b[1], (unsigned long long)container_of(p->node.b[1], struct cba_node_key, node)->key.u64);
+				       p->node.b[0], (unsigned long long)container_of(p->node.b[0], struct cb_node_key, node)->key.u64,
+				       p->node.b[1], (unsigned long long)container_of(p->node.b[1], struct cb_node_key, node)->key.u64);
 				break;
 			case CB_KT_MB:
 				CBADBG(" -> [%04d] meth=%d plen=%ld lft=%p,mb(%p) rgt=%p,mb(%p)\n", __LINE__, meth, (long)plen,
-				       p->node.b[0], container_of(p->node.b[0], struct cba_node_key, node)->key.mb,
-				       p->node.b[1], container_of(p->node.b[1], struct cba_node_key, node)->key.mb);
+				       p->node.b[0], container_of(p->node.b[0], struct cb_node_key, node)->key.mb,
+				       p->node.b[1], container_of(p->node.b[1], struct cb_node_key, node)->key.mb);
 				break;
 			case CB_KT_ST:
 				CBADBG(" -> [%04d] meth=%d plen=%ld lft=%p,str('%s') rgt=%p,str('%s')\n", __LINE__, meth, (long)plen,
-				       p->node.b[0], container_of(p->node.b[0], struct cba_node_key, node)->key.str,
-				       p->node.b[1], container_of(p->node.b[1], struct cba_node_key, node)->key.str);
+				       p->node.b[0], container_of(p->node.b[0], struct cb_node_key, node)->key.str,
+				       p->node.b[1], container_of(p->node.b[1], struct cb_node_key, node)->key.str);
 				break;
 			default:
 				CBADBG(" -> [%04d] meth=%d plen=%ld lft=%p rgt=%p\n", __LINE__, meth, (long)plen, p->node.b[0], p->node.b[1]);
@@ -493,23 +493,23 @@ struct cba_node *_cbu_descend(struct cba_node **root,
 			switch (key_type) {
 			case CB_KT_U32:
 				CBADBG(" -> [%04d] meth=%d pxor=%#x lft=%p,u32(%#x) rgt=%p,u32(%#x)\n", __LINE__, meth, pxor32,
-				       p->node.b[0], container_of(p->node.b[0], struct cba_node_key, node)->key.u32,
-				       p->node.b[1], container_of(p->node.b[1], struct cba_node_key, node)->key.u32);
+				       p->node.b[0], container_of(p->node.b[0], struct cb_node_key, node)->key.u32,
+				       p->node.b[1], container_of(p->node.b[1], struct cb_node_key, node)->key.u32);
 				break;
 			case CB_KT_U64:
 				CBADBG(" -> [%04d] meth=%d pxor=%#llx lft=%p,u64(%#llx) rgt=%p,u64(%#llx)\n", __LINE__, meth, (unsigned long long)pxor64,
-				       p->node.b[0], (unsigned long long)container_of(p->node.b[0], struct cba_node_key, node)->key.u64,
-				       p->node.b[1], (unsigned long long)container_of(p->node.b[1], struct cba_node_key, node)->key.u64);
+				       p->node.b[0], (unsigned long long)container_of(p->node.b[0], struct cb_node_key, node)->key.u64,
+				       p->node.b[1], (unsigned long long)container_of(p->node.b[1], struct cb_node_key, node)->key.u64);
 				break;
 			case CB_KT_MB:
 				CBADBG(" -> [%04d] meth=%d plen=%ld lft=%p,mb(%p) rgt=%p,mb(%p)\n", __LINE__, meth, (long)plen,
-				       p->node.b[0], container_of(p->node.b[0], struct cba_node_key, node)->key.mb,
-				       p->node.b[1], container_of(p->node.b[1], struct cba_node_key, node)->key.mb);
+				       p->node.b[0], container_of(p->node.b[0], struct cb_node_key, node)->key.mb,
+				       p->node.b[1], container_of(p->node.b[1], struct cb_node_key, node)->key.mb);
 				break;
 			case CB_KT_ST:
 				CBADBG(" <- [%04d] meth=%d plen=%ld lft=%p,str('%s') rgt=%p,str('%s')\n", __LINE__, meth, (long)plen,
-				       p->node.b[0], container_of(p->node.b[0], struct cba_node_key, node)->key.str,
-				       p->node.b[1], container_of(p->node.b[1], struct cba_node_key, node)->key.str);
+				       p->node.b[0], container_of(p->node.b[0], struct cb_node_key, node)->key.str,
+				       p->node.b[1], container_of(p->node.b[1], struct cb_node_key, node)->key.str);
 				break;
 			default:
 				CBADBG(" <- [%04d] meth=%d plen=%ld lft=%p rgt=%p\n", __LINE__, meth, (long)plen, p->node.b[0], p->node.b[1]);
@@ -517,7 +517,7 @@ struct cba_node *_cbu_descend(struct cba_node **root,
 			}
 		}
 
-		if (p == container_of(*root, struct cba_node_key, node)) {
+		if (p == container_of(*root, struct cb_node_key, node)) {
 			/* loops over itself, it's a leaf */
 			switch (key_type) {
 			case CB_KT_U32:
@@ -658,15 +658,15 @@ struct cba_node *_cbu_descend(struct cba_node **root,
  * Returns the inserted node or the one that already contains the same key.
  */
 static inline __attribute__((always_inline))
-struct cba_node *_cbu_insert(struct cba_node **root,
-			     struct cba_node *node,
-			     enum cba_key_type key_type,
-			     uint32_t key_u32,
-			     uint32_t key_u64,
-			     const void *key_ptr)
+struct cb_node *_cbu_insert(struct cb_node **root,
+			    struct cb_node *node,
+			    enum cb_key_type key_type,
+			    uint32_t key_u32,
+			    uint32_t key_u64,
+			    const void *key_ptr)
 {
-	struct cba_node **parent;
-	struct cba_node *ret;
+	struct cb_node **parent;
+	struct cb_node *ret;
 	int nside;
 
 	if (!*root) {
@@ -701,8 +701,8 @@ struct cba_node *_cbu_insert(struct cba_node **root,
  * type <key_type>.
  */
 static inline __attribute__((always_inline))
-struct cba_node *_cbu_first(struct cba_node **root,
-			    enum cba_key_type key_type)
+struct cb_node *_cbu_first(struct cb_node **root,
+			   enum cb_key_type key_type)
 {
 	if (!*root)
 		return NULL;
@@ -714,8 +714,8 @@ struct cba_node *_cbu_first(struct cba_node **root,
  * type <key_type>.
  */
 static inline __attribute__((always_inline))
-struct cba_node *_cbu_last(struct cba_node **root,
-			   enum cba_key_type key_type)
+struct cb_node *_cbu_last(struct cb_node **root,
+			  enum cb_key_type key_type)
 {
 	if (!*root)
 		return NULL;
@@ -731,13 +731,13 @@ struct cba_node *_cbu_last(struct cba_node **root,
  * that fork.
  */
 static inline __attribute__((always_inline))
-struct cba_node *_cbu_next(struct cba_node **root,
-			   enum cba_key_type key_type,
-			   uint32_t key_u32,
-			   uint32_t key_u64,
-			   const void *key_ptr)
+struct cb_node *_cbu_next(struct cb_node **root,
+			  enum cb_key_type key_type,
+			  uint32_t key_u32,
+			  uint32_t key_u64,
+			  const void *key_ptr)
 {
-	struct cba_node **right_branch = NULL;
+	struct cb_node **right_branch = NULL;
 
 	if (!*root)
 		return NULL;
@@ -756,13 +756,13 @@ struct cba_node *_cbu_next(struct cba_node **root,
  * that fork.
  */
 static inline __attribute__((always_inline))
-struct cba_node *_cbu_prev(struct cba_node **root,
-			   enum cba_key_type key_type,
-			   uint32_t key_u32,
-			   uint32_t key_u64,
-			   const void *key_ptr)
+struct cb_node *_cbu_prev(struct cb_node **root,
+			  enum cb_key_type key_type,
+			  uint32_t key_u32,
+			  uint32_t key_u64,
+			  const void *key_ptr)
 {
-	struct cba_node **left_branch = NULL;
+	struct cb_node **left_branch = NULL;
 
 	if (!*root)
 		return NULL;
@@ -777,11 +777,11 @@ struct cba_node *_cbu_prev(struct cba_node **root,
  * containing the key <key_*>. Returns NULL if not found.
  */
 static inline __attribute__((always_inline))
-struct cba_node *_cbu_lookup(struct cba_node **root,
-			     enum cba_key_type key_type,
-			     uint32_t key_u32,
-			     uint32_t key_u64,
-			     const void *key_ptr)
+struct cb_node *_cbu_lookup(struct cb_node **root,
+			    enum cb_key_type key_type,
+			    uint32_t key_u32,
+			    uint32_t key_u64,
+			    const void *key_ptr)
 {
 	if (!*root)
 		return NULL;
@@ -795,16 +795,16 @@ struct cba_node *_cbu_lookup(struct cba_node **root,
  * found node is returned in any case, otherwise NULL if not found.
  */
 static inline __attribute__((always_inline))
-struct cba_node *_cbu_delete(struct cba_node **root,
-			     struct cba_node *node,
-			     enum cba_key_type key_type,
-			     uint32_t key_u32,
-			     uint32_t key_u64,
-			     const void *key_ptr)
+struct cb_node *_cbu_delete(struct cb_node **root,
+			    struct cb_node *node,
+			    enum cb_key_type key_type,
+			    uint32_t key_u32,
+			    uint32_t key_u64,
+			    const void *key_ptr)
 {
-	struct cba_node *lparent, *nparent, *gparent;
+	struct cb_node *lparent, *nparent, *gparent;
 	int lpside, npside, gpside;
-	struct cba_node *ret = NULL;
+	struct cb_node *ret = NULL;
 
 	if (node && !node->b[0]) {
 		/* NULL on a branch means the node is not in the tree */
