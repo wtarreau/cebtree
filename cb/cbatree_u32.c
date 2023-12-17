@@ -425,7 +425,7 @@ void *cbu32_dump_tree(struct cb_node *node, u32 pxor, void *last,
 /* dumps a cb_node_key tree using the default functions above. If a node matches
  * <ctx>, this one will be highlighted in red.
  */
-void cbu32_default_dump(struct cb_node **cba_root, const char *label, const void *ctx)
+void cbu32_default_dump(struct cb_node **cb_root, const char *label, const void *ctx)
 {
 	struct cb_node *node;
 
@@ -437,17 +437,17 @@ void cbu32_default_dump(struct cb_node **cba_root, const char *label, const void
 
 	printf("  node [fontname=\"fixed\" fontsize=8 shape=\"box\" style=\"filled\" color=\"black\" fillcolor=\"white\"];\n"
 	       "  edge [fontname=\"fixed\" fontsize=8 style=\"solid\" color=\"magenta\" dir=\"forward\"];\n"
-	       "  \"%lx_n\" [label=\"root\\n%lx\"]\n", (long)cba_root, (long)cba_root);
+	       "  \"%lx_n\" [label=\"root\\n%lx\"]\n", (long)cb_root, (long)cb_root);
 
-	node = *cba_root;
+	node = *cb_root;
 	if (node) {
 		/* under the root we've either a node or the first leaf */
 		printf("  \"%lx_n\" -> \"%lx_%c\" [label=\"B\" arrowsize=0.66];\n",
-		       (long)cba_root, (long)node,
+		       (long)cb_root, (long)node,
 		       (node->b[0] == node->b[1]) ? 'l' : 'n');
 	}
 
-	cbu32_dump_tree(*cba_root, 0, NULL, 0, cbu32_default_dump_node, cbu32_default_dump_leaf, ctx);
+	cbu32_dump_tree(*cb_root, 0, NULL, 0, cbu32_default_dump_node, cbu32_default_dump_leaf, ctx);
 
 	printf("}\n");
 }
