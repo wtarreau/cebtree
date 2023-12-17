@@ -11,11 +11,11 @@
 
 #include "cbatree.h"
 
-void cbau32_default_dump(struct cba_node **cba_root, const char *label, const void *ctx);
-struct cba_node *cba_insert_u32(struct cba_node **root, struct cba_node *node);
-struct cba_node *cba_lookup_u32(struct cba_node **root, u32 key);
-struct cba_node *cba_delete_u32(struct cba_node **root, struct cba_node *node);
-struct cba_node *cba_pick_u32(struct cba_node **root, u32 key);
+void cbu32_default_dump(struct cba_node **cba_root, const char *label, const void *ctx);
+struct cba_node *cbu32_insert(struct cba_node **root, struct cba_node *node);
+struct cba_node *cbu32_lookup(struct cba_node **root, u32 key);
+struct cba_node *cbu32_delete(struct cba_node **root, struct cba_node *node);
+struct cba_node *cbu32_pick(struct cba_node **root, u32 key);
 
 struct cba_node *cba_root = NULL;
 
@@ -32,11 +32,11 @@ struct cba_node *add_value(struct cba_node **root, uint32_t value)
 	key = calloc(1, sizeof(*key));
 	key->key = value;
 	do {
-		prev = cba_insert_u32(root, &key->node);
+		prev = cbu32_insert(root, &key->node);
 		if (prev == &key->node)
 			return prev; // was properly inserted
 		/* otherwise was already there, let's try to remove it */
-		ret = cba_delete_u32(root, prev);
+		ret = cbu32_delete(root, prev);
 		if (ret != prev) {
 			/* was not properly removed either: THIS IS A BUG! */
 			printf("failed to insert %p(%u) because %p has the same key and could not be removed because returns %p\n",
@@ -102,16 +102,16 @@ int main(int argc, char **argv)
 	if (test == 0) {
 		while (count--) {
 			v = rnd32() & mask;
-			old = cba_lookup_u32(&cba_root, v);
+			old = cbu32_lookup(&cba_root, v);
 			if (old) {
-				if (cba_delete_u32(&cba_root, old) != old)
+				if (cbu32_delete(&cba_root, old) != old)
 					abort();
 				free(container_of(old, struct key, node));
 			}
 			else {
 				key = calloc(1, sizeof(*key));
 				key->key = v;
-				old = cba_insert_u32(&cba_root, &key->node);
+				old = cbu32_insert(&cba_root, &key->node);
 				if (old != &key->node)
 					abort();
 			}
@@ -119,16 +119,16 @@ int main(int argc, char **argv)
 	} else if (test == 1) {
 		while (count--) {
 			v = rnd32() & mask;
-			old = cba_lookup_u32(&cba_root, v);
+			old = cbu32_lookup(&cba_root, v);
 			if (old) {
-				if (cba_delete_u32(&cba_root, old) != old)
+				if (cbu32_delete(&cba_root, old) != old)
 					abort();
 				free(container_of(old, struct key, node));
 			}
 
 			key = calloc(1, sizeof(*key));
 			key->key = v;
-			old = cba_insert_u32(&cba_root, &key->node);
+			old = cbu32_insert(&cba_root, &key->node);
 			if (old != &key->node)
 				abort();
 
@@ -138,7 +138,7 @@ int main(int argc, char **argv)
 				int len;
 
 				len = snprintf(cmd, sizeof(cmd), "%s %d/%d : %p %d\n", orig_argv, round, round+count, old, v);
-				cbau32_default_dump(&cba_root, len < sizeof(cmd) ? cmd : orig_argv, old);
+				cbu32_default_dump(&cba_root, len < sizeof(cmd) ? cmd : orig_argv, old);
 				round++;
 			}
 		}
@@ -146,21 +146,21 @@ int main(int argc, char **argv)
 		while (count--) {
 			v = rnd32() & mask;
 			if (!count && debug > 2)
-				cbau32_default_dump(&cba_root, "step1", 0);
-			old = cba_pick_u32(&cba_root, v);
+				cbu32_default_dump(&cba_root, "step1", 0);
+			old = cbu32_pick(&cba_root, v);
 			if (!count && debug > 2)
-				cbau32_default_dump(&cba_root, "step2", 0);
+				cbu32_default_dump(&cba_root, "step2", 0);
 			back = old;
 			while (old) {
 				if (old && !count && debug > 2)
-					cbau32_default_dump(&cba_root, "step3", 0);
-				old = cba_pick_u32(&cba_root, v);
+					cbu32_default_dump(&cba_root, "step3", 0);
+				old = cbu32_pick(&cba_root, v);
 				//if (old)
 				//	printf("count=%d v=%u back=%p old=%p\n", count, v, back, old);
 			}
 
 			if (!count && debug > 2)
-				cbau32_default_dump(&cba_root, "step4", 0);
+				cbu32_default_dump(&cba_root, "step4", 0);
 
 			//abort();
 			//memset(old, 0, sizeof(*key));
@@ -169,25 +169,25 @@ int main(int argc, char **argv)
 
 			key = calloc(1, sizeof(*key));
 			key->key = v;
-			old = cba_insert_u32(&cba_root, &key->node);
+			old = cbu32_insert(&cba_root, &key->node);
 			if (old != &key->node)
 				abort();
 
 			if (!count && debug > 2)
-				cbau32_default_dump(&cba_root, "step5", 0);
+				cbu32_default_dump(&cba_root, "step5", 0);
 			else if (debug > 1) {
 				static int round;
 				char cmd[100];
 				int len;
 
 				len = snprintf(cmd, sizeof(cmd), "%s %d/%d : %p %d\n", orig_argv, round, round+count, old, v);
-				cbau32_default_dump(&cba_root, len < sizeof(cmd) ? cmd : orig_argv, old);
+				cbu32_default_dump(&cba_root, len < sizeof(cmd) ? cmd : orig_argv, old);
 				round++;
 			}
 		}
 	}
 
 	if (debug == 1)
-		cbau32_default_dump(&cba_root, orig_argv, 0);
+		cbu32_default_dump(&cba_root, orig_argv, 0);
 	return 0;
 }
