@@ -38,19 +38,19 @@ struct cba_node *cbu32_insert(struct cba_node **root, struct cba_node *node)
 {
 	uint32_t key = container_of(node, struct cba_node_key, node)->key.u32;
 
-	return _cbau_insert(root, node, CB_KT_U32, key, 0, NULL);
+	return _cbu_insert(root, node, CB_KT_U32, key, 0, NULL);
 }
 
 /* return the first node or NULL if not found. */
 struct cba_node *cbu32_first(struct cba_node **root)
 {
-	return _cbau_first(root, CB_KT_U32);
+	return _cbu_first(root, CB_KT_U32);
 }
 
 /* return the last node or NULL if not found. */
 struct cba_node *cbu32_last(struct cba_node **root)
 {
-	return _cbau_last(root, CB_KT_U32);
+	return _cbu_last(root, CB_KT_U32);
 }
 
 /* look up the specified key, and returns either the node containing it, or
@@ -58,7 +58,7 @@ struct cba_node *cbu32_last(struct cba_node **root)
  */
 struct cba_node *cbu32_lookup(struct cba_node **root, uint32_t key)
 {
-	return _cbau_lookup(root, CB_KT_U32, key, 0, NULL);
+	return _cbu_lookup(root, CB_KT_U32, key, 0, NULL);
 }
 
 /* search for the next node after the specified one, and return it, or NULL if
@@ -70,7 +70,7 @@ struct cba_node *cbu32_next(struct cba_node **root, struct cba_node *node)
 {
 	uint32_t key = container_of(node, struct cba_node_key, node)->key.u32;
 
-	return _cbau_next(root, CB_KT_U32, key, 0, NULL);
+	return _cbu_next(root, CB_KT_U32, key, 0, NULL);
 }
 
 /* search for the prev node before the specified one, and return it, or NULL if
@@ -82,7 +82,7 @@ struct cba_node *cbu32_prev(struct cba_node **root, struct cba_node *node)
 {
 	uint32_t key = container_of(node, struct cba_node_key, node)->key.u32;
 
-	return _cbau_prev(root, CB_KT_U32, key, 0, NULL);
+	return _cbu_prev(root, CB_KT_U32, key, 0, NULL);
 }
 
 /* look up the specified node with its key and deletes it if found, and in any
@@ -92,7 +92,7 @@ struct cba_node *cbu32_delete(struct cba_node **root, struct cba_node *node)
 {
 	uint32_t key = container_of(node, struct cba_node_key, node)->key.u32;
 
-	return _cbau_delete(root, node, CB_KT_U32, key, 0, NULL);
+	return _cbu_delete(root, node, CB_KT_U32, key, 0, NULL);
 }
 
 /* look up the specified key, and detaches it and returns it if found, or NULL
@@ -100,7 +100,7 @@ struct cba_node *cbu32_delete(struct cba_node **root, struct cba_node *node)
  */
 struct cba_node *cbu32_pick(struct cba_node **root, uint32_t key)
 {
-	return _cbau_delete(root, NULL, CB_KT_U32, key, 0, NULL);
+	return _cbu_delete(root, NULL, CB_KT_U32, key, 0, NULL);
 }
 
 ///* returns the highest node which is less than or equal to data. This is
