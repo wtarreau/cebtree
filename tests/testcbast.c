@@ -20,7 +20,7 @@ struct cb_node *cbus_last(struct cb_node **root);
 struct cb_node *cbus_next(struct cb_node **root, struct cb_node *node);
 struct cb_node *cbus_prev(struct cb_node **root, struct cb_node *node);
 
-struct cb_node *cba_root = NULL;
+struct cb_node *cb_root = NULL;
 
 struct key {
 	struct cb_node node;
@@ -190,16 +190,16 @@ int main(int argc, char **argv)
 		}
 		else
 			rnd64_to_str(key->key);
-		old = cbus_lookup(&cba_root, &key->key);
+		old = cbus_lookup(&cb_root, &key->key);
 		if (old)
 			fprintf(stderr, "Note: value %s already present at %p\n", key->key, old);
 
 	try_again:
-		prev = cbus_insert(&cba_root, &key->node);
+		prev = cbus_insert(&cb_root, &key->node);
 		if (prev != &key->node) {
 			fprintf(stderr, "Note: failed to insert %p('%s'), previous was at %p('%s')\n", &key->node, key->key, prev, ((const struct key*)prev)->key);
 
-			ret = cbus_delete(&cba_root, prev);
+			ret = cbus_delete(&cb_root, prev);
 			if (ret != prev) {
 				/* was not properly removed either: THIS IS A BUG! */
 				fprintf(stderr, "failed to remove %p (returned %p)\n", prev, ret);
@@ -226,7 +226,7 @@ int main(int argc, char **argv)
 				rnd64_to_str(key->key);
 				kptr = key->key;
 			}
-			old = cbus_lookup(&cba_root, kptr);
+			old = cbus_lookup(&cb_root, kptr);
 			if (old)
 				found++;
 		}
@@ -236,12 +236,12 @@ int main(int argc, char **argv)
 
 	/* now count elements */
 	found = 0;
-	ret = cbus_first(&cba_root);
+	ret = cbus_first(&cb_root);
 	if (debug)
 		printf("%d: ret=%p\n", __LINE__, ret);
 
 	while (ret) {
-		prev = cbus_next(&cba_root, ret);
+		prev = cbus_next(&cb_root, ret);
 		if (debug)
 			printf("   %4d: <%s>\n", found, ((const struct key *)ret)->key);
 		found++;
