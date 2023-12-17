@@ -9,7 +9,7 @@ CB_OBJ = $(CB_SRC:%.c=%.o)
 OBJS = $(CB_OBJ)
 
 TEST_DIR = tests
-TEST_BIN = $(addprefix $(TEST_DIR)/,stresscb testcb testcbub speedcbub testcbus speedcbus)
+TEST_BIN = $(addprefix $(TEST_DIR)/,stresscbu32 testcbu32 testcbub speedcbub testcbus speedcbus)
 
 all: test
 
