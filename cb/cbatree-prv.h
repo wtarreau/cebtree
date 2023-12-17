@@ -104,10 +104,12 @@ enum cba_walk_meth {
 
 enum cba_key_type {
 	CB_KT_NONE,    /* no key */
+	CB_KT_U32,     /* 32-bit unsigned word in key_u32 */
 	CB_KT_ST,      /* NUL-terminated string in key_ptr */
 };
 
 union cba_key_storage {
+	uint32_t u32;
 	unsigned char str[0];
 };
 
@@ -149,6 +151,7 @@ struct cba_node *_cbau_descend(struct cba_node **root,
 	struct cba_node **alt_l = NULL;
 	struct cba_node **alt_r = NULL;
 	struct cba_node *lparent;
+	uint32_t pxor32 = ~0; // previous xor between branches
 	int gpside = 0;   // side on the grand parent
 	int npside = 0;   // side on the node's parent
 	long lpside = 0;  // side on the leaf's parent
@@ -157,9 +160,12 @@ struct cba_node *_cbau_descend(struct cba_node **root,
 	int rlen = 0;     // right vs key matching length
 	int xlen = 0;     // left vs right matching length
 	int plen = 0;     // previous xlen
-	int found = 0;    // key was found
+	int found = 0;    // key was found (saves an extra strcmp for arrays)
 
 	switch (key_type) {
+	case CB_KT_U32:
+		CBADBG(">>> [%04d] meth=%d plen=%d key=u32(%#x)\n", __LINE__, meth, plen, key_u32);
+		break;
 	case CB_KT_ST:
 		CBADBG(">>> [%04d] meth=%d plen=%d key=str('%s')\n", __LINE__, meth, plen, (meth == CB_WM_KEY) ? (const char*)key_ptr : "");
 		break;
@@ -189,19 +195,11 @@ struct cba_node *_cbau_descend(struct cba_node **root,
 
 	/* the previous xor is initialized to the largest possible inter-branch
 	 * value so that it can never match on the first test as we want to use
-	 * it to detect a leaf vs node.
+	 * it to detect a leaf vs node. That's achieved with plen==0 for arrays
+	 * and pxorXX==~0 for scalars.
 	 */
 	while (1) {
 		p = container_of(*root, struct cba_node_key, node);
-
-		switch (key_type) {
-		case CB_KT_ST:
-			CBADBG("    [%04d] meth=%d plen=%d llen=%d rlen=%d xlen=%d p=%p pkey=str('%s') key=str('%s')\n", __LINE__, meth, plen, llen, rlen, xlen, p, (const char*)p->key.str, (meth == CB_WM_KEY) ? (const char*)key_ptr : "");
-			break;
-		default:
-			CBADBG("    [%04d] meth=%d plen=%d llen=%d rlen=%d xlen=%d p=%p\n", __LINE__, meth, plen, llen, rlen, xlen, p);
-			break;
-		}
 
 		/* let's prefetch the lower nodes for the keys */
 		__builtin_prefetch(p->node.b[0], 0);
@@ -211,9 +209,24 @@ struct cba_node *_cbau_descend(struct cba_node **root,
 		l = container_of(p->node.b[0], struct cba_node_key, node);
 		r = container_of(p->node.b[1], struct cba_node_key, node);
 
+		switch (key_type) {
+		case CB_KT_U32:
+			CBADBG("    [%04d] meth=%d pxor=%#x lxor=%#x rxor=%#x xxor=%#x p=%p pkey=u32(%#x) key=u32(%#x)\n", __LINE__, meth, pxor32, l->key.u32 ^ key_u32, r->key.u32 ^ key_u32, l->key.u32 ^ r->key.u32, p, p->key.u32, key_u32);
+			break;
+		case CB_KT_ST:
+			CBADBG("    [%04d] meth=%d plen=%d llen=%d rlen=%d xlen=%d p=%p pkey=str('%s') key=str('%s')\n", __LINE__, meth, plen, llen, rlen, xlen, p, (const char*)p->key.str, (meth == CB_WM_KEY) ? (const char*)key_ptr : "");
+			break;
+		default:
+			CBADBG("    [%04d] meth=%d plen=%d llen=%d rlen=%d xlen=%d p=%p\n", __LINE__, meth, plen, llen, rlen, xlen, p);
+			break;
+		}
+
 		/* two equal pointers identifies the nodeless leaf. */
 		if (l == r) {
 			switch (key_type) {
+			case CB_KT_U32:
+				CBADBG(" 1! [%04d] meth=%d pxor=%#x lxor=%#x rxor=%#x xxor=%#x p=%p pkey=u32(%#x) key=u32(%#x)\n", __LINE__, meth, pxor32, l->key.u32 ^ key_u32, r->key.u32 ^ key_u32, l->key.u32 ^ r->key.u32, p, p->key.u32, key_u32);
+				break;
 			case CB_KT_ST:
 				CBADBG(" 1! [%04d] meth=%d plen=%d llen=%d rlen=%d xlen=%d p=%p pkey=str('%s') key=str('%s')\n", __LINE__, meth, plen, llen, rlen, xlen, p, (const char*)p->key.str, (meth == CB_WM_KEY) ? (const char*)key_ptr : "");
 				break;
@@ -234,7 +247,11 @@ struct cba_node *_cbau_descend(struct cba_node **root,
 
 		/* next branch is calculated here when having a key */
 		if (meth == CB_WM_KEY) {
-			if (key_type == CB_KT_ST) {
+			if (key_type == CB_KT_U32) {
+				/* "found" is not used here */
+				brside = (key_u32 ^ l->key.u32) >= (key_u32 ^ r->key.u32);
+			}
+			else if (key_type == CB_KT_ST) {
 				/* Note that a negative length indicates an
 				 * equal value with the final zero reached, but
 				 * it is still needed to descend to find the
@@ -259,11 +276,18 @@ struct cba_node *_cbau_descend(struct cba_node **root,
 		 * necessarily is the one of an upper node, so what we're
 		 * seeing cannot be the node, hence it's the leaf. The case
 		 * where they're equal was already dealt with by the test at
-		 * the end of the loop (node points to self). For arrays and
-		 * strings, we store the previous equal length.
+		 * the end of the loop (node points to self). For scalar keys,
+		 * we directly store the last xor value in pxorXX. For arrays
+		 * and strings, instead we store the previous equal length.
 		 */
 
-		if (key_type == CB_KT_ST) {
+		if (key_type == CB_KT_U32) {
+			if ((l->key.u32 ^ r->key.u32) > pxor32) { // test using 2 4 6 4
+				CBADBG(" L! [%04d] meth=%d pxor=%#x lxor=%#x rxor=%#x xxor=%#x p=%p pkey=u32(%#x) key=u32(%#x)\n", __LINE__, meth, pxor32, l->key.u32 ^ key_u32, r->key.u32 ^ key_u32, l->key.u32 ^ r->key.u32, p, p->key.u32, key_u32);
+				break;
+			}
+		}
+		else if (key_type == CB_KT_ST) {
 			xlen = string_equal_bits(l->key.str, r->key.str, 0);
 			if (xlen < plen) {
 				/* this is a leaf. E.g. triggered using 2 4 6 4 */
@@ -290,9 +314,24 @@ struct cba_node *_cbau_descend(struct cba_node **root,
 		 *   - if we're deleting, it could be the key we were looking
 		 *     for so we have to check for it as long as it's still
 		 *     possible to keep a copy of the node's parent. <found> is
-		 *     set int this case.
+		 *     set int this case for expensive types.
 		 */
-		if (key_type == CB_KT_ST) {
+		if (key_type == CB_KT_U32) {
+			pxor32 = l->key.u32 ^ r->key.u32;
+			if ((key_u32 ^ l->key.u32) > pxor32 && (key_u32 ^ r->key.u32) > pxor32) {
+				CBADBG(" B! [%04d] meth=%d pxor=%#x lxor=%#x rxor=%#x xxor=%#x p=%p pkey=u32(%#x) key=u32(%#x)\n", __LINE__, meth, pxor32, l->key.u32 ^ key_u32, r->key.u32 ^ key_u32, l->key.u32 ^ r->key.u32, p, p->key.u32, key_u32);
+				break;
+			}
+
+			if (ret_npside || ret_nparent) {
+				if (key_u32 == p->key.u32) {
+					CBADBG(" F! [%04d] meth=%d pxor=%#x lxor=%#x rxor=%#x xxor=%#x p=%p pkey=u32(%#x) key=u32(%#x)\n", __LINE__, meth, pxor32, l->key.u32 ^ key_u32, r->key.u32 ^ key_u32, l->key.u32 ^ r->key.u32, p, p->key.u32, key_u32);
+					nparent = lparent;
+					npside  = lpside;
+				}
+			}
+		}
+		else if (key_type == CB_KT_ST) {
 			if ((unsigned)llen < (unsigned)xlen && (unsigned)rlen < (unsigned)xlen) {
 				CBADBG(" B! [%04d] meth=%d plen=%d llen=%d rlen=%d xlen=%d p=%p pkey=str('%s') key=str('%s')\n", __LINE__, meth, plen, llen, rlen, xlen, p, (const char*)p->key.str, (const char*)key_ptr);
 				break;
@@ -330,6 +369,11 @@ struct cba_node *_cbau_descend(struct cba_node **root,
 				brside = 0;
 
 			switch (key_type) {
+			case CB_KT_U32:
+				CBADBG(" -> [%04d] meth=%d pxor=%#x lft=%p,u32(%#x) rgt=%p,u32(%#x)\n", __LINE__, meth, pxor32,
+				       p->node.b[0], container_of(p->node.b[0], struct cba_node_key, node)->key.u32,
+				       p->node.b[1], container_of(p->node.b[1], struct cba_node_key, node)->key.u32);
+				break;
 			case CB_KT_ST:
 				CBADBG(" -> [%04d] meth=%d plen=%d lft=%p,str('%s') rgt=%p,str('%s')\n", __LINE__, meth, plen,
 				       p->node.b[0], container_of(p->node.b[0], struct cba_node_key, node)->key.str,
@@ -350,6 +394,11 @@ struct cba_node *_cbau_descend(struct cba_node **root,
 				brside = 1;
 
 			switch (key_type) {
+			case CB_KT_U32:
+				CBADBG(" -> [%04d] meth=%d pxor=%#x lft=%p,u32(%#x) rgt=%p,u32(%#x)\n", __LINE__, meth, pxor32,
+				       p->node.b[0], container_of(p->node.b[0], struct cba_node_key, node)->key.u32,
+				       p->node.b[1], container_of(p->node.b[1], struct cba_node_key, node)->key.u32);
+				break;
 			case CB_KT_ST:
 				CBADBG(" <- [%04d] meth=%d plen=%d lft=%p,str('%s') rgt=%p,str('%s')\n", __LINE__, meth, plen,
 				       p->node.b[0], container_of(p->node.b[0], struct cba_node_key, node)->key.str,
@@ -364,6 +413,9 @@ struct cba_node *_cbau_descend(struct cba_node **root,
 		if (p == container_of(*root, struct cba_node_key, node)) {
 			/* loops over itself, it's a leaf */
 			switch (key_type) {
+			case CB_KT_U32:
+				CBADBG(" B! [%04d] meth=%d pxor=%#x lxor=%#x rxor=%#x xxor=%#x p=%p pkey=u32(%#x) key=u32(%#x)\n", __LINE__, meth, pxor32, l->key.u32 ^ key_u32, r->key.u32 ^ key_u32, l->key.u32 ^ r->key.u32, p, p->key.u32, key_u32);
+				break;
 			case CB_KT_ST:
 				CBADBG(" ^! [%04d] meth=%d plen=%d llen=%d rlen=%d xlen=%d p=%p pkey=str('%s') key=str('%s')\n", __LINE__, meth, plen, llen, rlen, xlen, p, (const char*)p->key.str, (meth == CB_WM_KEY) ? (const char*)key_ptr : "");
 				break;
@@ -384,16 +436,28 @@ struct cba_node *_cbau_descend(struct cba_node **root,
 	 * guarantees these bits exist. Test with "100", "10", "1" to see where
 	 * this is needed.
 	 */
-	if (found || meth != CB_WM_KEY)
-		plen = -1;
-	else
-		plen = (llen > rlen) ? llen : rlen;
+	if (key_type == CB_KT_ST) {
+		if (found || meth != CB_WM_KEY)
+			plen = -1;
+		else
+			plen = (llen > rlen) ? llen : rlen;
+	}
 
 	/* we may have plen==-1 if we've got an exact match over the whole key length above */
 
 	/* update the pointers needed for modifications (insert, delete) */
-	if (ret_nside)
-		*ret_nside = (plen < 0) || strcmp(key_ptr + plen / 8, (const void *)p->key.str + plen / 8) >= 0;
+	if (ret_nside) {
+		switch (key_type) {
+		case CB_KT_U32:
+			*ret_nside = key_u32 >= p->key.u32;
+			break;
+		case CB_KT_ST:
+			*ret_nside = (plen < 0) || strcmp(key_ptr + plen / 8, (const void *)p->key.str + plen / 8) >= 0;
+			break;
+		default:
+			break;
+		}
+	}
 
 	if (ret_root)
 		*ret_root = root;
@@ -424,6 +488,9 @@ struct cba_node *_cbau_descend(struct cba_node **root,
 		*ret_alt_r = alt_r;
 
 	switch (key_type) {
+	case CB_KT_U32:
+		CBADBG("<<< [%04d] meth=%d pxor=%#x p=%p pkey=u32(%#x) key=u32(%#x)\n", __LINE__, meth, pxor32, p, p->key.u32, key_u32);
+		break;
 	case CB_KT_ST:
 		CBADBG("<<< [%04d] meth=%d plen=%d xlen=%d p=%p pkey=str('%s') key=str('%s')\n", __LINE__, meth, plen, xlen, p, (const char*)p->key.str, (meth == CB_WM_KEY) ? (const char*)key_ptr : "");
 		break;
@@ -437,8 +504,14 @@ struct cba_node *_cbau_descend(struct cba_node **root,
 	 * that the caller can decide what to do. For deletion, we also want to
 	 * return the pointer that's about to be deleted.
 	 */
-	if (plen < 0 || strcmp(key_ptr + plen / 8, (const void *)p->key.str + plen / 8) == 0)
-		return &p->node;
+	if (key_type == CB_KT_U32) {
+		if (key_u32 == p->key.u32)
+			return &p->node;
+	}
+	else if (key_type == CB_KT_ST) {
+		if (plen < 0 || strcmp(key_ptr + plen / 8, (const void *)p->key.str + plen / 8) == 0)
+			return &p->node;
+	}
 
 	/* lookups and deletes fail here */
 
