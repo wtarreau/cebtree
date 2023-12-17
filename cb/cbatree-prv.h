@@ -84,6 +84,7 @@
 #define _CBATREE_PRV_H
 
 #include <inttypes.h>
+#include <string.h>
 
 /* If DEBUG is set, we'll print additional debugging info during the descent */
 #ifdef DEBUG
