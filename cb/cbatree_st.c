@@ -131,7 +131,7 @@
  */
 struct cba_node *cba_insert_st(struct cba_node **root, struct cba_node *node)
 {
-	const void *key = &container_of(node, struct cba_st, node)->key;
+	const void *key = &container_of(node, struct cba_node_key, node)->key.str;
 
 	return _cbau_insert(root, node, CB_KT_ST, key);
 }
@@ -163,7 +163,7 @@ struct cba_node *cba_lookup_st(struct cba_node **root, const void *key)
  */
 struct cba_node *cba_next_st(struct cba_node **root, struct cba_node *node)
 {
-	const void *key = &container_of(node, struct cba_st, node)->key;
+	const void *key = &container_of(node, struct cba_node_key, node)->key.str;
 
 	return _cbau_next(root, CB_KT_ST, key);
 }
@@ -175,7 +175,7 @@ struct cba_node *cba_next_st(struct cba_node **root, struct cba_node *node)
  */
 struct cba_node *cba_prev_st(struct cba_node **root, struct cba_node *node)
 {
-	const void *key = &container_of(node, struct cba_st, node)->key;
+	const void *key = &container_of(node, struct cba_node_key, node)->key.str;
 
 	return _cbau_prev(root, CB_KT_ST, key);
 }
@@ -185,7 +185,7 @@ struct cba_node *cba_prev_st(struct cba_node **root, struct cba_node *node)
  */
 struct cba_node *cba_delete_st(struct cba_node **root, struct cba_node *node)
 {
-	const void *key = &container_of(node, struct cba_st, node)->key;
+	const void *key = &container_of(node, struct cba_node_key, node)->key.str;
 
 	return _cbau_delete(root, node, CB_KT_ST, key);
 }
@@ -202,19 +202,19 @@ struct cba_node *cba_pick_st(struct cba_node **root, const void *key)
 /* default node dump function */
 static void cbast_default_dump_node(struct cba_node *node, int level, const void *ctx)
 {
-	struct cba_st *key = container_of(node, struct cba_st, node);
+	struct cba_node_key *key = container_of(node, struct cba_node_key, node);
 	mb pxor, lxor, rxor;
 
 	/* xor of the keys of the two lower branches */
-	pxor = container_of(__cba_clrtag(node->b[0]), struct cba_st, node)->key ^
-		container_of(__cba_clrtag(node->b[1]), struct cba_st, node)->key;
+	pxor = container_of(__cba_clrtag(node->b[0]), struct cba_node_key, node)->key.str ^
+		container_of(__cba_clrtag(node->b[1]), struct cba_node_key, node)->key.str;
 
 	printf("  \"%lx_n\" [label=\"%lx\\nlev=%d\\nkey=%u\" fillcolor=\"lightskyblue1\"%s];\n",
-	       (long)node, (long)node, level, key->key, (ctx == node) ? " color=red" : "");
+	       (long)node, (long)node, level, key->key.str, (ctx == node) ? " color=red" : "");
 
 	/* xor of the keys of the left branch's lower branches */
-	lxor = container_of(__cba_clrtag(((struct cba_node*)__cba_clrtag(node->b[0]))->b[0]), struct cba_st, node)->key ^
-		container_of(__cba_clrtag(((struct cba_node*)__cba_clrtag(node->b[0]))->b[1]), struct cba_st, node)->key;
+	lxor = container_of(__cba_clrtag(((struct cba_node*)__cba_clrtag(node->b[0]))->b[0]), struct cba_node_key, node)->key.str ^
+		container_of(__cba_clrtag(((struct cba_node*)__cba_clrtag(node->b[0]))->b[1]), struct cba_node_key, node)->key.str;
 
 	printf("  \"%lx_n\" -> \"%lx_%c\" [label=\"L\" arrowsize=0.66 %s];\n",
 	       (long)node, (long)__cba_clrtag(node->b[0]),
@@ -222,8 +222,8 @@ static void cbast_default_dump_node(struct cba_node *node, int level, const void
 	       (node == __cba_clrtag(node->b[0])) ? " dir=both" : "");
 
 	/* xor of the keys of the right branch's lower branches */
-	rxor = container_of(__cba_clrtag(((struct cba_node*)__cba_clrtag(node->b[1]))->b[0]), struct cba_st, node)->key ^
-		container_of(__cba_clrtag(((struct cba_node*)__cba_clrtag(node->b[1]))->b[1]), struct cba_st, node)->key;
+	rxor = container_of(__cba_clrtag(((struct cba_node*)__cba_clrtag(node->b[1]))->b[0]), struct cba_node_key, node)->key.str ^
+		container_of(__cba_clrtag(((struct cba_node*)__cba_clrtag(node->b[1]))->b[1]), struct cba_node_key, node)->key.str;
 
 	printf("  \"%lx_n\" -> \"%lx_%c\" [label=\"R\" arrowsize=0.66 %s];\n",
 	       (long)node, (long)__cba_clrtag(node->b[1]),
@@ -234,14 +234,14 @@ static void cbast_default_dump_node(struct cba_node *node, int level, const void
 /* default leaf dump function */
 static void cbast_default_dump_leaf(struct cba_node *node, int level, const void *ctx)
 {
-	struct cba_st *key = container_of(node, struct cba_st, node);
+	struct cba_node_key *key = container_of(node, struct cba_node_key, node);
 
 	if (node->b[0] == node->b[1])
 		printf("  \"%lx_l\" [label=\"%lx\\nlev=%d\\nkey=%u\\n\" fillcolor=\"green\"%s];\n",
-		       (long)node, (long)node, level, key->key, (ctx == node) ? " color=red" : "");
+		       (long)node, (long)node, level, key->key.str, (ctx == node) ? " color=red" : "");
 	else
 		printf("  \"%lx_l\" [label=\"%lx\\nlev=%d\\nkey=%u\\n\" fillcolor=\"yellow\"%s];\n",
-		       (long)node, (long)node, level, key->key, (ctx == node) ? " color=red" : "");
+		       (long)node, (long)node, level, key->key.str, (ctx == node) ? " color=red" : "");
 }
 
 /* Dumps a tree through the specified callbacks. */
@@ -294,7 +294,7 @@ void *cba_dump_tree_st(struct cba_node *node, mb pxor, void *last,
 		return cba_dump_tree_st(node, 0, last, -1, node_dump, leaf_dump, ctx);
 	}
 
-	xor = ((struct cba_st*)node->b[0])->key ^ ((struct cba_st*)node->b[1])->key;
+	xor = ((struct cba_node_key*)node->b[0])->key.str ^ ((struct cba_node_key*)node->b[1])->key.str;
 	if (pxor && xor >= pxor) {
 		/* that's a leaf */
 		if (leaf_dump)
@@ -317,7 +317,7 @@ void *cba_dump_tree_st(struct cba_node *node, mb pxor, void *last,
 	return cba_dump_tree_st(node->b[1], xor, last, level + 1, node_dump, leaf_dump, ctx);
 }
 
-/* dumps a cba_st tree using the default functions above. If a node matches
+/* dumps a cba_node_key tree using the default functions above. If a node matches
  * <ctx>, this one will be highlighted in red.
  */
 void cbast_default_dump(struct cba_node **cba_root, const char *label, const void *ctx)
