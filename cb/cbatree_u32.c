@@ -24,69 +24,11 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-
-/*
- * These trees are optimized for adding the minimalest overhead to the stored
- * data. This version uses the node's pointer as the key, for the purpose of
- * quickly finding its neighbours.
- *
- * A few properties :
- * - the xor between two branches of a node cannot be zero since unless the two
- *   branches are duplicate keys
- * - the xor between two nodes has *at least* the split bit set, possibly more
- * - the split bit is always strictly smaller for a node than for its parent,
- *   which implies that the xor between the keys of the lowest level node is
- *   always smaller than the xor between a higher level node. Hence the xor
- *   between the branches of a regular leaf is always strictly larger than the
- *   xor of its parent node's branches if this node is different, since the
- *   leaf is associated with a higher level node which has at least one higher
- *   level branch. The first leaf doesn't validate this but is handled by the
- *   rules below.
- * - during the descent, the node corresponding to a leaf is always visited
- *   before the leaf, unless it's the first inserted, nodeless leaf.
- * - the first key is the only one without any node, and it has both its
- *   branches pointing to itself during insertion to detect it (i.e. xor==0).
- * - a leaf is always present as a node on the path from the root, except for
- *   the inserted first key which has no node, and is recognizable by its two
- *   branches pointing to itself.
- * - a consequence of the rules above is that a non-first leaf appearing below
- *   a node will necessarily have an associated node with a split bit equal to
- *   or greater than the node's split bit.
- * - another consequence is that below a node, the split bits are different for
- *   each branches since both of them are already present above the node, thus
- *   at different levels, so their respective XOR values will be different.
- * - since all nodes in a given path have a different split bit, if a leaf has
- *   the same split bit as its parent node, it is necessary its associated leaf
- *
- * When descending along the tree, it is possible to know that a search key is
- * not present, because its XOR with both of the branches is stricly higher
- * than the inter-branch XOR. The reason is simple : the inter-branch XOR will
- * have its highest bit set indicating the split bit. Since it's the bit that
- * differs between the two branches, the key cannot have it both set and
- * cleared when comparing to the branch values. So xoring the key with both
- * branches will emit a higher bit only when the key's bit differs from both
- * branches' similar bit. Thus, the following equation :
- *      (XOR(key, L) > XOR(L, R)) && (XOR(key, R) > XOR(L, R))
- * is only true when the key should be placed above that node. Since the key
- * has a higher bit which differs from the node, either it has it set and the
- * node has it clear (same for both branches), or it has it clear and the node
- * has it set for both branches. For this reason it's enough to compare the key
- * with any node when the equation above is true, to know if it ought to be
- * present on the left or on the right side. This is useful for insertion and
- * for range lookups.
- */
-
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "cbatree.h"
 #include "cbatree-prv.h"
-
-/* this structure is aliased to the common cba node during u32 operations */
-struct cba_u32 {
-	struct cba_node node;
-	u32 key;
-};
 
 /* Inserts node <node> into unique tree <tree> based on its key that
  * immediately follows the node. Returns the inserted node or the one
@@ -360,19 +302,19 @@ struct cba_node *cba_pick_u32(struct cba_node **root, uint32_t key)
 /* default node dump function */
 static void cbau32_default_dump_node(struct cba_node *node, int level, const void *ctx)
 {
-	struct cba_u32 *key = container_of(node, struct cba_u32, node);
+	struct cba_node_key *key = container_of(node, struct cba_node_key, node);
 	u32 pxor, lxor, rxor;
 
 	/* xor of the keys of the two lower branches */
-	pxor = container_of(__cba_clrtag(node->b[0]), struct cba_u32, node)->key ^
-		container_of(__cba_clrtag(node->b[1]), struct cba_u32, node)->key;
+	pxor = container_of(__cba_clrtag(node->b[0]), struct cba_node_key, node)->key.u32 ^
+		container_of(__cba_clrtag(node->b[1]), struct cba_node_key, node)->key.u32;
 
 	printf("  \"%lx_n\" [label=\"%lx\\nlev=%d bit=%d\\nkey=%u\" fillcolor=\"lightskyblue1\"%s];\n",
-	       (long)node, (long)node, level, flsnz(pxor) - 1, key->key, (ctx == node) ? " color=red" : "");
+	       (long)node, (long)node, level, flsnz(pxor) - 1, key->key.u32, (ctx == node) ? " color=red" : "");
 
 	/* xor of the keys of the left branch's lower branches */
-	lxor = container_of(__cba_clrtag(((struct cba_node*)__cba_clrtag(node->b[0]))->b[0]), struct cba_u32, node)->key ^
-		container_of(__cba_clrtag(((struct cba_node*)__cba_clrtag(node->b[0]))->b[1]), struct cba_u32, node)->key;
+	lxor = container_of(__cba_clrtag(((struct cba_node*)__cba_clrtag(node->b[0]))->b[0]), struct cba_node_key, node)->key.u32 ^
+		container_of(__cba_clrtag(((struct cba_node*)__cba_clrtag(node->b[0]))->b[1]), struct cba_node_key, node)->key.u32;
 
 	printf("  \"%lx_n\" -> \"%lx_%c\" [label=\"L\" arrowsize=0.66 %s];\n",
 	       (long)node, (long)__cba_clrtag(node->b[0]),
@@ -380,8 +322,8 @@ static void cbau32_default_dump_node(struct cba_node *node, int level, const voi
 	       (node == __cba_clrtag(node->b[0])) ? " dir=both" : "");
 
 	/* xor of the keys of the right branch's lower branches */
-	rxor = container_of(__cba_clrtag(((struct cba_node*)__cba_clrtag(node->b[1]))->b[0]), struct cba_u32, node)->key ^
-		container_of(__cba_clrtag(((struct cba_node*)__cba_clrtag(node->b[1]))->b[1]), struct cba_u32, node)->key;
+	rxor = container_of(__cba_clrtag(((struct cba_node*)__cba_clrtag(node->b[1]))->b[0]), struct cba_node_key, node)->key.u32 ^
+		container_of(__cba_clrtag(((struct cba_node*)__cba_clrtag(node->b[1]))->b[1]), struct cba_node_key, node)->key.u32;
 
 	printf("  \"%lx_n\" -> \"%lx_%c\" [label=\"R\" arrowsize=0.66 %s];\n",
 	       (long)node, (long)__cba_clrtag(node->b[1]),
@@ -392,19 +334,19 @@ static void cbau32_default_dump_node(struct cba_node *node, int level, const voi
 /* default leaf dump function */
 static void cbau32_default_dump_leaf(struct cba_node *node, int level, const void *ctx)
 {
-	struct cba_u32 *key = container_of(node, struct cba_u32, node);
+	struct cba_node_key *key = container_of(node, struct cba_node_key, node);
 	u32 pxor;
 
 	/* xor of the keys of the two lower branches */
-	pxor = container_of(__cba_clrtag(node->b[0]), struct cba_u32, node)->key ^
-		container_of(__cba_clrtag(node->b[1]), struct cba_u32, node)->key;
+	pxor = container_of(__cba_clrtag(node->b[0]), struct cba_node_key, node)->key.u32 ^
+		container_of(__cba_clrtag(node->b[1]), struct cba_node_key, node)->key.u32;
 
 	if (node->b[0] == node->b[1])
 		printf("  \"%lx_l\" [label=\"%lx\\nlev=%d\\nkey=%u\\n\" fillcolor=\"green\"%s];\n",
-		       (long)node, (long)node, level, key->key, (ctx == node) ? " color=red" : "");
+		       (long)node, (long)node, level, key->key.u32, (ctx == node) ? " color=red" : "");
 	else
 		printf("  \"%lx_l\" [label=\"%lx\\nlev=%d bit=%d\\nkey=%u\\n\" fillcolor=\"yellow\"%s];\n",
-		       (long)node, (long)node, level, flsnz(pxor) - 1, key->key, (ctx == node) ? " color=red" : "");
+		       (long)node, (long)node, level, flsnz(pxor) - 1, key->key.u32, (ctx == node) ? " color=red" : "");
 }
 
 /* Dumps a tree through the specified callbacks. */
@@ -457,7 +399,7 @@ void *cba_dump_tree_u32(struct cba_node *node, u32 pxor, void *last,
 		return cba_dump_tree_u32(node, 0, last, -1, node_dump, leaf_dump, ctx);
 	}
 
-	xor = ((struct cba_u32*)node->b[0])->key ^ ((struct cba_u32*)node->b[1])->key;
+	xor = ((struct cba_node_key*)node->b[0])->key.u32 ^ ((struct cba_node_key*)node->b[1])->key.u32;
 	if (pxor && xor >= pxor) {
 		/* that's a leaf */
 		if (leaf_dump)
@@ -480,7 +422,7 @@ void *cba_dump_tree_u32(struct cba_node *node, u32 pxor, void *last,
 	return cba_dump_tree_u32(node->b[1], xor, last, level + 1, node_dump, leaf_dump, ctx);
 }
 
-/* dumps a cba_u32 tree using the default functions above. If a node matches
+/* dumps a cba_node_key tree using the default functions above. If a node matches
  * <ctx>, this one will be highlighted in red.
  */
 void cbau32_default_dump(struct cba_node **cba_root, const char *label, const void *ctx)
