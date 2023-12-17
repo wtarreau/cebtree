@@ -88,9 +88,9 @@
 
 /* If DEBUG is set, we'll print additional debugging info during the descent */
 #ifdef DEBUG
-#define CBADBG(x, ...) fprintf(stderr, x, ##__VA_ARGS__)
+#define CBDBG(x, ...) fprintf(stderr, x, ##__VA_ARGS__)
 #else
-#define CBADBG(x, ...) do { } while (0)
+#define CBDBG(x, ...) do { } while (0)
 #endif
 
 
@@ -172,19 +172,19 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 
 	switch (key_type) {
 	case CB_KT_U32:
-		CBADBG(">>> [%04d] meth=%d plen=%ld key=u32(%#x)\n", __LINE__, meth, (long)plen, key_u32);
+		CBDBG(">>> [%04d] meth=%d plen=%ld key=u32(%#x)\n", __LINE__, meth, (long)plen, key_u32);
 		break;
 	case CB_KT_U64:
-		CBADBG(">>> [%04d] meth=%d plen=%ld key=u64(%#llx)\n", __LINE__, meth, (long)plen, (unsigned long long)key_u64);
+		CBDBG(">>> [%04d] meth=%d plen=%ld key=u64(%#llx)\n", __LINE__, meth, (long)plen, (unsigned long long)key_u64);
 		break;
 	case CB_KT_MB:
-		CBADBG(">>> [%04d] meth=%d plen=%ld key=mb(%llu@%p)\n", __LINE__, meth, (long)plen, (unsigned long long)key_u64, key_ptr);
+		CBDBG(">>> [%04d] meth=%d plen=%ld key=mb(%llu@%p)\n", __LINE__, meth, (long)plen, (unsigned long long)key_u64, key_ptr);
 		break;
 	case CB_KT_ST:
-		CBADBG(">>> [%04d] meth=%d plen=%ld key=str('%s')\n", __LINE__, meth, (long)plen, (meth == CB_WM_KEY) ? (const char*)key_ptr : "");
+		CBDBG(">>> [%04d] meth=%d plen=%ld key=str('%s')\n", __LINE__, meth, (long)plen, (meth == CB_WM_KEY) ? (const char*)key_ptr : "");
 		break;
 	default:
-		CBADBG(">>> [%04d] meth=%d plen=%ld\n", __LINE__, meth, plen);
+		CBDBG(">>> [%04d] meth=%d plen=%ld\n", __LINE__, meth, plen);
 		break;
 	}
 
@@ -225,19 +225,19 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 
 		switch (key_type) {
 		case CB_KT_U32:
-			CBADBG("    [%04d] meth=%d pxor=%#x lxor=%#x rxor=%#x xxor=%#x p=%p pkey=u32(%#x) key=u32(%#x)\n", __LINE__, meth, pxor32, l->key.u32 ^ key_u32, r->key.u32 ^ key_u32, l->key.u32 ^ r->key.u32, p, p->key.u32, key_u32);
+			CBDBG("    [%04d] meth=%d pxor=%#x lxor=%#x rxor=%#x xxor=%#x p=%p pkey=u32(%#x) key=u32(%#x)\n", __LINE__, meth, pxor32, l->key.u32 ^ key_u32, r->key.u32 ^ key_u32, l->key.u32 ^ r->key.u32, p, p->key.u32, key_u32);
 			break;
 		case CB_KT_U64:
-			CBADBG("    [%04d] meth=%d pxor=%#llx lxor=%#llx rxor=%#llx xxor=%#llx p=%p pkey=u64(%#llx) key=u64(%#llx)\n", __LINE__, meth, (unsigned long long)pxor64, (unsigned long long)(l->key.u64 ^ key_u64), (unsigned long long)(r->key.u64 ^ key_u64), (unsigned long long)(l->key.u64 ^ r->key.u64), p, (unsigned long long)p->key.u64, (unsigned long long)key_u64);
+			CBDBG("    [%04d] meth=%d pxor=%#llx lxor=%#llx rxor=%#llx xxor=%#llx p=%p pkey=u64(%#llx) key=u64(%#llx)\n", __LINE__, meth, (unsigned long long)pxor64, (unsigned long long)(l->key.u64 ^ key_u64), (unsigned long long)(r->key.u64 ^ key_u64), (unsigned long long)(l->key.u64 ^ r->key.u64), p, (unsigned long long)p->key.u64, (unsigned long long)key_u64);
 			break;
 		case CB_KT_MB:
-			CBADBG("    [%04d] meth=%d plen=%ld llen=%ld rlen=%ld xlen=%ld p=%p pkey=mb(%p) key=mb(%p)\n", __LINE__, meth, (long)plen, (long)llen, (long)rlen, (long)xlen, p, p->key.mb, key_ptr);
+			CBDBG("    [%04d] meth=%d plen=%ld llen=%ld rlen=%ld xlen=%ld p=%p pkey=mb(%p) key=mb(%p)\n", __LINE__, meth, (long)plen, (long)llen, (long)rlen, (long)xlen, p, p->key.mb, key_ptr);
 			break;
 		case CB_KT_ST:
-			CBADBG("    [%04d] meth=%d plen=%ld llen=%ld rlen=%ld xlen=%ld p=%p pkey=str('%s') key=str('%s')\n", __LINE__, meth, (long)plen, (long)llen, (long)rlen, (long)xlen, p, (const char*)p->key.str, (meth == CB_WM_KEY) ? (const char*)key_ptr : "");
+			CBDBG("    [%04d] meth=%d plen=%ld llen=%ld rlen=%ld xlen=%ld p=%p pkey=str('%s') key=str('%s')\n", __LINE__, meth, (long)plen, (long)llen, (long)rlen, (long)xlen, p, (const char*)p->key.str, (meth == CB_WM_KEY) ? (const char*)key_ptr : "");
 			break;
 		default:
-			CBADBG("    [%04d] meth=%d plen=%ld llen=%ld rlen=%ld xlen=%ld p=%p\n", __LINE__, meth, (long)plen, (long)llen, (long)rlen, (long)xlen, p);
+			CBDBG("    [%04d] meth=%d plen=%ld llen=%ld rlen=%ld xlen=%ld p=%p\n", __LINE__, meth, (long)plen, (long)llen, (long)rlen, (long)xlen, p);
 			break;
 		}
 
@@ -245,19 +245,19 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 		if (l == r) {
 			switch (key_type) {
 			case CB_KT_U32:
-				CBADBG(" 1! [%04d] meth=%d pxor=%#x lxor=%#x rxor=%#x xxor=%#x p=%p pkey=u32(%#x) key=u32(%#x)\n", __LINE__, meth, pxor32, l->key.u32 ^ key_u32, r->key.u32 ^ key_u32, l->key.u32 ^ r->key.u32, p, p->key.u32, key_u32);
+				CBDBG(" 1! [%04d] meth=%d pxor=%#x lxor=%#x rxor=%#x xxor=%#x p=%p pkey=u32(%#x) key=u32(%#x)\n", __LINE__, meth, pxor32, l->key.u32 ^ key_u32, r->key.u32 ^ key_u32, l->key.u32 ^ r->key.u32, p, p->key.u32, key_u32);
 				break;
 			case CB_KT_U64:
-				CBADBG(" 1! [%04d] meth=%d pxor=%#llx lxor=%#llx rxor=%#llx xxor=%#llx p=%p pkey=u64(%#llx) key=u64(%#llx)\n", __LINE__, meth, (unsigned long long)pxor64, (unsigned long long)(l->key.u64 ^ key_u64), (unsigned long long)(r->key.u64 ^ key_u64), (unsigned long long)(l->key.u64 ^ r->key.u64), p, (unsigned long long)p->key.u64, (unsigned long long)key_u64);
+				CBDBG(" 1! [%04d] meth=%d pxor=%#llx lxor=%#llx rxor=%#llx xxor=%#llx p=%p pkey=u64(%#llx) key=u64(%#llx)\n", __LINE__, meth, (unsigned long long)pxor64, (unsigned long long)(l->key.u64 ^ key_u64), (unsigned long long)(r->key.u64 ^ key_u64), (unsigned long long)(l->key.u64 ^ r->key.u64), p, (unsigned long long)p->key.u64, (unsigned long long)key_u64);
 			break;
 			case CB_KT_MB:
-				CBADBG(" 1! [%04d] meth=%d plen=%ld llen=%ld rlen=%ld xlen=%ld p=%p pkey=mb(%p) key=mb(%p)\n", __LINE__, meth, (long)plen, (long)llen, (long)rlen, (long)xlen, p, p->key.mb, key_ptr);
+				CBDBG(" 1! [%04d] meth=%d plen=%ld llen=%ld rlen=%ld xlen=%ld p=%p pkey=mb(%p) key=mb(%p)\n", __LINE__, meth, (long)plen, (long)llen, (long)rlen, (long)xlen, p, p->key.mb, key_ptr);
 				break;
 			case CB_KT_ST:
-				CBADBG(" 1! [%04d] meth=%d plen=%ld llen=%ld rlen=%ld xlen=%ld p=%p pkey=str('%s') key=str('%s')\n", __LINE__, meth, (long)plen, (long)llen, (long)rlen, (long)xlen, p, (const char*)p->key.str, (meth == CB_WM_KEY) ? (const char*)key_ptr : "");
+				CBDBG(" 1! [%04d] meth=%d plen=%ld llen=%ld rlen=%ld xlen=%ld p=%p pkey=str('%s') key=str('%s')\n", __LINE__, meth, (long)plen, (long)llen, (long)rlen, (long)xlen, p, (const char*)p->key.str, (meth == CB_WM_KEY) ? (const char*)key_ptr : "");
 				break;
 			default:
-				CBADBG(" 1! [%04d] meth=%d plen=%ld llen=%ld rlen=%ld xlen=%ld p=%p\n", __LINE__, meth, (long)plen, (long)llen, (long)rlen, (long)xlen, p);
+				CBDBG(" 1! [%04d] meth=%d plen=%ld llen=%ld rlen=%ld xlen=%ld p=%p\n", __LINE__, meth, (long)plen, (long)llen, (long)rlen, (long)xlen, p);
 				break;
 			}
 			break;
@@ -321,13 +321,13 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 
 		if (key_type == CB_KT_U32) {
 			if ((l->key.u32 ^ r->key.u32) > pxor32) { // test using 2 4 6 4
-				CBADBG(" L! [%04d] meth=%d pxor=%#x lxor=%#x rxor=%#x xxor=%#x p=%p pkey=u32(%#x) key=u32(%#x)\n", __LINE__, meth, pxor32, l->key.u32 ^ key_u32, r->key.u32 ^ key_u32, l->key.u32 ^ r->key.u32, p, p->key.u32, key_u32);
+				CBDBG(" L! [%04d] meth=%d pxor=%#x lxor=%#x rxor=%#x xxor=%#x p=%p pkey=u32(%#x) key=u32(%#x)\n", __LINE__, meth, pxor32, l->key.u32 ^ key_u32, r->key.u32 ^ key_u32, l->key.u32 ^ r->key.u32, p, p->key.u32, key_u32);
 				break;
 			}
 		}
 		else if (key_type == CB_KT_U64) {
 			if ((l->key.u64 ^ r->key.u64) > pxor64) { // test using 2 4 6 4
-				CBADBG(" L! [%04d] meth=%d pxor=%#llx lxor=%#llx rxor=%#llx xxor=%#llx p=%p pkey=u64(%#llx) key=u64(%#llx)\n", __LINE__, meth, (unsigned long long)pxor64, (unsigned long long)(l->key.u64 ^ key_u64), (unsigned long long)(r->key.u64 ^ key_u64), (unsigned long long)(l->key.u64 ^ r->key.u64), p, (unsigned long long)p->key.u64, (unsigned long long)key_u64);
+				CBDBG(" L! [%04d] meth=%d pxor=%#llx lxor=%#llx rxor=%#llx xxor=%#llx p=%p pkey=u64(%#llx) key=u64(%#llx)\n", __LINE__, meth, (unsigned long long)pxor64, (unsigned long long)(l->key.u64 ^ key_u64), (unsigned long long)(r->key.u64 ^ key_u64), (unsigned long long)(l->key.u64 ^ r->key.u64), p, (unsigned long long)p->key.u64, (unsigned long long)key_u64);
 				break;
 			}
 		}
@@ -335,7 +335,7 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 			xlen = equal_bits(l->key.mb, r->key.mb, 0, key_u64 << 3);
 			if (xlen < plen) {
 				/* this is a leaf. E.g. triggered using 2 4 6 4 */
-				CBADBG(" L! [%04d] meth=%d plen=%ld llen=%ld rlen=%ld xlen=%ld p=%p pkey=mb(%p) key=mb(%p)\n", __LINE__, meth, (long)plen, (long)llen, (long)rlen, (long)xlen, p, p->key.mb, key_ptr);
+				CBDBG(" L! [%04d] meth=%d plen=%ld llen=%ld rlen=%ld xlen=%ld p=%p pkey=mb(%p) key=mb(%p)\n", __LINE__, meth, (long)plen, (long)llen, (long)rlen, (long)xlen, p, p->key.mb, key_ptr);
 				break;
 			}
 		}
@@ -343,7 +343,7 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 			xlen = string_equal_bits(l->key.str, r->key.str, 0);
 			if (xlen < plen) {
 				/* this is a leaf. E.g. triggered using 2 4 6 4 */
-				CBADBG(" L! [%04d] meth=%d plen=%ld llen=%ld rlen=%ld xlen=%ld p=%p pkey=str('%s') key=str('%s')\n", __LINE__, meth, (long)plen, (long)llen, (long)rlen, (long)xlen, p, (const char*)p->key.str, (meth == CB_WM_KEY) ? (const char*)key_ptr : "");
+				CBDBG(" L! [%04d] meth=%d plen=%ld llen=%ld rlen=%ld xlen=%ld p=%p pkey=str('%s') key=str('%s')\n", __LINE__, meth, (long)plen, (long)llen, (long)rlen, (long)xlen, p, (const char*)p->key.str, (meth == CB_WM_KEY) ? (const char*)key_ptr : "");
 				break;
 			}
 		}
@@ -371,13 +371,13 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 		if (key_type == CB_KT_U32) {
 			pxor32 = l->key.u32 ^ r->key.u32;
 			if ((key_u32 ^ l->key.u32) > pxor32 && (key_u32 ^ r->key.u32) > pxor32) {
-				CBADBG(" B! [%04d] meth=%d pxor=%#x lxor=%#x rxor=%#x xxor=%#x p=%p pkey=u32(%#x) key=u32(%#x)\n", __LINE__, meth, pxor32, l->key.u32 ^ key_u32, r->key.u32 ^ key_u32, l->key.u32 ^ r->key.u32, p, p->key.u32, key_u32);
+				CBDBG(" B! [%04d] meth=%d pxor=%#x lxor=%#x rxor=%#x xxor=%#x p=%p pkey=u32(%#x) key=u32(%#x)\n", __LINE__, meth, pxor32, l->key.u32 ^ key_u32, r->key.u32 ^ key_u32, l->key.u32 ^ r->key.u32, p, p->key.u32, key_u32);
 				break;
 			}
 
 			if (ret_npside || ret_nparent) {
 				if (key_u32 == p->key.u32) {
-					CBADBG(" F! [%04d] meth=%d pxor=%#x lxor=%#x rxor=%#x xxor=%#x p=%p pkey=u32(%#x) key=u32(%#x)\n", __LINE__, meth, pxor32, l->key.u32 ^ key_u32, r->key.u32 ^ key_u32, l->key.u32 ^ r->key.u32, p, p->key.u32, key_u32);
+					CBDBG(" F! [%04d] meth=%d pxor=%#x lxor=%#x rxor=%#x xxor=%#x p=%p pkey=u32(%#x) key=u32(%#x)\n", __LINE__, meth, pxor32, l->key.u32 ^ key_u32, r->key.u32 ^ key_u32, l->key.u32 ^ r->key.u32, p, p->key.u32, key_u32);
 					nparent = lparent;
 					npside  = lpside;
 				}
@@ -386,13 +386,13 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 		else if (key_type == CB_KT_U64) {
 			pxor64 = l->key.u64 ^ r->key.u64;
 			if ((key_u64 ^ l->key.u64) > pxor64 && (key_u64 ^ r->key.u64) > pxor64) {
-				CBADBG(" B! [%04d] meth=%d pxor=%#llx lxor=%#llx rxor=%#llx xxor=%#llx p=%p pkey=u64(%#llx) key=u64(%#llx)\n", __LINE__, meth, (unsigned long long)pxor64, (unsigned long long)(l->key.u64 ^ key_u64), (unsigned long long)(r->key.u64 ^ key_u64), (unsigned long long)(l->key.u64 ^ r->key.u64), p, (unsigned long long)p->key.u64, (unsigned long long)key_u64);
+				CBDBG(" B! [%04d] meth=%d pxor=%#llx lxor=%#llx rxor=%#llx xxor=%#llx p=%p pkey=u64(%#llx) key=u64(%#llx)\n", __LINE__, meth, (unsigned long long)pxor64, (unsigned long long)(l->key.u64 ^ key_u64), (unsigned long long)(r->key.u64 ^ key_u64), (unsigned long long)(l->key.u64 ^ r->key.u64), p, (unsigned long long)p->key.u64, (unsigned long long)key_u64);
 				break;
 			}
 
 			if (ret_npside || ret_nparent) {
 				if (key_u64 == p->key.u64) {
-					CBADBG(" F! [%04d] meth=%d pxor=%#llx lxor=%#llx rxor=%#llx xxor=%#llx p=%p pkey=u64(%#llx) key=u64(%#llx)\n", __LINE__, meth, (unsigned long long)pxor64, (unsigned long long)(l->key.u64 ^ key_u64), (unsigned long long)(r->key.u64 ^ key_u64), (unsigned long long)(l->key.u64 ^ r->key.u64), p, (unsigned long long)p->key.u64, (unsigned long long)key_u64);
+					CBDBG(" F! [%04d] meth=%d pxor=%#llx lxor=%#llx rxor=%#llx xxor=%#llx p=%p pkey=u64(%#llx) key=u64(%#llx)\n", __LINE__, meth, (unsigned long long)pxor64, (unsigned long long)(l->key.u64 ^ key_u64), (unsigned long long)(r->key.u64 ^ key_u64), (unsigned long long)(l->key.u64 ^ r->key.u64), p, (unsigned long long)p->key.u64, (unsigned long long)key_u64);
 					nparent = lparent;
 					npside  = lpside;
 				}
@@ -400,7 +400,7 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 		}
 		else if (key_type == CB_KT_MB) {
 			if (llen < xlen && rlen < xlen) {
-				CBADBG(" B! [%04d] meth=%d plen=%ld llen=%ld rlen=%ld xlen=%ld p=%p pkey=mb(%p) key=mb(%p)\n", __LINE__, meth, (long)plen, (long)llen, (long)rlen, (long)xlen, p, p->key.mb, key_ptr);
+				CBDBG(" B! [%04d] meth=%d plen=%ld llen=%ld rlen=%ld xlen=%ld p=%p pkey=mb(%p) key=mb(%p)\n", __LINE__, meth, (long)plen, (long)llen, (long)rlen, (long)xlen, p, p->key.mb, key_ptr);
 				break;
 			}
 
@@ -411,7 +411,7 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 					mlen = xlen;
 
 				if ((uint64_t)xlen / 8 == key_u64 || memcmp(key_ptr + mlen / 8, p->key.mb + mlen / 8, key_u64 - mlen / 8) == 0) {
-					CBADBG(" F! [%04d] meth=%d plen=%ld llen=%ld rlen=%ld xlen=%ld p=%p pkey=mb(%p) key=mb(%p)\n", __LINE__, meth, (long)plen, (long)llen, (long)rlen, (long)xlen, p, p->key.mb, key_ptr);
+					CBDBG(" F! [%04d] meth=%d plen=%ld llen=%ld rlen=%ld xlen=%ld p=%p pkey=mb(%p) key=mb(%p)\n", __LINE__, meth, (long)plen, (long)llen, (long)rlen, (long)xlen, p, p->key.mb, key_ptr);
 					nparent = lparent;
 					npside  = lpside;
 					found = 1;
@@ -420,7 +420,7 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 		}
 		else if (key_type == CB_KT_ST) {
 			if ((unsigned)llen < (unsigned)xlen && (unsigned)rlen < (unsigned)xlen) {
-				CBADBG(" B! [%04d] meth=%d plen=%ld llen=%ld rlen=%ld xlen=%ld p=%p pkey=str('%s') key=str('%s')\n", __LINE__, meth, (long)plen, (long)llen, (long)rlen, (long)xlen, p, (const char*)p->key.str, (const char*)key_ptr);
+				CBDBG(" B! [%04d] meth=%d plen=%ld llen=%ld rlen=%ld xlen=%ld p=%p pkey=str('%s') key=str('%s')\n", __LINE__, meth, (long)plen, (long)llen, (long)rlen, (long)xlen, p, (const char*)p->key.str, (const char*)key_ptr);
 				break;
 			}
 
@@ -432,7 +432,7 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 
 				if (strcmp(key_ptr + mlen / 8, (const void *)p->key.str + mlen / 8) == 0) {
 					/* strcmp() still needed. E.g. 1 2 3 4 10 11 4 3 2 1 10 11 fails otherwise */
-					CBADBG(" F! [%04d] meth=%d plen=%ld llen=%ld rlen=%ld xlen=%ld p=%p pkey=str('%s') key=str('%s')\n", __LINE__, meth, (long)plen, (long)llen, (long)rlen, (long)xlen, p, (const char*)p->key.str, (const char*)key_ptr);
+					CBDBG(" F! [%04d] meth=%d plen=%ld llen=%ld rlen=%ld xlen=%ld p=%p pkey=str('%s') key=str('%s')\n", __LINE__, meth, (long)plen, (long)llen, (long)rlen, (long)xlen, p, (const char*)p->key.str, (const char*)key_ptr);
 					nparent = lparent;
 					npside  = lpside;
 					found = 1;
@@ -457,27 +457,27 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 
 			switch (key_type) {
 			case CB_KT_U32:
-				CBADBG(" -> [%04d] meth=%d pxor=%#x lft=%p,u32(%#x) rgt=%p,u32(%#x)\n", __LINE__, meth, pxor32,
+				CBDBG(" -> [%04d] meth=%d pxor=%#x lft=%p,u32(%#x) rgt=%p,u32(%#x)\n", __LINE__, meth, pxor32,
 				       p->node.b[0], container_of(p->node.b[0], struct cb_node_key, node)->key.u32,
 				       p->node.b[1], container_of(p->node.b[1], struct cb_node_key, node)->key.u32);
 				break;
 			case CB_KT_U64:
-				CBADBG(" -> [%04d] meth=%d pxor=%#llx lft=%p,u64(%#llx) rgt=%p,u64(%#llx)\n", __LINE__, meth, (unsigned long long)pxor64,
+				CBDBG(" -> [%04d] meth=%d pxor=%#llx lft=%p,u64(%#llx) rgt=%p,u64(%#llx)\n", __LINE__, meth, (unsigned long long)pxor64,
 				       p->node.b[0], (unsigned long long)container_of(p->node.b[0], struct cb_node_key, node)->key.u64,
 				       p->node.b[1], (unsigned long long)container_of(p->node.b[1], struct cb_node_key, node)->key.u64);
 				break;
 			case CB_KT_MB:
-				CBADBG(" -> [%04d] meth=%d plen=%ld lft=%p,mb(%p) rgt=%p,mb(%p)\n", __LINE__, meth, (long)plen,
+				CBDBG(" -> [%04d] meth=%d plen=%ld lft=%p,mb(%p) rgt=%p,mb(%p)\n", __LINE__, meth, (long)plen,
 				       p->node.b[0], container_of(p->node.b[0], struct cb_node_key, node)->key.mb,
 				       p->node.b[1], container_of(p->node.b[1], struct cb_node_key, node)->key.mb);
 				break;
 			case CB_KT_ST:
-				CBADBG(" -> [%04d] meth=%d plen=%ld lft=%p,str('%s') rgt=%p,str('%s')\n", __LINE__, meth, (long)plen,
+				CBDBG(" -> [%04d] meth=%d plen=%ld lft=%p,str('%s') rgt=%p,str('%s')\n", __LINE__, meth, (long)plen,
 				       p->node.b[0], container_of(p->node.b[0], struct cb_node_key, node)->key.str,
 				       p->node.b[1], container_of(p->node.b[1], struct cb_node_key, node)->key.str);
 				break;
 			default:
-				CBADBG(" -> [%04d] meth=%d plen=%ld lft=%p rgt=%p\n", __LINE__, meth, (long)plen, p->node.b[0], p->node.b[1]);
+				CBDBG(" -> [%04d] meth=%d plen=%ld lft=%p rgt=%p\n", __LINE__, meth, (long)plen, p->node.b[0], p->node.b[1]);
 				break;
 			}
 		}
@@ -492,27 +492,27 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 
 			switch (key_type) {
 			case CB_KT_U32:
-				CBADBG(" -> [%04d] meth=%d pxor=%#x lft=%p,u32(%#x) rgt=%p,u32(%#x)\n", __LINE__, meth, pxor32,
+				CBDBG(" -> [%04d] meth=%d pxor=%#x lft=%p,u32(%#x) rgt=%p,u32(%#x)\n", __LINE__, meth, pxor32,
 				       p->node.b[0], container_of(p->node.b[0], struct cb_node_key, node)->key.u32,
 				       p->node.b[1], container_of(p->node.b[1], struct cb_node_key, node)->key.u32);
 				break;
 			case CB_KT_U64:
-				CBADBG(" -> [%04d] meth=%d pxor=%#llx lft=%p,u64(%#llx) rgt=%p,u64(%#llx)\n", __LINE__, meth, (unsigned long long)pxor64,
+				CBDBG(" -> [%04d] meth=%d pxor=%#llx lft=%p,u64(%#llx) rgt=%p,u64(%#llx)\n", __LINE__, meth, (unsigned long long)pxor64,
 				       p->node.b[0], (unsigned long long)container_of(p->node.b[0], struct cb_node_key, node)->key.u64,
 				       p->node.b[1], (unsigned long long)container_of(p->node.b[1], struct cb_node_key, node)->key.u64);
 				break;
 			case CB_KT_MB:
-				CBADBG(" -> [%04d] meth=%d plen=%ld lft=%p,mb(%p) rgt=%p,mb(%p)\n", __LINE__, meth, (long)plen,
+				CBDBG(" -> [%04d] meth=%d plen=%ld lft=%p,mb(%p) rgt=%p,mb(%p)\n", __LINE__, meth, (long)plen,
 				       p->node.b[0], container_of(p->node.b[0], struct cb_node_key, node)->key.mb,
 				       p->node.b[1], container_of(p->node.b[1], struct cb_node_key, node)->key.mb);
 				break;
 			case CB_KT_ST:
-				CBADBG(" <- [%04d] meth=%d plen=%ld lft=%p,str('%s') rgt=%p,str('%s')\n", __LINE__, meth, (long)plen,
+				CBDBG(" <- [%04d] meth=%d plen=%ld lft=%p,str('%s') rgt=%p,str('%s')\n", __LINE__, meth, (long)plen,
 				       p->node.b[0], container_of(p->node.b[0], struct cb_node_key, node)->key.str,
 				       p->node.b[1], container_of(p->node.b[1], struct cb_node_key, node)->key.str);
 				break;
 			default:
-				CBADBG(" <- [%04d] meth=%d plen=%ld lft=%p rgt=%p\n", __LINE__, meth, (long)plen, p->node.b[0], p->node.b[1]);
+				CBDBG(" <- [%04d] meth=%d plen=%ld lft=%p rgt=%p\n", __LINE__, meth, (long)plen, p->node.b[0], p->node.b[1]);
 				break;
 			}
 		}
@@ -521,16 +521,16 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 			/* loops over itself, it's a leaf */
 			switch (key_type) {
 			case CB_KT_U32:
-				CBADBG(" B! [%04d] meth=%d pxor=%#x lxor=%#x rxor=%#x xxor=%#x p=%p pkey=u32(%#x) key=u32(%#x)\n", __LINE__, meth, pxor32, l->key.u32 ^ key_u32, r->key.u32 ^ key_u32, l->key.u32 ^ r->key.u32, p, p->key.u32, key_u32);
+				CBDBG(" B! [%04d] meth=%d pxor=%#x lxor=%#x rxor=%#x xxor=%#x p=%p pkey=u32(%#x) key=u32(%#x)\n", __LINE__, meth, pxor32, l->key.u32 ^ key_u32, r->key.u32 ^ key_u32, l->key.u32 ^ r->key.u32, p, p->key.u32, key_u32);
 				break;
 			case CB_KT_U64:
-				CBADBG(" B! [%04d] meth=%d pxor=%#llx lxor=%#llx rxor=%#llx xxor=%#llx p=%p pkey=u64(%#llx) key=u64(%#llx)\n", __LINE__, meth, (unsigned long long)pxor64, (unsigned long long)(l->key.u64 ^ key_u64), (unsigned long long)(r->key.u64 ^ key_u64), (unsigned long long)(l->key.u64 ^ r->key.u64), p, (unsigned long long)p->key.u64, (unsigned long long)key_u64);
+				CBDBG(" B! [%04d] meth=%d pxor=%#llx lxor=%#llx rxor=%#llx xxor=%#llx p=%p pkey=u64(%#llx) key=u64(%#llx)\n", __LINE__, meth, (unsigned long long)pxor64, (unsigned long long)(l->key.u64 ^ key_u64), (unsigned long long)(r->key.u64 ^ key_u64), (unsigned long long)(l->key.u64 ^ r->key.u64), p, (unsigned long long)p->key.u64, (unsigned long long)key_u64);
 				break;
 			case CB_KT_ST:
-				CBADBG(" ^! [%04d] meth=%d plen=%ld llen=%ld rlen=%ld xlen=%ld p=%p pkey=str('%s') key=str('%s')\n", __LINE__, meth, (long)plen, (long)llen, (long)rlen, (long)xlen, p, (const char*)p->key.str, (meth == CB_WM_KEY) ? (const char*)key_ptr : "");
+				CBDBG(" ^! [%04d] meth=%d plen=%ld llen=%ld rlen=%ld xlen=%ld p=%p pkey=str('%s') key=str('%s')\n", __LINE__, meth, (long)plen, (long)llen, (long)rlen, (long)xlen, p, (const char*)p->key.str, (meth == CB_WM_KEY) ? (const char*)key_ptr : "");
 				break;
 			default:
-				CBADBG(" ^! [%04d] meth=%d plen=%ld llen=%ld rlen=%ld xlen=%ld p=%p\n", __LINE__, meth, (long)plen, (long)llen, (long)rlen, (long)xlen, p);
+				CBDBG(" ^! [%04d] meth=%d plen=%ld llen=%ld rlen=%ld xlen=%ld p=%p\n", __LINE__, meth, (long)plen, (long)llen, (long)rlen, (long)xlen, p);
 				break;
 			}
 			break;
@@ -605,19 +605,19 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 
 	switch (key_type) {
 	case CB_KT_U32:
-		CBADBG("<<< [%04d] meth=%d pxor=%#x p=%p pkey=u32(%#x) key=u32(%#x)\n", __LINE__, meth, pxor32, p, p->key.u32, key_u32);
+		CBDBG("<<< [%04d] meth=%d pxor=%#x p=%p pkey=u32(%#x) key=u32(%#x)\n", __LINE__, meth, pxor32, p, p->key.u32, key_u32);
 		break;
 	case CB_KT_U64:
-		CBADBG("<<< [%04d] meth=%d pxor=%#llx p=%p pkey=u64(%#llx) key=u64(%#llx)\n", __LINE__, meth, (unsigned long long)pxor64, p, (unsigned long long)p->key.u64, (unsigned long long)key_u64);
+		CBDBG("<<< [%04d] meth=%d pxor=%#llx p=%p pkey=u64(%#llx) key=u64(%#llx)\n", __LINE__, meth, (unsigned long long)pxor64, p, (unsigned long long)p->key.u64, (unsigned long long)key_u64);
 		break;
 	case CB_KT_MB:
-		CBADBG("<<< [%04d] meth=%d plen=%ld xlen=%ld p=%p pkey=mb(%p) key=mb(%p)\n", __LINE__, meth, (long)plen, (long)xlen, p, p->key.mb, key_ptr);
+		CBDBG("<<< [%04d] meth=%d plen=%ld xlen=%ld p=%p pkey=mb(%p) key=mb(%p)\n", __LINE__, meth, (long)plen, (long)xlen, p, p->key.mb, key_ptr);
 		break;
 	case CB_KT_ST:
-		CBADBG("<<< [%04d] meth=%d plen=%ld xlen=%ld p=%p pkey=str('%s') key=str('%s')\n", __LINE__, meth, (long)plen, (long)xlen, p, (const char*)p->key.str, (meth == CB_WM_KEY) ? (const char*)key_ptr : "");
+		CBDBG("<<< [%04d] meth=%d plen=%ld xlen=%ld p=%p pkey=str('%s') key=str('%s')\n", __LINE__, meth, (long)plen, (long)xlen, p, (const char*)p->key.str, (meth == CB_WM_KEY) ? (const char*)key_ptr : "");
 		break;
 	default:
-		CBADBG("<<< [%04d] meth=%d plen=%ld xlen=%ld p=%p\n", __LINE__, meth, (long)plen, (long)xlen, p);
+		CBDBG("<<< [%04d] meth=%d plen=%ld xlen=%ld p=%p\n", __LINE__, meth, (long)plen, (long)xlen, p);
 		break;
 	}
 
