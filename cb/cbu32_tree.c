@@ -27,8 +27,8 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "cbatree.h"
-#include "cbatree-prv.h"
+#include "cbtree.h"
+#include "cbtree-prv.h"
 
 /* Inserts node <node> into unique tree <tree> based on its key that
  * immediately follows the node. Returns the inserted node or the one

@@ -3,13 +3,13 @@ CFLAGS = -O3 -W -Wall -Wdeclaration-after-statement -Wno-unused-parameter -ggdb3
 COMMON_DIR = common
 
 CB_DIR = cb
-CB_SRC = $(wildcard $(CB_DIR)/cba*.c)
+CB_SRC = $(wildcard $(CB_DIR)/cb*.c)
 CB_OBJ = $(CB_SRC:%.c=%.o)
 
 OBJS = $(CB_OBJ)
 
 TEST_DIR = tests
-TEST_BIN = $(addprefix $(TEST_DIR)/,stresscba testcba testcbamb speedcbamb)
+TEST_BIN = $(addprefix $(TEST_DIR)/,stresscb testcb testcbub speedcbub testcbus speedcbus)
 
 all: test
 

@@ -1,7 +1,7 @@
 /*
  * Compact Binary Trees - exported functions for operations on node's address
  *
- * Copyright (C) 2014-2021 Willy Tarreau - w@1wt.eu
+ * Copyright (C) 2014-2023 Willy Tarreau - w@1wt.eu
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
@@ -24,8 +24,8 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef _CBATREE_H
-#define _CBATREE_H
+#ifndef _CBTREE_H
+#define _CBTREE_H
 
 #include <stddef.h>
 #include "../common/tools.h"
@@ -111,4 +111,4 @@ static inline size_t __cba_intptr(struct cb_node *tree)
 //                    void (*node_dump)(struct cb_node *node, int level),
 //                    void (*leaf_dump)(struct cb_node *node, int level));
 //
-#endif /* _CBATREE_H */
+#endif /* _CBTREE_H */

@@ -80,8 +80,8 @@
  * for range lookups.
  */
 
-#ifndef _CBATREE_PRV_H
-#define _CBATREE_PRV_H
+#ifndef _CBTREE_PRV_H
+#define _CBTREE_PRV_H
 
 #include <inttypes.h>
 #include <string.h>
@@ -864,4 +864,4 @@ done:
 }
 
 
-#endif /* _CBATREE_PRV_H */
+#endif /* _CBTREE_PRV_H */

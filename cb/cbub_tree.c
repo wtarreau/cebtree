@@ -1,7 +1,7 @@
 /*
  * Compact Binary Trees - exported functions for operations on mb keys
  *
- * Copyright (C) 2014-2021 Willy Tarreau - w@1wt.eu
+ * Copyright (C) 2014-2023 Willy Tarreau - w@1wt.eu
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
@@ -28,8 +28,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "cbatree.h"
-#include "cbatree-prv.h"
+#include "cbtree.h"
+#include "cbtree-prv.h"
 
 /* Inserts node <node> into unique tree <tree> based on its key that
  * immediately follows the node and for <len> bytes. Returns the
