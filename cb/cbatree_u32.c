@@ -1,7 +1,7 @@
 /*
  * Compact Binary Trees - exported functions for operations on u32 keys
  *
- * Copyright (C) 2014-2021 Willy Tarreau - w@1wt.eu
+ * Copyright (C) 2014-2023 Willy Tarreau - w@1wt.eu
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
@@ -80,6 +80,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "cbatree.h"
+#include "cbatree-prv.h"
 
 /* this structure is aliased to the common cba node during u32 operations */
 struct cba_u32 {
@@ -87,239 +88,59 @@ struct cba_u32 {
 	u32 key;
 };
 
-/* Generic tree descent function. It must absolutely be inlined so that the
- * compiler can eliminate the tests related to the various return pointers,
- * which must either point to a local variable in the caller, or be NULL.
- * It must not be called with an empty tree, it's the caller business to
- * deal with this special case. It returns in ret_root the location of the
- * pointer to the leaf (i.e. where we have to insert ourselves). The integer
- * pointed to by ret_nside will contain the side the leaf should occupy at
- * its own node, with the sibling being *ret_root.
+/* Inserts node <node> into unique tree <tree> based on its key that
+ * immediately follows the node. Returns the inserted node or the one
+ * that already contains the same key.
  */
-static inline __attribute__((always_inline))
-struct cba_node *cbau_descend_u32(/*const*/ struct cba_node **root,
-				  /*const*/ struct cba_node *node,
-				  int *ret_nside,
-				  struct cba_node ***ret_root,
-				  struct cba_node **ret_lparent,
-				  int *ret_lpside,
-				  struct cba_node **ret_nparent,
-				  int *ret_npside,
-				  struct cba_node **ret_gparent,
-				  int *ret_gpside)
-{
-	struct cba_u32 *p, *l, *r;
-	u32 pxor = ~0; // make sure we don't run the first test.
-	u32 key = container_of(node, struct cba_u32, node)->key;
-	struct cba_node *gparent = NULL;
-	struct cba_node *nparent = NULL;
-	struct cba_node *lparent;
-	int gpside = 0; // side on the grand parent
-	int npside = 0;  // side on the node's parent
-	long lpside = 0;  // side on the leaf's parent
-	long brside = 0;  // branch side when descending
-
-	/* When exiting the loop, pxor will be zero for nodes and first leaf,
-	 * or non-zero for a leaf.
-	 */
-
-	/* the parent will be the (possibly virtual) node so that
-	 * &lparent->l == root.
-	 */
-	lparent = container_of(root, struct cba_node, b[0]);
-	gparent = nparent = lparent;
-
-	/* the previous xor is initialized to the largest possible inter-branch
-	 * value so that it can never match on the first test as we want to use
-	 * it to detect a leaf vs node.
-	 */
-	while (1) {
-	//while (p != container_of(*root, struct cba_u32, node)) {
-		//u32 lkey, rkey;
-
-		p = container_of(*root, struct cba_u32, node);
-
-		/* let's prefetch the lower nodes for the keys */
-		__builtin_prefetch(p->node.b[0], 0);
-		__builtin_prefetch(p->node.b[1], 0);
-
-		/* neither pointer is tagged */
-		l = container_of(p->node.b[0], struct cba_u32, node);
-		r = container_of(p->node.b[1], struct cba_u32, node);
-
-		/* two equal pointers identifies the nodeless leaf */
-		if (l == r) {
-			//fprintf(stderr, "key %u break at %d\n", key, __LINE__);
-			break;
-		}
-
-		//lkey = l->key;
-		//rkey = r->key;
-
-		/* we can compute this here for scalar types, it allows the
-		 * CPU to predict next branches. We can also xor lkey/rkey
-		 * with key and use it everywhere later but it doesn't save
-		 * much.
-		 */
-		brside = (key ^ l->key) >= (key ^ r->key);
-
-		/* so that's either a node or a leaf. Each leaf we visit had
-		 * its node part already visited. The only way to distinguish
-		 * them is that the inter-branch xor of the leaf will be the
-		 * node's one, and will necessarily be larger than the previous
-		 * node's xor if the node is above (we've already checked for
-		 * direct descendent below). Said differently, if an inter-
-		 * branch xor is strictly larger than the previous one, it
-		 * necessarily is the one of an upper node, so what we're
-		 * seeing cannot be the node, hence it's the leaf.
-		 */
-		if ((l->key ^ r->key) > pxor) { // test using 2 4 6 4
-			/* this is a leaf */
-			//fprintf(stderr, "key %u break at %d\n", key, __LINE__);
-			break;
-		}
-
-		pxor = l->key ^ r->key;
-
-		/* check the split bit */
-		if ((key ^ l->key) > pxor && (key ^ r->key) > pxor) {
-			/* can't go lower, the node must be inserted above p
-			 * (which is then necessarily a node). We also know
-			 * that (key != p->key) because p->key differs from at
-			 * least one of its subkeys by a higher bit than the
-			 * split bit, so lookups must fail here.
-			 */
-			//fprintf(stderr, "key %u break at %d\n", key, __LINE__);
-			break;
-		}
-
-		/* here we're guaranteed to be above a node. If this is the
-		 * same node as the one we're looking for, let's store the
-		 * parent as the node's parent.
-		 */
-		if (ret_npside || ret_nparent) {
-			//if (node == &p->node) {
-			if (key == p->key) {
-				nparent = lparent;
-				npside  = lpside;
-			}
-		}
-
-		/* shift all copies by one */
-		gparent = lparent;
-		gpside = lpside;
-		lparent = &p->node;
-		lpside = brside;
-		//root = &p->node.b[brside];  // significantly slower on x86
-		if (brside)
-			root = &p->node.b[1];
-		else
-			root = &p->node.b[0];
-
-		if (p == container_of(*root, struct cba_u32, node)) {
-			//fprintf(stderr, "key %u break at %d\n", key, __LINE__);
-			/* loops over itself, it's a leaf */
-			break;
-		}
-	}
-
-	/* update the pointers needed for modifications (insert, delete) */
-	if (ret_nside)
-		*ret_nside = key >= p->key;
-
-	if (ret_root)
-		*ret_root = root;
-
-	/* info needed by delete */
-	if (ret_lpside)
-		*ret_lpside = lpside;
-
-	if (ret_lparent)
-		*ret_lparent = lparent;
-
-	if (ret_npside)
-		*ret_npside = npside;
-
-	if (ret_nparent)
-		*ret_nparent = nparent;
-
-	if (ret_gpside)
-		*ret_gpside = gpside;
-
-	if (ret_gparent)
-		*ret_gparent = gparent;
-
-	/* For lookups, an equal value means an instant return. For insertions,
-	 * it is the same, we want to return the previously existing value so
-	 * that the caller can decide what to do. For deletion, we also want to
-	 * return the pointer that's about to be deleted.
-	 */
-	if (key == p->key)
-		return &p->node;//*root;  both are the same, but p->node should be cheaper
-
-//	/* We're going to insert <node> above leaf <p> and below <root>. It's
-//	 * possible that <p> is the first inserted node, or that it's any other
-//	 * regular node or leaf. Therefore we don't care about pointer tagging.
-//	 * We need to know two things :
-//	 *  - whether <p> is left or right on <root>, to unlink it properly and
-//	 *    to take its place
-//	 *  - whether we attach <p> left or right below us
-//	 */
-//	if (!ret_root && !ret_lparent && key == p->key) {
-//		/* for lookups this is sufficient. For insert the caller can
-//		 * verify that the result is not node hence a conflicting value
-//		 * already existed. We do not make more efforts for now towards
-//		 * duplicates.
-//		 */
-//		return *root;
-//	}
-
-	/* lookups and deletes fail here */
-	/* plain lookups just stop here */
-	if (!ret_root)
-		return NULL;
-
-	/* inserts return the node we expect to insert */
-	//printf("descent insert: node=%p key=%d root=%p *root=%p p->node=%p\n", node, key, root, *root, &p->node);
-	return node;
-	//return &p->node;
-}
-
 struct cba_node *cba_insert_u32(struct cba_node **root, struct cba_node *node)
 {
-	struct cba_node **parent;
-	struct cba_node *ret;
-	int nside;
+	uint32_t key = container_of(node, struct cba_node_key, node)->key.u32;
 
-	if (!*root) {
-		/* empty tree, insert a leaf only */
-		node->b[0] = node->b[1] = node;
-		*root = node;
-		return node;
-	}
+	return _cbau_insert(root, node, CB_KT_U32, key, NULL);
+}
 
-	ret = cbau_descend_u32(root, node, &nside, &parent, NULL, NULL, NULL, NULL, NULL, NULL);
+/* return the first node or NULL if not found. */
+struct cba_node *cba_first_u32(struct cba_node **root)
+{
+	return _cbau_first(root, CB_KT_U32);
+}
 
-	if (ret == node) {
-		node->b[nside] = node;
-		node->b[!nside] = *parent;
-		*parent = ret;
-	}
-	return ret;
+/* return the last node or NULL if not found. */
+struct cba_node *cba_last_u32(struct cba_node **root)
+{
+	return _cbau_last(root, CB_KT_U32);
 }
 
 /* look up the specified key, and returns either the node containing it, or
  * NULL if not found.
  */
-struct cba_node *cba_lookup_u32(struct cba_node **root, u32 key)
+struct cba_node *cba_lookup_u32(struct cba_node **root, uint32_t key)
 {
-	u32 key_back = key;
-	/*const*/ struct cba_node *node = &container_of(&key_back, struct cba_u32, key)->node;
+	return _cbau_lookup(root, CB_KT_U32, key, NULL);
+}
 
-	if (!*root)
-		return NULL;
+/* search for the next node after the specified one, and return it, or NULL if
+ * not found. The approach consists in looking up that node, recalling the last
+ * time a left turn was made, and returning the first node along the right
+ * branch at that fork.
+ */
+struct cba_node *cba_next_u32(struct cba_node **root, struct cba_node *node)
+{
+	uint32_t key = container_of(node, struct cba_node_key, node)->key.u32;
 
-	return cbau_descend_u32(root, node, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	return _cbau_next(root, CB_KT_U32, key, NULL);
+}
+
+/* search for the prev node before the specified one, and return it, or NULL if
+ * not found. The approach consists in looking up that node, recalling the last
+ * time a right turn was made, and returning the last node along the left
+ * branch at that fork.
+ */
+struct cba_node *cba_prev_u32(struct cba_node **root, struct cba_node *node)
+{
+	uint32_t key = container_of(node, struct cba_node_key, node)->key.u32;
+
+	return _cbau_prev(root, CB_KT_U32, key, NULL);
 }
 
 /* look up the specified node with its key and deletes it if found, and in any
@@ -327,136 +148,17 @@ struct cba_node *cba_lookup_u32(struct cba_node **root, u32 key)
  */
 struct cba_node *cba_delete_u32(struct cba_node **root, struct cba_node *node)
 {
-	struct cba_node *lparent, *nparent, *gparent, *sibling;
-	int lpside, npside, gpside;
-	struct cba_node *ret;
+	uint32_t key = container_of(node, struct cba_node_key, node)->key.u32;
 
-	if (!node->b[0]) {
-		/* NULL on a branch means the node is not in the tree */
-		return node;
-	}
-
-	if (!*root) {
-		/* empty tree, the node cannot be there */
-		return node;
-	}
-
-	ret = cbau_descend_u32(root, node, NULL, NULL, &lparent, &lpside, &nparent, &npside, &gparent, &gpside);
-	if (ret == node) {
-		//fprintf(stderr, "root=%p ret=%p l=%p[%d] n=%p[%d] g=%p[%d]\n", root, ret, lparent, lpside, nparent, npside, gparent, gpside);
-
-		if (&lparent->b[0] == root) {
-			/* there was a single entry, this one */
-			*root = NULL;
-			goto done;
-		}
-		//printf("g=%p\n", gparent);
-
-		/* then we necessarily have a gparent */
-		sibling = lpside ? lparent->b[0] : lparent->b[1];
-		gparent->b[gpside] = sibling;
-
-		if (lparent == node) {
-			/* we're removing the leaf and node together, nothing
-			 * more to do.
-			 */
-			goto done;
-		}
-
-		if (node->b[0] == node->b[1]) {
-			/* we're removing the node-less item, the parent will
-			 * take this role.
-			 */
-			lparent->b[0] = lparent->b[1] = lparent;
-			goto done;
-		}
-
-		/* more complicated, the node was split from the leaf, we have
-		 * to find a spare one to switch it. The parent node is not
-		 * needed anymore so we can reuse it.
-		 */
-		lparent->b[0] = node->b[0];
-		lparent->b[1] = node->b[1];
-		nparent->b[npside] = lparent;
-	}
-done:
-	return ret;
+	return _cbau_delete(root, node, CB_KT_U32, key, NULL);
 }
 
 /* look up the specified key, and detaches it and returns it if found, or NULL
  * if not found.
  */
-struct cba_node *cba_pick_u32(struct cba_node **root, u32 key)
+struct cba_node *cba_pick_u32(struct cba_node **root, uint32_t key)
 {
-	u32 key_back = key;
-	/*const*/ struct cba_node *node = &container_of(&key_back, struct cba_u32, key)->node;
-	struct cba_node *lparent, *nparent, *gparent/*, *sibling*/;
-	int lpside, npside, gpside;
-	struct cba_node *ret;
-
-	if (!*root)
-		return NULL;
-
-	//if (key == 425144) printf("%d: k=%u\n", __LINE__, key);
-
-	ret = cbau_descend_u32(root, node, NULL, NULL, &lparent, &lpside, &nparent, &npside, &gparent, &gpside);
-
-	//if (key == 425144) printf("%d: k=%u ret=%p\n", __LINE__, key, ret);
-
-	if (ret) {
-		struct cba_u32 *p = container_of(ret, struct cba_u32, node);
-
-		if (ret == node)
-			abort();
-
-		if (p->key != key)
-			abort();
-
-		//fprintf(stderr, "root=%p ret=%p l=%p[%d] n=%p[%d] g=%p[%d]\n", root, ret, lparent, lpside, nparent, npside, gparent, gpside);
-
-		if (&lparent->b[0] == root) {
-			/* there was a single entry, this one */
-			*root = NULL;
-			//if (key == 425144) printf("%d: k=%u ret=%p\n", __LINE__, key, ret);
-			goto done;
-		}
-		//printf("g=%p\n", gparent);
-
-		/* then we necessarily have a gparent */
-		//sibling = lpside ? lparent->b[0] : lparent->b[1];
-		//gparent->b[gpside] = sibling;
-
-		gparent->b[gpside] = lparent->b[!lpside];
-
-		if (lparent == ret) {
-			/* we're removing the leaf and node together, nothing
-			 * more to do.
-			 */
-			//if (key == 425144) printf("%d: k=%u ret=%p\n", __LINE__, key, ret);
-			goto done;
-		}
-
-		if (ret->b[0] == ret->b[1]) {
-			/* we're removing the node-less item, the parent will
-			 * take this role.
-			 */
-			lparent->b[0] = lparent->b[1] = lparent;
-			//if (key == 425144) printf("%d: k=%u ret=%p\n", __LINE__, key, ret);
-			goto done;
-		}
-
-		/* more complicated, the node was split from the leaf, we have
-		 * to find a spare one to switch it. The parent node is not
-		 * needed anymore so we can reuse it.
-		 */
-		//if (key == 425144) printf("%d: k=%u ret=%p lp=%p np=%p gp=%p\n", __LINE__, key, ret, lparent, nparent, gparent);
-		lparent->b[0] = ret->b[0];
-		lparent->b[1] = ret->b[1];
-		nparent->b[npside] = lparent;
-	}
-done:
-	//if (key == 425144) printf("%d: k=%u ret=%p\n", __LINE__, key, ret);
-	return ret;
+	return _cbau_delete(root, NULL, CB_KT_U32, key, NULL);
 }
 
 ///* returns the highest node which is less than or equal to data. This is
