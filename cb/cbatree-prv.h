@@ -135,22 +135,22 @@ struct cba_node_key {
  * size arrays are passed in key_ptr with their length in key_u64.
  */
 static inline __attribute__((always_inline))
-struct cba_node *_cbau_descend(struct cba_node **root,
-			       enum cba_walk_meth meth,
-			       enum cba_key_type key_type,
-			       uint32_t key_u32,
-			       uint32_t key_u64,
-			       const void *key_ptr,
-			       int *ret_nside,
-			       struct cba_node ***ret_root,
-			       struct cba_node **ret_lparent,
-			       int *ret_lpside,
-			       struct cba_node **ret_nparent,
-			       int *ret_npside,
-			       struct cba_node **ret_gparent,
-			       int *ret_gpside,
-			       struct cba_node ***ret_alt_l,
-			       struct cba_node ***ret_alt_r)
+struct cba_node *_cbu_descend(struct cba_node **root,
+			      enum cba_walk_meth meth,
+			      enum cba_key_type key_type,
+			      uint32_t key_u32,
+			      uint32_t key_u64,
+			      const void *key_ptr,
+			      int *ret_nside,
+			      struct cba_node ***ret_root,
+			      struct cba_node **ret_lparent,
+			      int *ret_lpside,
+			      struct cba_node **ret_nparent,
+			      int *ret_npside,
+			      struct cba_node **ret_gparent,
+			      int *ret_gpside,
+			      struct cba_node ***ret_alt_l,
+			      struct cba_node ***ret_alt_r)
 {
 	struct cba_node_key *p, *l, *r;
 	struct cba_node *gparent = NULL;
@@ -658,12 +658,12 @@ struct cba_node *_cbau_descend(struct cba_node **root,
  * Returns the inserted node or the one that already contains the same key.
  */
 static inline __attribute__((always_inline))
-struct cba_node *_cbau_insert(struct cba_node **root,
-			      struct cba_node *node,
-			      enum cba_key_type key_type,
-			      uint32_t key_u32,
-			      uint32_t key_u64,
-			      const void *key_ptr)
+struct cba_node *_cbu_insert(struct cba_node **root,
+			     struct cba_node *node,
+			     enum cba_key_type key_type,
+			     uint32_t key_u32,
+			     uint32_t key_u64,
+			     const void *key_ptr)
 {
 	struct cba_node **parent;
 	struct cba_node *ret;
@@ -676,7 +676,7 @@ struct cba_node *_cbau_insert(struct cba_node **root,
 		return node;
 	}
 
-	ret = _cbau_descend(root, CB_WM_KEY, key_type, key_u32, key_u64, key_ptr, &nside, &parent, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	ret = _cbu_descend(root, CB_WM_KEY, key_type, key_u32, key_u64, key_ptr, &nside, &parent, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 
 	if (!ret) {
 		/* The key was not in the tree, we can insert it. Better use an
@@ -701,26 +701,26 @@ struct cba_node *_cbau_insert(struct cba_node **root,
  * type <key_type>.
  */
 static inline __attribute__((always_inline))
-struct cba_node *_cbau_first(struct cba_node **root,
-			     enum cba_key_type key_type)
+struct cba_node *_cbu_first(struct cba_node **root,
+			    enum cba_key_type key_type)
 {
 	if (!*root)
 		return NULL;
 
-	return _cbau_descend(root, CB_WM_FST, key_type, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	return _cbu_descend(root, CB_WM_FST, key_type, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 }
 
 /* Returns the last node or NULL if not found, assuming a tree made of keys of
  * type <key_type>.
  */
 static inline __attribute__((always_inline))
-struct cba_node *_cbau_last(struct cba_node **root,
-			    enum cba_key_type key_type)
+struct cba_node *_cbu_last(struct cba_node **root,
+			   enum cba_key_type key_type)
 {
 	if (!*root)
 		return NULL;
 
-	return _cbau_descend(root, CB_WM_LST, key_type, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	return _cbu_descend(root, CB_WM_LST, key_type, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 }
 
 /* Searches in the tree <root> made of keys of type <key_type>, for the next
@@ -731,21 +731,21 @@ struct cba_node *_cbau_last(struct cba_node **root,
  * that fork.
  */
 static inline __attribute__((always_inline))
-struct cba_node *_cbau_next(struct cba_node **root,
-			    enum cba_key_type key_type,
-			    uint32_t key_u32,
-			    uint32_t key_u64,
-			    const void *key_ptr)
+struct cba_node *_cbu_next(struct cba_node **root,
+			   enum cba_key_type key_type,
+			   uint32_t key_u32,
+			   uint32_t key_u64,
+			   const void *key_ptr)
 {
 	struct cba_node **right_branch = NULL;
 
 	if (!*root)
 		return NULL;
 
-	_cbau_descend(root, CB_WM_KEY, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &right_branch);
+	_cbu_descend(root, CB_WM_KEY, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &right_branch);
 	if (!right_branch)
 		return NULL;
-	return _cbau_descend(right_branch, CB_WM_NXT, key_type, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	return _cbu_descend(right_branch, CB_WM_NXT, key_type, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 }
 
 /* Searches in the tree <root> made of keys of type <key_type>, for the prev
@@ -756,37 +756,37 @@ struct cba_node *_cbau_next(struct cba_node **root,
  * that fork.
  */
 static inline __attribute__((always_inline))
-struct cba_node *_cbau_prev(struct cba_node **root,
-			    enum cba_key_type key_type,
-			    uint32_t key_u32,
-			    uint32_t key_u64,
-			    const void *key_ptr)
+struct cba_node *_cbu_prev(struct cba_node **root,
+			   enum cba_key_type key_type,
+			   uint32_t key_u32,
+			   uint32_t key_u64,
+			   const void *key_ptr)
 {
 	struct cba_node **left_branch = NULL;
 
 	if (!*root)
 		return NULL;
 
-	_cbau_descend(root, CB_WM_KEY, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &left_branch, NULL);
+	_cbu_descend(root, CB_WM_KEY, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &left_branch, NULL);
 	if (!left_branch)
 		return NULL;
-	return _cbau_descend(left_branch, CB_WM_PRV, key_type, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	return _cbu_descend(left_branch, CB_WM_PRV, key_type, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 }
 
 /* Searches in the tree <root> made of keys of type <key_type>, for the node
  * containing the key <key_*>. Returns NULL if not found.
  */
 static inline __attribute__((always_inline))
-struct cba_node *_cbau_lookup(struct cba_node **root,
-			      enum cba_key_type key_type,
-			      uint32_t key_u32,
-			      uint32_t key_u64,
-			      const void *key_ptr)
+struct cba_node *_cbu_lookup(struct cba_node **root,
+			     enum cba_key_type key_type,
+			     uint32_t key_u32,
+			     uint32_t key_u64,
+			     const void *key_ptr)
 {
 	if (!*root)
 		return NULL;
 
-	return _cbau_descend(root, CB_WM_KEY, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	return _cbu_descend(root, CB_WM_KEY, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 }
 
 /* Searches in the tree <root> made of keys of type <key_type>, for the node
@@ -795,12 +795,12 @@ struct cba_node *_cbau_lookup(struct cba_node **root,
  * found node is returned in any case, otherwise NULL if not found.
  */
 static inline __attribute__((always_inline))
-struct cba_node *_cbau_delete(struct cba_node **root,
-			      struct cba_node *node,
-			      enum cba_key_type key_type,
-			      uint32_t key_u32,
-			      uint32_t key_u64,
-			      const void *key_ptr)
+struct cba_node *_cbu_delete(struct cba_node **root,
+			     struct cba_node *node,
+			     enum cba_key_type key_type,
+			     uint32_t key_u32,
+			     uint32_t key_u64,
+			     const void *key_ptr)
 {
 	struct cba_node *lparent, *nparent, *gparent;
 	int lpside, npside, gpside;
@@ -816,7 +816,7 @@ struct cba_node *_cbau_delete(struct cba_node **root,
 		goto done;
 	}
 
-	ret = _cbau_descend(root, CB_WM_KEY, key_type, key_u32, key_u64, key_ptr, NULL, NULL,
+	ret = _cbu_descend(root, CB_WM_KEY, key_type, key_u32, key_u64, key_ptr, NULL, NULL,
 			    &lparent, &lpside, &nparent, &npside, &gparent, &gpside, NULL, NULL);
 
 	if (!ret) {
