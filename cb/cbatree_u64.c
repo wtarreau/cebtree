@@ -34,7 +34,7 @@
  * immediately follows the node. Returns the inserted node or the one
  * that already contains the same key.
  */
-struct cba_node *cba_insert_u64(struct cba_node **root, struct cba_node *node)
+struct cba_node *cbu64_insert(struct cba_node **root, struct cba_node *node)
 {
 	uint64_t key = container_of(node, struct cba_node_key, node)->key.u64;
 
@@ -42,13 +42,13 @@ struct cba_node *cba_insert_u64(struct cba_node **root, struct cba_node *node)
 }
 
 /* return the first node or NULL if not found. */
-struct cba_node *cba_first_u64(struct cba_node **root)
+struct cba_node *cbu64_first(struct cba_node **root)
 {
 	return _cbau_first(root, CB_KT_U64);
 }
 
 /* return the last node or NULL if not found. */
-struct cba_node *cba_last_u64(struct cba_node **root)
+struct cba_node *cbu64_last(struct cba_node **root)
 {
 	return _cbau_last(root, CB_KT_U64);
 }
@@ -56,7 +56,7 @@ struct cba_node *cba_last_u64(struct cba_node **root)
 /* look up the specified key, and returns either the node containing it, or
  * NULL if not found.
  */
-struct cba_node *cba_lookup_u64(struct cba_node **root, uint64_t key)
+struct cba_node *cbu64_lookup(struct cba_node **root, uint64_t key)
 {
 	return _cbau_lookup(root, CB_KT_U64, 0, key, NULL);
 }
@@ -66,7 +66,7 @@ struct cba_node *cba_lookup_u64(struct cba_node **root, uint64_t key)
  * time a left turn was made, and returning the first node along the right
  * branch at that fork.
  */
-struct cba_node *cba_next_u64(struct cba_node **root, struct cba_node *node)
+struct cba_node *cbu64_next(struct cba_node **root, struct cba_node *node)
 {
 	uint64_t key = container_of(node, struct cba_node_key, node)->key.u64;
 
@@ -78,7 +78,7 @@ struct cba_node *cba_next_u64(struct cba_node **root, struct cba_node *node)
  * time a right turn was made, and returning the last node along the left
  * branch at that fork.
  */
-struct cba_node *cba_prev_u64(struct cba_node **root, struct cba_node *node)
+struct cba_node *cbu64_prev(struct cba_node **root, struct cba_node *node)
 {
 	uint64_t key = container_of(node, struct cba_node_key, node)->key.u64;
 
@@ -88,7 +88,7 @@ struct cba_node *cba_prev_u64(struct cba_node **root, struct cba_node *node)
 /* look up the specified node with its key and deletes it if found, and in any
  * case, returns the node.
  */
-struct cba_node *cba_delete_u64(struct cba_node **root, struct cba_node *node)
+struct cba_node *cbu64_delete(struct cba_node **root, struct cba_node *node)
 {
 	uint64_t key = container_of(node, struct cba_node_key, node)->key.u64;
 
@@ -98,7 +98,7 @@ struct cba_node *cba_delete_u64(struct cba_node **root, struct cba_node *node)
 /* look up the specified key, and detaches it and returns it if found, or NULL
  * if not found.
  */
-struct cba_node *cba_pick_u64(struct cba_node **root, uint64_t key)
+struct cba_node *cbu64_pick(struct cba_node **root, uint64_t key)
 {
 	return _cbau_delete(root, NULL, CB_KT_U64, 0, key, NULL);
 }
@@ -231,7 +231,7 @@ void cbau64_default_dump(struct cba_node **cba_root, const char *label, const vo
 {
 	struct cba_node *node;
 
-	printf("\ndigraph cba_tree_u64 {\n"
+	printf("\ndigraph cbu64_tree {\n"
 	       "  fontname=\"fixed\";\n"
 	       "  fontsize=8\n"
 	       "  label=\"%s\"\n"
