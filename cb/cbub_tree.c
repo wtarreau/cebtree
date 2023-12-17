@@ -28,8 +28,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "cbatree.h"
-#include "cbatree-prv.h"
+#include "cbtree.h"
+#include "cbtree-prv.h"
 
 /* Inserts node <node> into unique tree <tree> based on its key that
  * immediately follows the node and for <len> bytes. Returns the
