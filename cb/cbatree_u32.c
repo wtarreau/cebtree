@@ -34,21 +34,21 @@
  * immediately follows the node. Returns the inserted node or the one
  * that already contains the same key.
  */
-struct cba_node *cbu32_insert(struct cba_node **root, struct cba_node *node)
+struct cb_node *cbu32_insert(struct cb_node **root, struct cb_node *node)
 {
-	uint32_t key = container_of(node, struct cba_node_key, node)->key.u32;
+	uint32_t key = container_of(node, struct cb_node_key, node)->key.u32;
 
 	return _cbu_insert(root, node, CB_KT_U32, key, 0, NULL);
 }
 
 /* return the first node or NULL if not found. */
-struct cba_node *cbu32_first(struct cba_node **root)
+struct cb_node *cbu32_first(struct cb_node **root)
 {
 	return _cbu_first(root, CB_KT_U32);
 }
 
 /* return the last node or NULL if not found. */
-struct cba_node *cbu32_last(struct cba_node **root)
+struct cb_node *cbu32_last(struct cb_node **root)
 {
 	return _cbu_last(root, CB_KT_U32);
 }
@@ -56,7 +56,7 @@ struct cba_node *cbu32_last(struct cba_node **root)
 /* look up the specified key, and returns either the node containing it, or
  * NULL if not found.
  */
-struct cba_node *cbu32_lookup(struct cba_node **root, uint32_t key)
+struct cb_node *cbu32_lookup(struct cb_node **root, uint32_t key)
 {
 	return _cbu_lookup(root, CB_KT_U32, key, 0, NULL);
 }
@@ -66,9 +66,9 @@ struct cba_node *cbu32_lookup(struct cba_node **root, uint32_t key)
  * time a left turn was made, and returning the first node along the right
  * branch at that fork.
  */
-struct cba_node *cbu32_next(struct cba_node **root, struct cba_node *node)
+struct cb_node *cbu32_next(struct cb_node **root, struct cb_node *node)
 {
-	uint32_t key = container_of(node, struct cba_node_key, node)->key.u32;
+	uint32_t key = container_of(node, struct cb_node_key, node)->key.u32;
 
 	return _cbu_next(root, CB_KT_U32, key, 0, NULL);
 }
@@ -78,9 +78,9 @@ struct cba_node *cbu32_next(struct cba_node **root, struct cba_node *node)
  * time a right turn was made, and returning the last node along the left
  * branch at that fork.
  */
-struct cba_node *cbu32_prev(struct cba_node **root, struct cba_node *node)
+struct cb_node *cbu32_prev(struct cb_node **root, struct cb_node *node)
 {
-	uint32_t key = container_of(node, struct cba_node_key, node)->key.u32;
+	uint32_t key = container_of(node, struct cb_node_key, node)->key.u32;
 
 	return _cbu_prev(root, CB_KT_U32, key, 0, NULL);
 }
@@ -88,9 +88,9 @@ struct cba_node *cbu32_prev(struct cba_node **root, struct cba_node *node)
 /* look up the specified node with its key and deletes it if found, and in any
  * case, returns the node.
  */
-struct cba_node *cbu32_delete(struct cba_node **root, struct cba_node *node)
+struct cb_node *cbu32_delete(struct cb_node **root, struct cb_node *node)
 {
-	uint32_t key = container_of(node, struct cba_node_key, node)->key.u32;
+	uint32_t key = container_of(node, struct cb_node_key, node)->key.u32;
 
 	return _cbu_delete(root, node, CB_KT_U32, key, 0, NULL);
 }
@@ -98,7 +98,7 @@ struct cba_node *cbu32_delete(struct cba_node **root, struct cba_node *node)
 /* look up the specified key, and detaches it and returns it if found, or NULL
  * if not found.
  */
-struct cba_node *cbu32_pick(struct cba_node **root, uint32_t key)
+struct cb_node *cbu32_pick(struct cb_node **root, uint32_t key)
 {
 	return _cbu_delete(root, NULL, CB_KT_U32, key, 0, NULL);
 }
@@ -106,9 +106,9 @@ struct cba_node *cbu32_pick(struct cba_node **root, uint32_t key)
 ///* returns the highest node which is less than or equal to data. This is
 // * typically used to know what memory area <data> belongs to.
 // */
-//struct cba_node *cba_lookup_le(struct cba_node **root, void *data)
+//struct cb_node *cba_lookup_le(struct cb_node **root, void *data)
 //{
-//	struct cba_node *p, *last_r;
+//	struct cb_node *p, *last_r;
 //	u32 pxor;
 //
 //	pxor = 0;
@@ -181,9 +181,9 @@ struct cba_node *cbu32_pick(struct cba_node **root, uint32_t key)
 //}
 //
 ///* returns the note which equals <data> or NULL if <data> is not in the tree */
-//struct cba_node *cba_lookup(struct cba_node **root, void *data)
+//struct cb_node *cba_lookup(struct cb_node **root, void *data)
 //{
-//	struct cba_node *p;
+//	struct cb_node *p;
 //	u32 pxor;
 //
 //	pxor = 0;
@@ -225,9 +225,9 @@ struct cba_node *cbu32_pick(struct cba_node **root, uint32_t key)
 // * typically used to know the distance between <data> and the next memory
 // * area.
 // */
-//struct cba_node *cba_lookup_ge(struct cba_node **root, void *data)
+//struct cb_node *cba_lookup_ge(struct cb_node **root, void *data)
 //{
-//	struct cba_node *p, *last_l;
+//	struct cb_node *p, *last_l;
 //	u32 pxor;
 //
 //	pxor = 0;
@@ -300,46 +300,46 @@ struct cba_node *cbu32_pick(struct cba_node **root, uint32_t key)
 //}
 
 /* default node dump function */
-static void cbu32_default_dump_node(struct cba_node *node, int level, const void *ctx)
+static void cbu32_default_dump_node(struct cb_node *node, int level, const void *ctx)
 {
-	struct cba_node_key *key = container_of(node, struct cba_node_key, node);
+	struct cb_node_key *key = container_of(node, struct cb_node_key, node);
 	u32 pxor, lxor, rxor;
 
 	/* xor of the keys of the two lower branches */
-	pxor = container_of(__cba_clrtag(node->b[0]), struct cba_node_key, node)->key.u32 ^
-		container_of(__cba_clrtag(node->b[1]), struct cba_node_key, node)->key.u32;
+	pxor = container_of(__cba_clrtag(node->b[0]), struct cb_node_key, node)->key.u32 ^
+		container_of(__cba_clrtag(node->b[1]), struct cb_node_key, node)->key.u32;
 
 	printf("  \"%lx_n\" [label=\"%lx\\nlev=%d bit=%d\\nkey=%u\" fillcolor=\"lightskyblue1\"%s];\n",
 	       (long)node, (long)node, level, flsnz(pxor) - 1, key->key.u32, (ctx == node) ? " color=red" : "");
 
 	/* xor of the keys of the left branch's lower branches */
-	lxor = container_of(__cba_clrtag(((struct cba_node*)__cba_clrtag(node->b[0]))->b[0]), struct cba_node_key, node)->key.u32 ^
-		container_of(__cba_clrtag(((struct cba_node*)__cba_clrtag(node->b[0]))->b[1]), struct cba_node_key, node)->key.u32;
+	lxor = container_of(__cba_clrtag(((struct cb_node*)__cba_clrtag(node->b[0]))->b[0]), struct cb_node_key, node)->key.u32 ^
+		container_of(__cba_clrtag(((struct cb_node*)__cba_clrtag(node->b[0]))->b[1]), struct cb_node_key, node)->key.u32;
 
 	printf("  \"%lx_n\" -> \"%lx_%c\" [label=\"L\" arrowsize=0.66 %s];\n",
 	       (long)node, (long)__cba_clrtag(node->b[0]),
-	       (((long)node->b[0] & 1) || (lxor < pxor && ((struct cba_node*)node->b[0])->b[0] != ((struct cba_node*)node->b[0])->b[1])) ? 'n' : 'l',
+	       (((long)node->b[0] & 1) || (lxor < pxor && ((struct cb_node*)node->b[0])->b[0] != ((struct cb_node*)node->b[0])->b[1])) ? 'n' : 'l',
 	       (node == __cba_clrtag(node->b[0])) ? " dir=both" : "");
 
 	/* xor of the keys of the right branch's lower branches */
-	rxor = container_of(__cba_clrtag(((struct cba_node*)__cba_clrtag(node->b[1]))->b[0]), struct cba_node_key, node)->key.u32 ^
-		container_of(__cba_clrtag(((struct cba_node*)__cba_clrtag(node->b[1]))->b[1]), struct cba_node_key, node)->key.u32;
+	rxor = container_of(__cba_clrtag(((struct cb_node*)__cba_clrtag(node->b[1]))->b[0]), struct cb_node_key, node)->key.u32 ^
+		container_of(__cba_clrtag(((struct cb_node*)__cba_clrtag(node->b[1]))->b[1]), struct cb_node_key, node)->key.u32;
 
 	printf("  \"%lx_n\" -> \"%lx_%c\" [label=\"R\" arrowsize=0.66 %s];\n",
 	       (long)node, (long)__cba_clrtag(node->b[1]),
-	       (((long)node->b[1] & 1) || (rxor < pxor && ((struct cba_node*)node->b[1])->b[0] != ((struct cba_node*)node->b[1])->b[1])) ? 'n' : 'l',
+	       (((long)node->b[1] & 1) || (rxor < pxor && ((struct cb_node*)node->b[1])->b[0] != ((struct cb_node*)node->b[1])->b[1])) ? 'n' : 'l',
 	       (node == __cba_clrtag(node->b[1])) ? " dir=both" : "");
 }
 
 /* default leaf dump function */
-static void cbu32_default_dump_leaf(struct cba_node *node, int level, const void *ctx)
+static void cbu32_default_dump_leaf(struct cb_node *node, int level, const void *ctx)
 {
-	struct cba_node_key *key = container_of(node, struct cba_node_key, node);
+	struct cb_node_key *key = container_of(node, struct cb_node_key, node);
 	u32 pxor;
 
 	/* xor of the keys of the two lower branches */
-	pxor = container_of(__cba_clrtag(node->b[0]), struct cba_node_key, node)->key.u32 ^
-		container_of(__cba_clrtag(node->b[1]), struct cba_node_key, node)->key.u32;
+	pxor = container_of(__cba_clrtag(node->b[0]), struct cb_node_key, node)->key.u32 ^
+		container_of(__cba_clrtag(node->b[1]), struct cb_node_key, node)->key.u32;
 
 	if (node->b[0] == node->b[1])
 		printf("  \"%lx_l\" [label=\"%lx\\nlev=%d\\nkey=%u\\n\" fillcolor=\"green\"%s];\n",
@@ -350,10 +350,10 @@ static void cbu32_default_dump_leaf(struct cba_node *node, int level, const void
 }
 
 /* Dumps a tree through the specified callbacks. */
-void *cbu32_dump_tree(struct cba_node *node, u32 pxor, void *last,
+void *cbu32_dump_tree(struct cb_node *node, u32 pxor, void *last,
 			int level,
-			void (*node_dump)(struct cba_node *node, int level, const void *ctx),
-			void (*leaf_dump)(struct cba_node *node, int level, const void *ctx),
+			void (*node_dump)(struct cb_node *node, int level, const void *ctx),
+			void (*leaf_dump)(struct cb_node *node, int level, const void *ctx),
 			const void *ctx)
 {
 	u32 xor;
@@ -399,7 +399,7 @@ void *cbu32_dump_tree(struct cba_node *node, u32 pxor, void *last,
 		return cbu32_dump_tree(node, 0, last, -1, node_dump, leaf_dump, ctx);
 	}
 
-	xor = ((struct cba_node_key*)node->b[0])->key.u32 ^ ((struct cba_node_key*)node->b[1])->key.u32;
+	xor = ((struct cb_node_key*)node->b[0])->key.u32 ^ ((struct cb_node_key*)node->b[1])->key.u32;
 	if (pxor && xor >= pxor) {
 		/* that's a leaf */
 		if (leaf_dump)
@@ -422,12 +422,12 @@ void *cbu32_dump_tree(struct cba_node *node, u32 pxor, void *last,
 	return cbu32_dump_tree(node->b[1], xor, last, level + 1, node_dump, leaf_dump, ctx);
 }
 
-/* dumps a cba_node_key tree using the default functions above. If a node matches
+/* dumps a cb_node_key tree using the default functions above. If a node matches
  * <ctx>, this one will be highlighted in red.
  */
-void cbu32_default_dump(struct cba_node **cba_root, const char *label, const void *ctx)
+void cbu32_default_dump(struct cb_node **cba_root, const char *label, const void *ctx)
 {
-	struct cba_node *node;
+	struct cb_node *node;
 
 	printf("\ndigraph cbu32_tree {\n"
 	       "  fontname=\"fixed\";\n"
