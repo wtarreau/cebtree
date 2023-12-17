@@ -42,31 +42,31 @@ static inline int cb_intree(const struct cb_node *node)
 }
 
 /* tag an untagged pointer */
-static inline struct cb_node *__cba_dotag(const struct cb_node *node)
+static inline struct cb_node *__cb_dotag(const struct cb_node *node)
 {
 	return (struct cb_node *)((size_t)node + 1);
 }
 
 /* untag a tagged pointer */
-static inline struct cb_node *__cba_untag(const struct cb_node *node)
+static inline struct cb_node *__cb_untag(const struct cb_node *node)
 {
 	return (struct cb_node *)((size_t)node - 1);
 }
 
 /* clear a pointer's tag */
-static inline struct cb_node *__cba_clrtag(const struct cb_node *node)
+static inline struct cb_node *__cb_clrtag(const struct cb_node *node)
 {
 	return (struct cb_node *)((size_t)node & ~((size_t)1));
 }
 
 /* returns whether a pointer is tagged */
-static inline int __cba_tagged(const struct cb_node *node)
+static inline int __cb_tagged(const struct cb_node *node)
 {
 	return !!((size_t)node & 1);
 }
 
 /* returns an integer equivalent of the pointer */
-static inline size_t __cba_intptr(struct cb_node *tree)
+static inline size_t __cb_intptr(struct cb_node *tree)
 {
 	return (size_t)tree;
 }
@@ -75,43 +75,9 @@ static inline size_t __cba_intptr(struct cb_node *tree)
 // * that the current node is at the top of a duplicate sub-tree and that all
 // * values below it are the same.
 // */
-//static inline int __cba_is_dup(const struct cb_node *node)
+//static inline int __cb_is_dup(const struct cb_node *node)
 //{
-//	return __cba_tagged((struct cb_node *)(__cba_intptr(node->l) | __cba_intptr(node->r)));
+//	return __cb_tagged((struct cb_node *)(__cb_intptr(node->l) | __cb_intptr(node->r)));
 //}
 
-///* Returns the type of the branch pointed to by <tree> among CB_TYPE_LEAF and
-// * CB_TYPE_NODE.
-// */
-//static inline size_t __cba_get_branch_type(struct cb_node * tree)
-//{
-//	return (size_t)tree & CB_TYPE_MASK;
-//}
-//
-///* Converts a cb_node pointer to its equivalent tagged value for use in ->l/r.
-// * NULL is not preserved. <tag> must be either CB_TYPE_LEAF or CB_TYPE_NODE.
-// */
-//static inline struct cb_node * __cba_dotag(struct cb_node *node, size_t tag)
-//{
-//	return (struct cb_node *)((char *)node + tag);
-//}
-//
-///* Converts a struct cb_node * to its equivalent untagged pointer. NULL is preserved.
-// * <tag> must be either CB_TYPE_LEAF or CB_TYPE_NODE.
-// */
-//static inline struct cb_node *__cba_untag(struct cb_node * tree, size_t tag)
-//{
-//	return (struct cb_node *)((char *)tree - tag);
-//}
-
-//
-//struct cb_node *cba_insert(struct cb_node **root, struct cb_node *data);
-//struct cb_node *cba_lookup(struct cb_node **root, void *data);
-//struct cb_node *cba_lookup_le(struct cb_node **root, void *data);
-//struct cb_node *cba_lookup_ge(struct cb_node **root, void *data);
-//void *cba_dump_tree(struct cb_node *node, unsigned long pxor, void *last,
-//                    int level,
-//                    void (*node_dump)(struct cb_node *node, int level),
-//                    void (*leaf_dump)(struct cb_node *node, int level));
-//
 #endif /* _CBTREE_H */

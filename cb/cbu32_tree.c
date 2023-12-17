@@ -106,7 +106,7 @@ struct cb_node *cbu32_pick(struct cb_node **root, uint32_t key)
 ///* returns the highest node which is less than or equal to data. This is
 // * typically used to know what memory area <data> belongs to.
 // */
-//struct cb_node *cba_lookup_le(struct cb_node **root, void *data)
+//struct cb_node *cb_lookup_le(struct cb_node **root, void *data)
 //{
 //	struct cb_node *p, *last_r;
 //	u32 pxor;
@@ -181,7 +181,7 @@ struct cb_node *cbu32_pick(struct cb_node **root, uint32_t key)
 //}
 //
 ///* returns the note which equals <data> or NULL if <data> is not in the tree */
-//struct cb_node *cba_lookup(struct cb_node **root, void *data)
+//struct cb_node *cb_lookup(struct cb_node **root, void *data)
 //{
 //	struct cb_node *p;
 //	u32 pxor;
@@ -225,7 +225,7 @@ struct cb_node *cbu32_pick(struct cb_node **root, uint32_t key)
 // * typically used to know the distance between <data> and the next memory
 // * area.
 // */
-//struct cb_node *cba_lookup_ge(struct cb_node **root, void *data)
+//struct cb_node *cb_lookup_ge(struct cb_node **root, void *data)
 //{
 //	struct cb_node *p, *last_l;
 //	u32 pxor;
@@ -306,29 +306,29 @@ static void cbu32_default_dump_node(struct cb_node *node, int level, const void 
 	u32 pxor, lxor, rxor;
 
 	/* xor of the keys of the two lower branches */
-	pxor = container_of(__cba_clrtag(node->b[0]), struct cb_node_key, node)->key.u32 ^
-		container_of(__cba_clrtag(node->b[1]), struct cb_node_key, node)->key.u32;
+	pxor = container_of(__cb_clrtag(node->b[0]), struct cb_node_key, node)->key.u32 ^
+		container_of(__cb_clrtag(node->b[1]), struct cb_node_key, node)->key.u32;
 
 	printf("  \"%lx_n\" [label=\"%lx\\nlev=%d bit=%d\\nkey=%u\" fillcolor=\"lightskyblue1\"%s];\n",
 	       (long)node, (long)node, level, flsnz(pxor) - 1, key->key.u32, (ctx == node) ? " color=red" : "");
 
 	/* xor of the keys of the left branch's lower branches */
-	lxor = container_of(__cba_clrtag(((struct cb_node*)__cba_clrtag(node->b[0]))->b[0]), struct cb_node_key, node)->key.u32 ^
-		container_of(__cba_clrtag(((struct cb_node*)__cba_clrtag(node->b[0]))->b[1]), struct cb_node_key, node)->key.u32;
+	lxor = container_of(__cb_clrtag(((struct cb_node*)__cb_clrtag(node->b[0]))->b[0]), struct cb_node_key, node)->key.u32 ^
+		container_of(__cb_clrtag(((struct cb_node*)__cb_clrtag(node->b[0]))->b[1]), struct cb_node_key, node)->key.u32;
 
 	printf("  \"%lx_n\" -> \"%lx_%c\" [label=\"L\" arrowsize=0.66 %s];\n",
-	       (long)node, (long)__cba_clrtag(node->b[0]),
+	       (long)node, (long)__cb_clrtag(node->b[0]),
 	       (((long)node->b[0] & 1) || (lxor < pxor && ((struct cb_node*)node->b[0])->b[0] != ((struct cb_node*)node->b[0])->b[1])) ? 'n' : 'l',
-	       (node == __cba_clrtag(node->b[0])) ? " dir=both" : "");
+	       (node == __cb_clrtag(node->b[0])) ? " dir=both" : "");
 
 	/* xor of the keys of the right branch's lower branches */
-	rxor = container_of(__cba_clrtag(((struct cb_node*)__cba_clrtag(node->b[1]))->b[0]), struct cb_node_key, node)->key.u32 ^
-		container_of(__cba_clrtag(((struct cb_node*)__cba_clrtag(node->b[1]))->b[1]), struct cb_node_key, node)->key.u32;
+	rxor = container_of(__cb_clrtag(((struct cb_node*)__cb_clrtag(node->b[1]))->b[0]), struct cb_node_key, node)->key.u32 ^
+		container_of(__cb_clrtag(((struct cb_node*)__cb_clrtag(node->b[1]))->b[1]), struct cb_node_key, node)->key.u32;
 
 	printf("  \"%lx_n\" -> \"%lx_%c\" [label=\"R\" arrowsize=0.66 %s];\n",
-	       (long)node, (long)__cba_clrtag(node->b[1]),
+	       (long)node, (long)__cb_clrtag(node->b[1]),
 	       (((long)node->b[1] & 1) || (rxor < pxor && ((struct cb_node*)node->b[1])->b[0] != ((struct cb_node*)node->b[1])->b[1])) ? 'n' : 'l',
-	       (node == __cba_clrtag(node->b[1])) ? " dir=both" : "");
+	       (node == __cb_clrtag(node->b[1])) ? " dir=both" : "");
 }
 
 /* default leaf dump function */
@@ -338,8 +338,8 @@ static void cbu32_default_dump_leaf(struct cb_node *node, int level, const void 
 	u32 pxor;
 
 	/* xor of the keys of the two lower branches */
-	pxor = container_of(__cba_clrtag(node->b[0]), struct cb_node_key, node)->key.u32 ^
-		container_of(__cba_clrtag(node->b[1]), struct cb_node_key, node)->key.u32;
+	pxor = container_of(__cb_clrtag(node->b[0]), struct cb_node_key, node)->key.u32 ^
+		container_of(__cb_clrtag(node->b[1]), struct cb_node_key, node)->key.u32;
 
 	if (node->b[0] == node->b[1])
 		printf("  \"%lx_l\" [label=\"%lx\\nlev=%d\\nkey=%u\\n\" fillcolor=\"green\"%s];\n",
@@ -368,17 +368,17 @@ void *cbu32_dump_tree(struct cb_node *node, u32 pxor, void *last,
 		 * untagged ones leaves.
 		 */
 		level--;
-		if (__cba_tagged(node->b[0])) {
-		  last = cbu32_dump_tree(__cba_untag(node->b[0]), 0, last, level, node_dump, leaf_dump, ctx);
+		if (__cb_tagged(node->b[0])) {
+		  last = cbu32_dump_tree(__cb_untag(node->b[0]), 0, last, level, node_dump, leaf_dump, ctx);
 			if (node_dump)
-			  node_dump(__cba_untag(node->b[0]), level, ctx);
+			  node_dump(__cb_untag(node->b[0]), level, ctx);
 		} else if (leaf_dump)
 			leaf_dump(node->b[0], level, ctx);
 
-		if (__cba_tagged(node->b[1])) {
-			last = cbu32_dump_tree(__cba_untag(node->b[1]), 0, last, level, node_dump, leaf_dump, ctx);
+		if (__cb_tagged(node->b[1])) {
+			last = cbu32_dump_tree(__cb_untag(node->b[1]), 0, last, level, node_dump, leaf_dump, ctx);
 			if (node_dump)
-				node_dump(__cba_untag(node->b[1]), level, ctx);
+				node_dump(__cb_untag(node->b[1]), level, ctx);
 		} else if (leaf_dump)
 			leaf_dump(node->b[1], level, ctx);
 		return node;
@@ -393,7 +393,7 @@ void *cbu32_dump_tree(struct cb_node *node, u32 pxor, void *last,
 		return node;
 	}
 
-	if (0/*__cba_is_dup(node)*/) {
+	if (0/*__cb_is_dup(node)*/) {
 		if (node_dump)
 			node_dump(node, -1, ctx);
 		return cbu32_dump_tree(node, 0, last, -1, node_dump, leaf_dump, ctx);
