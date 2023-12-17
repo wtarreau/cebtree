@@ -28,8 +28,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "cbatree.h"
-#include "cbatree-prv.h"
+#include "cbtree.h"
+#include "cbtree-prv.h"
 
 // to be redone: compare the 3 strings as long as they match, then
 // fall back to different labels depending on the non-matching one.

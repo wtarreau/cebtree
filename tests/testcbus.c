@@ -9,7 +9,7 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "cbatree.h"
+#include "cbtree.h"
 
 struct cb_node *cbus_insert(struct cb_node **root, struct cb_node *node);
 struct cb_node *cbus_lookup(struct cb_node **root, const void *key);

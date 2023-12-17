@@ -9,7 +9,7 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "cbatree.h"
+#include "cbtree.h"
 
 void cbu32_default_dump(struct cb_node **cb_root, const char *label, const void *ctx);
 struct cb_node *cbu32_insert(struct cb_node **root, struct cb_node *node);
