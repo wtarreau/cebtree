@@ -83,6 +83,7 @@
 #ifndef _CBATREE_PRV_H
 #define _CBATREE_PRV_H
 
+#include <inttypes.h>
 
 /* If DEBUG is set, we'll print additional debugging info during the descent */
 #ifdef DEBUG
@@ -129,6 +130,7 @@ static inline __attribute__((always_inline))
 struct cba_node *_cbau_descend(struct cba_node **root,
 			       enum cba_walk_meth meth,
 			       enum cba_key_type key_type,
+			       uint32_t key_u32,
 			       const void *key_ptr,
 			       int *ret_nside,
 			       struct cba_node ***ret_root,
@@ -469,7 +471,7 @@ struct cba_node *_cbau_insert(struct cba_node **root,
 		return node;
 	}
 
-	ret = _cbau_descend(root, CB_WM_KEY, key_type, key_ptr, &nside, &parent, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	ret = _cbau_descend(root, CB_WM_KEY, key_type, 0, key_ptr, &nside, &parent, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 
 	if (!ret) {
 		/* The key was not in the tree, we can insert it. Better use an
@@ -500,7 +502,7 @@ struct cba_node *_cbau_first(struct cba_node **root,
 	if (!*root)
 		return NULL;
 
-	return _cbau_descend(root, CB_WM_FST, key_type, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	return _cbau_descend(root, CB_WM_FST, key_type, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 }
 
 /* Returns the last node or NULL if not found, assuming a tree made of keys of
@@ -513,7 +515,7 @@ struct cba_node *_cbau_last(struct cba_node **root,
 	if (!*root)
 		return NULL;
 
-	return _cbau_descend(root, CB_WM_LST, key_type, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	return _cbau_descend(root, CB_WM_LST, key_type, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 }
 
 /* Searches in the tree <root> made of keys of type <key_type>, for the next
@@ -533,10 +535,10 @@ struct cba_node *_cbau_next(struct cba_node **root,
 	if (!*root)
 		return NULL;
 
-	_cbau_descend(root, CB_WM_KEY, key_type, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &right_branch);
+	_cbau_descend(root, CB_WM_KEY, key_type, 0, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &right_branch);
 	if (!right_branch)
 		return NULL;
-	return _cbau_descend(right_branch, CB_WM_NXT, key_type, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	return _cbau_descend(right_branch, CB_WM_NXT, key_type, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 }
 
 /* Searches in the tree <root> made of keys of type <key_type>, for the prev
@@ -556,10 +558,10 @@ struct cba_node *_cbau_prev(struct cba_node **root,
 	if (!*root)
 		return NULL;
 
-	_cbau_descend(root, CB_WM_KEY, key_type, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &left_branch, NULL);
+	_cbau_descend(root, CB_WM_KEY, key_type, 0, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &left_branch, NULL);
 	if (!left_branch)
 		return NULL;
-	return _cbau_descend(left_branch, CB_WM_PRV, key_type, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	return _cbau_descend(left_branch, CB_WM_PRV, key_type, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 }
 
 /* Searches in the tree <root> made of keys of type <key_type>, for the node
@@ -573,7 +575,7 @@ struct cba_node *_cbau_lookup(struct cba_node **root,
 	if (!*root)
 		return NULL;
 
-	return _cbau_descend(root, CB_WM_KEY, key_type, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	return _cbau_descend(root, CB_WM_KEY, key_type, 0, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 }
 
 /* Searches in the tree <root> made of keys of type <key_type>, for the node
@@ -601,7 +603,7 @@ struct cba_node *_cbau_delete(struct cba_node **root,
 		goto done;
 	}
 
-	ret = _cbau_descend(root, CB_WM_KEY, key_type, key_ptr, NULL, NULL,
+	ret = _cbau_descend(root, CB_WM_KEY, key_type, 0, key_ptr, NULL, NULL,
 			    &lparent, &lpside, &nparent, &npside, &gparent, &gpside, NULL, NULL);
 
 	if (!ret) {
