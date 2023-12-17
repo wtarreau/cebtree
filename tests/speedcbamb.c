@@ -11,9 +11,9 @@
 
 #include "cbatree.h"
 
-struct cba_node *cba_insert_mb(struct cba_node **root, struct cba_node *node, size_t len);
-struct cba_node *cba_lookup_mb(struct cba_node **root, const unsigned char *key, size_t len);
-struct cba_node *cba_delete_mb(struct cba_node **root, struct cba_node *node, size_t len);
+struct cba_node *cbub_insert(struct cba_node **root, struct cba_node *node, size_t len);
+struct cba_node *cbub_lookup(struct cba_node **root, const unsigned char *key, size_t len);
+struct cba_node *cbub_delete(struct cba_node **root, struct cba_node *node, size_t len);
 
 struct cba_node *cba_root = NULL;
 
@@ -30,11 +30,11 @@ struct cba_node *add_value(struct cba_node **root, uint64_t value)
 	key = calloc(1, sizeof(*key));
 	key->key = value;
 	do {
-		prev = cba_insert_mb(root, &key->node, sizeof(key->key));
+		prev = cbub_insert(root, &key->node, sizeof(key->key));
 		if (prev == &key->node)
 			return prev; // was properly inserted
 		/* otherwise was already there, let's try to remove it */
-		ret = cba_delete_mb(root, prev, sizeof(key->key));
+		ret = cbub_delete(root, prev, sizeof(key->key));
 		if (ret != prev) {
 			/* was not properly removed either: THIS IS A BUG! */
 			printf("failed to insert %p(%llx) because %p has the same key and could not be removed because returns %p\n",
@@ -79,7 +79,7 @@ int main(int argc, char **argv)
 
 	for (i = 0; i < entries; i++) {
 		v = rnd64();
-		old = cba_lookup_mb(&cba_root, (const void*)&v, sizeof(v));
+		old = cbub_lookup(&cba_root, (const void*)&v, sizeof(v));
 		if (old)
 			fprintf(stderr, "Note: value %llx already present at %p\n", (long long)v, old);
 		old = add_value(&cba_root, v);
@@ -90,7 +90,7 @@ int main(int argc, char **argv)
 		found = 0;
 		for (i = 0; i < lookups; i++) {
 			v = rnd64();
-			old = cba_lookup_mb(&cba_root, (const void*)&v, sizeof(v));
+			old = cbub_lookup(&cba_root, (const void*)&v, sizeof(v));
 			if (old)
 				found++;
 		}
