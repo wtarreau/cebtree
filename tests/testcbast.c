@@ -11,19 +11,19 @@
 
 #include "cbatree.h"
 
-struct cba_node *cbus_insert(struct cba_node **root, struct cba_node *node);
-struct cba_node *cbus_lookup(struct cba_node **root, const void *key);
-struct cba_node *cbus_delete(struct cba_node **root, struct cba_node *node);
+struct cb_node *cbus_insert(struct cb_node **root, struct cb_node *node);
+struct cb_node *cbus_lookup(struct cb_node **root, const void *key);
+struct cb_node *cbus_delete(struct cb_node **root, struct cb_node *node);
 
-struct cba_node *cbus_first(struct cba_node **root);
-struct cba_node *cbus_last(struct cba_node **root);
-struct cba_node *cbus_next(struct cba_node **root, struct cba_node *node);
-struct cba_node *cbus_prev(struct cba_node **root, struct cba_node *node);
+struct cb_node *cbus_first(struct cb_node **root);
+struct cb_node *cbus_last(struct cb_node **root);
+struct cb_node *cbus_next(struct cb_node **root, struct cb_node *node);
+struct cb_node *cbus_prev(struct cb_node **root, struct cb_node *node);
 
-struct cba_node *cba_root = NULL;
+struct cb_node *cba_root = NULL;
 
 struct key {
-	struct cba_node node;
+	struct cb_node node;
 	char key[21];
 };
 
@@ -158,8 +158,8 @@ void usage(const char *name)
 int main(int argc, char **argv)
 {
 	int entries, lookups, loops, found, i;
-	const struct cba_node *old;
-	struct cba_node *prev, *ret;
+	const struct cb_node *old;
+	struct cb_node *prev, *ret;
 	struct key *key;
 	int debug = 0;
 

@@ -11,23 +11,23 @@
 
 #include "cbatree.h"
 
-void cbu32_default_dump(struct cba_node **cba_root, const char *label, const void *ctx);
-struct cba_node *cbu32_insert(struct cba_node **root, struct cba_node *node);
-struct cba_node *cbu32_lookup(struct cba_node **root, u32 key);
-struct cba_node *cbu32_delete(struct cba_node **root, struct cba_node *node);
-struct cba_node *cbu32_pick(struct cba_node **root, u32 key);
+void cbu32_default_dump(struct cb_node **cba_root, const char *label, const void *ctx);
+struct cb_node *cbu32_insert(struct cb_node **root, struct cb_node *node);
+struct cb_node *cbu32_lookup(struct cb_node **root, u32 key);
+struct cb_node *cbu32_delete(struct cb_node **root, struct cb_node *node);
+struct cb_node *cbu32_pick(struct cb_node **root, u32 key);
 
-struct cba_node *cba_root = NULL;
+struct cb_node *cba_root = NULL;
 
 struct key {
-	struct cba_node node;
+	struct cb_node node;
 	uint32_t key;
 };
 
-struct cba_node *add_value(struct cba_node **root, uint32_t value)
+struct cb_node *add_value(struct cb_node **root, uint32_t value)
 {
 	struct key *key;
-	struct cba_node *prev, *ret;
+	struct cb_node *prev, *ret;
 
 	key = calloc(1, sizeof(*key));
 	key->key = value;
@@ -59,7 +59,7 @@ static uint32_t rnd32()
 
 int main(int argc, char **argv)
 {
-	struct cba_node *old, *back;
+	struct cb_node *old, *back;
 	char *orig_argv, *argv0 = *argv, *larg;
 	struct key *key;
 	char *p;
