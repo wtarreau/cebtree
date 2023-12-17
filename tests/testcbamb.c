@@ -82,7 +82,7 @@ int main(int argc, char **argv)
 			int len;
 
 			len = snprintf(cmd, sizeof(cmd), "%s [%d] +%d", orig_argv, round, v);
-			//cbau32_default_dump(&cba_root, len < sizeof(cmd) ? cmd : orig_argv, old);
+			//cbu32_default_dump(&cba_root, len < sizeof(cmd) ? cmd : orig_argv, old);
 			round++;
 		}
 
@@ -95,7 +95,7 @@ int main(int argc, char **argv)
 		p += strlen(p);
 
 	//if (!debug)
-	//	cbau32_default_dump(&cba_root, orig_argv, 0);
+	//	cbu32_default_dump(&cba_root, orig_argv, 0);
 
 	return 0;
 }
