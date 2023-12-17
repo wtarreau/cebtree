@@ -11,21 +11,21 @@
 
 #include "cbatree.h"
 
-struct cba_node *cbub_insert(struct cba_node **root, struct cba_node *node, size_t len);
-struct cba_node *cbub_lookup(struct cba_node **root, const unsigned char *key, size_t len);
-struct cba_node *cbub_delete(struct cba_node **root, struct cba_node *node, size_t len);
+struct cb_node *cbub_insert(struct cb_node **root, struct cb_node *node, size_t len);
+struct cb_node *cbub_lookup(struct cb_node **root, const unsigned char *key, size_t len);
+struct cb_node *cbub_delete(struct cb_node **root, struct cb_node *node, size_t len);
 
-struct cba_node *cba_root = NULL;
+struct cb_node *cba_root = NULL;
 
 struct key {
-	struct cba_node node;
+	struct cb_node node;
 	uint64_t key;
 };
 
-struct cba_node *add_value(struct cba_node **root, uint64_t value)
+struct cb_node *add_value(struct cb_node **root, uint64_t value)
 {
 	struct key *key;
-	struct cba_node *prev, *ret;
+	struct cb_node *prev, *ret;
 
 	key = calloc(1, sizeof(*key));
 	key->key = value;
@@ -64,7 +64,7 @@ static uint64_t rnd64()
 int main(int argc, char **argv)
 {
 	int entries, lookups, loops, found, i;
-	const struct cba_node *old;
+	const struct cb_node *old;
 	uint64_t v;
 
 	if (argc != 4) {
