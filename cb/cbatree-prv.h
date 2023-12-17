@@ -270,46 +270,49 @@ struct cba_node *_cbau_descend(struct cba_node **root,
 			}
 		}
 
-		if (meth == CB_WM_KEY) {
-			/* check the split bit */
-			if (key_type == CB_KT_ST) {
-				if ((unsigned)llen < (unsigned)xlen && (unsigned)rlen < (unsigned)xlen) {
-					/* can't go lower, the node must be inserted above p
-					 * (which is then necessarily a node). We also know
-					 * that (key != p->key.str) because p->key.str differs
-					 * from at least one of its subkeys by a higher bit
-					 * than the split bit, so lookups must fail here.
-					 */
-					CBADBG(" B! [%04d] meth=%d plen=%d llen=%d rlen=%d xlen=%d p=%p pkey=str('%s') key=str('%s')\n", __LINE__, meth, plen, llen, rlen, xlen, p, (const char*)p->key.str, (const char*)key_ptr);
-					break;
-				}
+		if (meth != CB_WM_KEY)
+			goto skip_key_check;
+
+		/* We're looking up a specific key. Check the split bit. For
+		 * each key type, the principle is the same:
+		 *   - if the xor between the key and both sides shows a
+		 *     shorter common length than the xor between the two
+		 *     sides, we cannot go lower. We know that the searched key
+		 *     differs from the current one because p->key differs from
+		 *     at least one of its subkeys by one higher bit than the
+		 *     split bit.
+		 *   - if we're doing a lookup, the key is not found and we
+		 *     fail.
+		 *   - if we are inserting, we must stop here and we have the
+		 *     guarantee to be above a node.
+		 *   - if we're deleting, it could be the key we were looking
+		 *     for so we have to check for it as long as it's still
+		 *     possible to keep a copy of the node's parent. <found> is
+		 *     set int this case.
+		 */
+		if (key_type == CB_KT_ST) {
+			if ((unsigned)llen < (unsigned)xlen && (unsigned)rlen < (unsigned)xlen) {
+				CBADBG(" B! [%04d] meth=%d plen=%d llen=%d rlen=%d xlen=%d p=%p pkey=str('%s') key=str('%s')\n", __LINE__, meth, plen, llen, rlen, xlen, p, (const char*)p->key.str, (const char*)key_ptr);
+				break;
 			}
 
-			/* here we're guaranteed to be above a node. If this is the
-			 * same node as the one we're looking for, let's store the
-			 * parent as the node's parent.
-			 */
-			if (ret_npside || ret_nparent) {
+			if (ret_npside || ret_nparent) { // delete ?
 				int mlen = llen > rlen ? llen : rlen;
 
 				if (mlen > xlen)
 					mlen = xlen;
 
-				if (key_type == CB_KT_ST &&
-				    strcmp(key_ptr + mlen / 8, (const void *)p->key.str + mlen / 8) == 0) {
+				if (strcmp(key_ptr + mlen / 8, (const void *)p->key.str + mlen / 8) == 0) {
 					/* strcmp() still needed. E.g. 1 2 3 4 10 11 4 3 2 1 10 11 fails otherwise */
 					CBADBG(" F! [%04d] meth=%d plen=%d llen=%d rlen=%d xlen=%d p=%p pkey=str('%s') key=str('%s')\n", __LINE__, meth, plen, llen, rlen, xlen, p, (const char*)p->key.str, (const char*)key_ptr);
-
 					nparent = lparent;
 					npside  = lpside;
-					/* we've found a match, so we know the node is there but
-					 * we still need to walk down to spot all parents.
-					 */
 					found = 1;
 				}
 			}
 		}
 
+	skip_key_check:
 		/* shift all copies by one */
 		gparent = lparent;
 		gpside = lpside;
