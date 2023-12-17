@@ -15,7 +15,7 @@ struct cb_node *cbub_insert(struct cb_node **root, struct cb_node *node, size_t 
 struct cb_node *cbub_lookup(struct cb_node **root, const unsigned char *key, size_t len);
 struct cb_node *cbub_delete(struct cb_node **root, struct cb_node *node, size_t len);
 
-struct cb_node *cba_root = NULL;
+struct cb_node *cb_root = NULL;
 
 struct key {
 	struct cb_node node;
@@ -79,10 +79,10 @@ int main(int argc, char **argv)
 
 	for (i = 0; i < entries; i++) {
 		v = rnd64();
-		old = cbub_lookup(&cba_root, (const void*)&v, sizeof(v));
+		old = cbub_lookup(&cb_root, (const void*)&v, sizeof(v));
 		if (old)
 			fprintf(stderr, "Note: value %llx already present at %p\n", (long long)v, old);
-		old = add_value(&cba_root, v);
+		old = add_value(&cb_root, v);
 	}
 
 	while (loops-- > 0) {
@@ -90,7 +90,7 @@ int main(int argc, char **argv)
 		found = 0;
 		for (i = 0; i < lookups; i++) {
 			v = rnd64();
-			old = cbub_lookup(&cba_root, (const void*)&v, sizeof(v));
+			old = cbub_lookup(&cb_root, (const void*)&v, sizeof(v));
 			if (old)
 				found++;
 		}

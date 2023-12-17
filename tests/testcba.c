@@ -11,12 +11,12 @@
 
 #include "cbatree.h"
 
-void cbu32_default_dump(struct cb_node **cba_root, const char *label, const void *ctx);
+void cbu32_default_dump(struct cb_node **cb_root, const char *label, const void *ctx);
 struct cb_node *cbu32_insert(struct cb_node **root, struct cb_node *node);
 struct cb_node *cbu32_lookup(struct cb_node **root, u32 key);
 struct cb_node *cbu32_delete(struct cb_node **root, struct cb_node *node);
 
-struct cb_node *cba_root = NULL;
+struct cb_node *cb_root = NULL;
 
 struct key {
 	struct cb_node node;
@@ -72,10 +72,10 @@ int main(int argc, char **argv)
 	orig_argv = larg = *argv;
 	while (argc > 0) {
 		v = atoi(argv[0]);
-		old = cbu32_lookup(&cba_root, v);
+		old = cbu32_lookup(&cb_root, v);
 		if (old)
 			fprintf(stderr, "Note: value %u already present at %p\n", v, old);
-		old = add_value(&cba_root, v);
+		old = add_value(&cb_root, v);
 
 		if (debug) {
 			static int round;
@@ -83,7 +83,7 @@ int main(int argc, char **argv)
 			int len;
 
 			len = snprintf(cmd, sizeof(cmd), "%s [%d] +%d", orig_argv, round, v);
-			cbu32_default_dump(&cba_root, len < sizeof(cmd) ? cmd : orig_argv, old);
+			cbu32_default_dump(&cb_root, len < sizeof(cmd) ? cmd : orig_argv, old);
 			round++;
 		}
 
@@ -96,7 +96,7 @@ int main(int argc, char **argv)
 		p += strlen(p);
 
 	if (!debug)
-		cbu32_default_dump(&cba_root, orig_argv, 0);
+		cbu32_default_dump(&cb_root, orig_argv, 0);
 
 	return 0;
 }

@@ -15,7 +15,7 @@ struct cb_node *cbub_insert(struct cb_node **root, struct cb_node *node, size_t 
 struct cb_node *cbub_lookup(struct cb_node **root, const unsigned char *key, size_t len);
 struct cb_node *cbub_delete(struct cb_node **root, struct cb_node *node, size_t len);
 
-struct cb_node *cba_root = NULL;
+struct cb_node *cb_root = NULL;
 
 struct key {
 	struct cb_node node;
@@ -71,10 +71,10 @@ int main(int argc, char **argv)
 	orig_argv = larg = *argv;
 	while (argc > 0) {
 		v = atoi(argv[0]);
-		old = cbub_lookup(&cba_root, &v, sizeof(uint32_t));
+		old = cbub_lookup(&cb_root, &v, sizeof(uint32_t));
 		if (old)
 			fprintf(stderr, "Note: value %u already present at %p\n", v, old);
-		old = add_value(&cba_root, v);
+		old = add_value(&cb_root, v);
 
 		if (debug) {
 			static int round;
@@ -82,7 +82,7 @@ int main(int argc, char **argv)
 			int len;
 
 			len = snprintf(cmd, sizeof(cmd), "%s [%d] +%d", orig_argv, round, v);
-			//cbu32_default_dump(&cba_root, len < sizeof(cmd) ? cmd : orig_argv, old);
+			//cbu32_default_dump(&cb_root, len < sizeof(cmd) ? cmd : orig_argv, old);
 			round++;
 		}
 
@@ -95,7 +95,7 @@ int main(int argc, char **argv)
 		p += strlen(p);
 
 	//if (!debug)
-	//	cbu32_default_dump(&cba_root, orig_argv, 0);
+	//	cbu32_default_dump(&cb_root, orig_argv, 0);
 
 	return 0;
 }

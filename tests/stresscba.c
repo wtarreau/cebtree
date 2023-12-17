@@ -11,13 +11,13 @@
 
 #include "cbatree.h"
 
-void cbu32_default_dump(struct cb_node **cba_root, const char *label, const void *ctx);
+void cbu32_default_dump(struct cb_node **cb_root, const char *label, const void *ctx);
 struct cb_node *cbu32_insert(struct cb_node **root, struct cb_node *node);
 struct cb_node *cbu32_lookup(struct cb_node **root, u32 key);
 struct cb_node *cbu32_delete(struct cb_node **root, struct cb_node *node);
 struct cb_node *cbu32_pick(struct cb_node **root, u32 key);
 
-struct cb_node *cba_root = NULL;
+struct cb_node *cb_root = NULL;
 
 struct key {
 	struct cb_node node;
@@ -102,16 +102,16 @@ int main(int argc, char **argv)
 	if (test == 0) {
 		while (count--) {
 			v = rnd32() & mask;
-			old = cbu32_lookup(&cba_root, v);
+			old = cbu32_lookup(&cb_root, v);
 			if (old) {
-				if (cbu32_delete(&cba_root, old) != old)
+				if (cbu32_delete(&cb_root, old) != old)
 					abort();
 				free(container_of(old, struct key, node));
 			}
 			else {
 				key = calloc(1, sizeof(*key));
 				key->key = v;
-				old = cbu32_insert(&cba_root, &key->node);
+				old = cbu32_insert(&cb_root, &key->node);
 				if (old != &key->node)
 					abort();
 			}
@@ -119,16 +119,16 @@ int main(int argc, char **argv)
 	} else if (test == 1) {
 		while (count--) {
 			v = rnd32() & mask;
-			old = cbu32_lookup(&cba_root, v);
+			old = cbu32_lookup(&cb_root, v);
 			if (old) {
-				if (cbu32_delete(&cba_root, old) != old)
+				if (cbu32_delete(&cb_root, old) != old)
 					abort();
 				free(container_of(old, struct key, node));
 			}
 
 			key = calloc(1, sizeof(*key));
 			key->key = v;
-			old = cbu32_insert(&cba_root, &key->node);
+			old = cbu32_insert(&cb_root, &key->node);
 			if (old != &key->node)
 				abort();
 
@@ -138,7 +138,7 @@ int main(int argc, char **argv)
 				int len;
 
 				len = snprintf(cmd, sizeof(cmd), "%s %d/%d : %p %d\n", orig_argv, round, round+count, old, v);
-				cbu32_default_dump(&cba_root, len < sizeof(cmd) ? cmd : orig_argv, old);
+				cbu32_default_dump(&cb_root, len < sizeof(cmd) ? cmd : orig_argv, old);
 				round++;
 			}
 		}
@@ -146,21 +146,21 @@ int main(int argc, char **argv)
 		while (count--) {
 			v = rnd32() & mask;
 			if (!count && debug > 2)
-				cbu32_default_dump(&cba_root, "step1", 0);
-			old = cbu32_pick(&cba_root, v);
+				cbu32_default_dump(&cb_root, "step1", 0);
+			old = cbu32_pick(&cb_root, v);
 			if (!count && debug > 2)
-				cbu32_default_dump(&cba_root, "step2", 0);
+				cbu32_default_dump(&cb_root, "step2", 0);
 			back = old;
 			while (old) {
 				if (old && !count && debug > 2)
-					cbu32_default_dump(&cba_root, "step3", 0);
-				old = cbu32_pick(&cba_root, v);
+					cbu32_default_dump(&cb_root, "step3", 0);
+				old = cbu32_pick(&cb_root, v);
 				//if (old)
 				//	printf("count=%d v=%u back=%p old=%p\n", count, v, back, old);
 			}
 
 			if (!count && debug > 2)
-				cbu32_default_dump(&cba_root, "step4", 0);
+				cbu32_default_dump(&cb_root, "step4", 0);
 
 			//abort();
 			//memset(old, 0, sizeof(*key));
@@ -169,25 +169,25 @@ int main(int argc, char **argv)
 
 			key = calloc(1, sizeof(*key));
 			key->key = v;
-			old = cbu32_insert(&cba_root, &key->node);
+			old = cbu32_insert(&cb_root, &key->node);
 			if (old != &key->node)
 				abort();
 
 			if (!count && debug > 2)
-				cbu32_default_dump(&cba_root, "step5", 0);
+				cbu32_default_dump(&cb_root, "step5", 0);
 			else if (debug > 1) {
 				static int round;
 				char cmd[100];
 				int len;
 
 				len = snprintf(cmd, sizeof(cmd), "%s %d/%d : %p %d\n", orig_argv, round, round+count, old, v);
-				cbu32_default_dump(&cba_root, len < sizeof(cmd) ? cmd : orig_argv, old);
+				cbu32_default_dump(&cb_root, len < sizeof(cmd) ? cmd : orig_argv, old);
 				round++;
 			}
 		}
 	}
 
 	if (debug == 1)
-		cbu32_default_dump(&cba_root, orig_argv, 0);
+		cbu32_default_dump(&cb_root, orig_argv, 0);
 	return 0;
 }
