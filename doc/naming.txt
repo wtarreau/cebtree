@@ -29,7 +29,7 @@ Key access mode :
     addressing model.
 
 Key type and size (for both direct/indirect) :
-  - 16 / 32 / 64 for fixed integer key sizes
+  - 16 / 32 / 64 / l for fixed integer key sizes (l for long)
   - "b" for fixed size memory block ("binary")
   - "s" for null-terminated string
   - none for node's address only
@@ -40,8 +40,8 @@ Key sign (for integers) :
 
 That gives :
 
-  {eb,cb}{,l,m,s}{u,}{,a,i}{,16,32,64,b,s}{i,}
-     \       \     \    \         \         \_ signed int y/n
+  {eb,cb}{,l,m,s}{u,}{,a,i}{,16,32,64,l,b,s}{i,}
+     \       \     \    \         \           \_ signed int y/n
       \       \     \    \         \_ key type/size
        \       \     \    \_ access mode ((dir)/abs/indir)
         \       \     \_ unique y/n

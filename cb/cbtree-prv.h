@@ -114,6 +114,7 @@ enum cb_key_type {
 union cb_key_storage {
 	uint32_t u32;
 	uint64_t u64;
+	unsigned long ul;
 	unsigned char mb[0];
 	unsigned char str[0];
 };
