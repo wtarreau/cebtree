@@ -165,10 +165,10 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 	int npside = 0;   // side on the node's parent
 	long lpside = 0;  // side on the leaf's parent
 	long brside = 0;  // branch side when descending
-	ssize_t llen = 0; // left vs key matching length
-	ssize_t rlen = 0; // right vs key matching length
-	ssize_t xlen = 0; // left vs right matching length
-	ssize_t plen = 0; // previous xlen
+	size_t llen = 0; // left vs key matching length
+	size_t rlen = 0; // right vs key matching length
+	size_t xlen = 0; // left vs right matching length
+	size_t plen = 0; // previous xlen
 	int found = 0;    // key was found (saves an extra strcmp for arrays)
 
 	switch (key_type) {
@@ -300,7 +300,7 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 				llen = string_equal_bits(key_ptr, l->key.str, 0);
 				rlen = string_equal_bits(key_ptr, r->key.str, 0);
 				brside = (size_t)llen <= (size_t)rlen;
-				if (llen < 0 || rlen < 0)
+				if ((ssize_t)llen < 0 || (ssize_t)rlen < 0)
 					found = 1;
 			}
 		}
@@ -406,7 +406,7 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 			}
 
 			if (ret_npside || ret_nparent) { // delete ?
-				ssize_t mlen = llen > rlen ? llen : rlen;
+				size_t mlen = llen > rlen ? llen : rlen;
 
 				if (mlen > xlen)
 					mlen = xlen;
@@ -426,7 +426,7 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 			}
 
 			if (ret_npside || ret_nparent) { // delete ?
-				ssize_t mlen = llen > rlen ? llen : rlen;
+				size_t mlen = llen > rlen ? llen : rlen;
 
 				if (mlen > xlen)
 					mlen = xlen;
@@ -549,7 +549,7 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 	 */
 	if (key_type == CB_KT_ST) {
 		if (found || meth != CB_WM_KEY)
-			plen = -1;
+			plen = (size_t)-1;
 		else
 			plen = (llen > rlen) ? llen : rlen;
 	}
@@ -569,7 +569,7 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 			*ret_nside = (uint64_t)plen / 8 == key_u64 || memcmp(key_ptr + plen / 8, p->key.mb + plen / 8, key_u64 - plen / 8) >= 0;
 			break;
 		case CB_KT_ST:
-			*ret_nside = (plen < 0) || strcmp(key_ptr + plen / 8, (const void *)p->key.str + plen / 8) >= 0;
+			*ret_nside = ((ssize_t)plen < 0) || strcmp(key_ptr + plen / 8, (const void *)p->key.str + plen / 8) >= 0;
 			break;
 		default:
 			break;
@@ -640,7 +640,7 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 			return &p->node;
 	}
 	else if (key_type == CB_KT_ST) {
-		if (plen < 0 || strcmp(key_ptr + plen / 8, (const void *)p->key.str + plen / 8) == 0)
+		if ((ssize_t)plen < 0 || strcmp(key_ptr + plen / 8, (const void *)p->key.str + plen / 8) == 0)
 			return &p->node;
 	}
 
