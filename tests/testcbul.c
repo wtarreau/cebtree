@@ -46,19 +46,24 @@ struct cb_node *add_value(struct cb_node **root, unsigned long value)
 int main(int argc, char **argv)
 {
 	const struct cb_node *old;
+	struct cb_node *ret, *next;
 	char *argv0 = *argv, *larg;
 	char *orig_argv;
 	char *p;
 	unsigned long v;
 	int debug = 0;
+	int found;
+	int do_count = 0;
 
 	argv++; argc--;
 
 	while (argc && **argv == '-') {
 		if (strcmp(*argv, "-d") == 0)
 			debug++;
+		else if (strcmp(*argv, "-c") == 0)
+			do_count=1;
 		else {
-			printf("Usage: %s [-d]* [value]*\n", argv0);
+			printf("Usage: %s [-dc]* [value]*\n", argv0);
 			exit(1);
 		}
 		argc--; argv++;
@@ -89,6 +94,23 @@ int main(int argc, char **argv)
 	/* rebuild non-debug args as a single string */
 	for (p = orig_argv; p < larg; *p++ = ' ')
 		p += strlen(p);
+
+	/* now count elements */
+	if (do_count) {
+		found = 0;
+		ret = cbul_first(&cb_root);
+		if (debug)
+			fprintf(stderr, "%d: ret=%p\n", __LINE__, ret);
+
+		while (ret) {
+			next = cbul_next(&cb_root, ret);
+			if (debug)
+				fprintf(stderr, "   %4d: @%p: <%#lx> next=%p\n", found, ret, ((const struct key *)ret)->key, next);
+			found++;
+			ret = next;
+		}
+		fprintf(stderr, "counted %d elements\n", found);
+	}
 
 	if (!debug)
 		cbul_default_dump(&cb_root, orig_argv, 0);
