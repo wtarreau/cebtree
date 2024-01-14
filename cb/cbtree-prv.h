@@ -159,7 +159,9 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 	struct cb_node **alt_l = NULL;
 	struct cb_node **alt_r = NULL;
 	struct cb_node *lparent;
+	uint32_t xor32;   // left vs right branch xor, 32 bit
 	uint32_t pxor32 = ~0; // previous xor between branches
+	uint64_t xor64;   // left vs right branch xor, 64-bit
 	uint64_t pxor64 = ~0ULL; // previous xor between branches
 	int gpside = 0;   // side on the grand parent
 	int npside = 0;   // side on the node's parent
@@ -321,14 +323,16 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 		 */
 
 		if (key_type == CB_KT_U32) {
-			if ((l->key.u32 ^ r->key.u32) > pxor32) { // test using 2 4 6 4
-				CBDBG(" L! [%04d] meth=%d pxor=%#x lxor=%#x rxor=%#x xxor=%#x p=%p pkey=u32(%#x) key=u32(%#x)\n", __LINE__, meth, pxor32, l->key.u32 ^ key_u32, r->key.u32 ^ key_u32, l->key.u32 ^ r->key.u32, p, p->key.u32, key_u32);
+			xor32 = l->key.u32 ^ r->key.u32;
+			if (xor32 > pxor32) { // test using 2 4 6 4
+				CBDBG(" L! [%04d] meth=%d pxor=%#x lxor=%#x rxor=%#x xxor=%#x p=%p pkey=u32(%#x) key=u32(%#x)\n", __LINE__, meth, pxor32, l->key.u32 ^ key_u32, r->key.u32 ^ key_u32, xor32, p, p->key.u32, key_u32);
 				break;
 			}
 		}
 		else if (key_type == CB_KT_U64) {
-			if ((l->key.u64 ^ r->key.u64) > pxor64) { // test using 2 4 6 4
-				CBDBG(" L! [%04d] meth=%d pxor=%#llx lxor=%#llx rxor=%#llx xxor=%#llx p=%p pkey=u64(%#llx) key=u64(%#llx)\n", __LINE__, meth, (unsigned long long)pxor64, (unsigned long long)(l->key.u64 ^ key_u64), (unsigned long long)(r->key.u64 ^ key_u64), (unsigned long long)(l->key.u64 ^ r->key.u64), p, (unsigned long long)p->key.u64, (unsigned long long)key_u64);
+			xor64 = l->key.u64 ^ r->key.u64;
+			if (xor64 > pxor64) { // test using 2 4 6 4
+				CBDBG(" L! [%04d] meth=%d pxor=%#llx lxor=%#llx rxor=%#llx xxor=%#llx p=%p pkey=u64(%#llx) key=u64(%#llx)\n", __LINE__, meth, (unsigned long long)pxor64, (unsigned long long)(l->key.u64 ^ key_u64), (unsigned long long)(r->key.u64 ^ key_u64), (unsigned long long)xor64, p, (unsigned long long)p->key.u64, (unsigned long long)key_u64);
 				break;
 			}
 		}
@@ -370,30 +374,28 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 		 *     set int this case for expensive types.
 		 */
 		if (key_type == CB_KT_U32) {
-			pxor32 = l->key.u32 ^ r->key.u32;
-			if ((key_u32 ^ l->key.u32) > pxor32 && (key_u32 ^ r->key.u32) > pxor32) {
-				CBDBG(" B! [%04d] meth=%d pxor=%#x lxor=%#x rxor=%#x xxor=%#x p=%p pkey=u32(%#x) key=u32(%#x)\n", __LINE__, meth, pxor32, l->key.u32 ^ key_u32, r->key.u32 ^ key_u32, l->key.u32 ^ r->key.u32, p, p->key.u32, key_u32);
+			if ((key_u32 ^ l->key.u32) > xor32 && (key_u32 ^ r->key.u32) > xor32) {
+				CBDBG(" B! [%04d] meth=%d pxor=%#x lxor=%#x rxor=%#x xxor=%#x p=%p pkey=u32(%#x) key=u32(%#x)\n", __LINE__, meth, pxor32, l->key.u32 ^ key_u32, r->key.u32 ^ key_u32, xor32, p, p->key.u32, key_u32);
 				break;
 			}
 
 			if (ret_npside || ret_nparent) {
 				if (key_u32 == p->key.u32) {
-					CBDBG(" F! [%04d] meth=%d pxor=%#x lxor=%#x rxor=%#x xxor=%#x p=%p pkey=u32(%#x) key=u32(%#x)\n", __LINE__, meth, pxor32, l->key.u32 ^ key_u32, r->key.u32 ^ key_u32, l->key.u32 ^ r->key.u32, p, p->key.u32, key_u32);
+					CBDBG(" F! [%04d] meth=%d pxor=%#x lxor=%#x rxor=%#x xxor=%#x p=%p pkey=u32(%#x) key=u32(%#x)\n", __LINE__, meth, pxor32, l->key.u32 ^ key_u32, r->key.u32 ^ key_u32, xor32, p, p->key.u32, key_u32);
 					nparent = lparent;
 					npside  = lpside;
 				}
 			}
 		}
 		else if (key_type == CB_KT_U64) {
-			pxor64 = l->key.u64 ^ r->key.u64;
-			if ((key_u64 ^ l->key.u64) > pxor64 && (key_u64 ^ r->key.u64) > pxor64) {
-				CBDBG(" B! [%04d] meth=%d pxor=%#llx lxor=%#llx rxor=%#llx xxor=%#llx p=%p pkey=u64(%#llx) key=u64(%#llx)\n", __LINE__, meth, (unsigned long long)pxor64, (unsigned long long)(l->key.u64 ^ key_u64), (unsigned long long)(r->key.u64 ^ key_u64), (unsigned long long)(l->key.u64 ^ r->key.u64), p, (unsigned long long)p->key.u64, (unsigned long long)key_u64);
+			if ((key_u64 ^ l->key.u64) > xor64 && (key_u64 ^ r->key.u64) > xor64) {
+				CBDBG(" B! [%04d] meth=%d pxor=%#llx lxor=%#llx rxor=%#llx xxor=%#llx p=%p pkey=u64(%#llx) key=u64(%#llx)\n", __LINE__, meth, (unsigned long long)pxor64, (unsigned long long)(l->key.u64 ^ key_u64), (unsigned long long)(r->key.u64 ^ key_u64), (unsigned long long)(xor64), p, (unsigned long long)p->key.u64, (unsigned long long)key_u64);
 				break;
 			}
 
 			if (ret_npside || ret_nparent) {
 				if (key_u64 == p->key.u64) {
-					CBDBG(" F! [%04d] meth=%d pxor=%#llx lxor=%#llx rxor=%#llx xxor=%#llx p=%p pkey=u64(%#llx) key=u64(%#llx)\n", __LINE__, meth, (unsigned long long)pxor64, (unsigned long long)(l->key.u64 ^ key_u64), (unsigned long long)(r->key.u64 ^ key_u64), (unsigned long long)(l->key.u64 ^ r->key.u64), p, (unsigned long long)p->key.u64, (unsigned long long)key_u64);
+					CBDBG(" F! [%04d] meth=%d pxor=%#llx lxor=%#llx rxor=%#llx xxor=%#llx p=%p pkey=u64(%#llx) key=u64(%#llx)\n", __LINE__, meth, (unsigned long long)pxor64, (unsigned long long)(l->key.u64 ^ key_u64), (unsigned long long)(r->key.u64 ^ key_u64), (unsigned long long)(xor64), p, (unsigned long long)p->key.u64, (unsigned long long)key_u64);
 					nparent = lparent;
 					npside  = lpside;
 				}
@@ -522,10 +524,10 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 			/* loops over itself, it's a leaf */
 			switch (key_type) {
 			case CB_KT_U32:
-				CBDBG(" B! [%04d] meth=%d pxor=%#x lxor=%#x rxor=%#x xxor=%#x p=%p pkey=u32(%#x) key=u32(%#x)\n", __LINE__, meth, pxor32, l->key.u32 ^ key_u32, r->key.u32 ^ key_u32, l->key.u32 ^ r->key.u32, p, p->key.u32, key_u32);
+				CBDBG(" B! [%04d] meth=%d pxor=%#x lxor=%#x rxor=%#x xxor=%#x p=%p pkey=u32(%#x) key=u32(%#x)\n", __LINE__, meth, pxor32, l->key.u32 ^ key_u32, r->key.u32 ^ key_u32, xor32, p, p->key.u32, key_u32);
 				break;
 			case CB_KT_U64:
-				CBDBG(" B! [%04d] meth=%d pxor=%#llx lxor=%#llx rxor=%#llx xxor=%#llx p=%p pkey=u64(%#llx) key=u64(%#llx)\n", __LINE__, meth, (unsigned long long)pxor64, (unsigned long long)(l->key.u64 ^ key_u64), (unsigned long long)(r->key.u64 ^ key_u64), (unsigned long long)(l->key.u64 ^ r->key.u64), p, (unsigned long long)p->key.u64, (unsigned long long)key_u64);
+				CBDBG(" B! [%04d] meth=%d pxor=%#llx lxor=%#llx rxor=%#llx xxor=%#llx p=%p pkey=u64(%#llx) key=u64(%#llx)\n", __LINE__, meth, (unsigned long long)pxor64, (unsigned long long)(l->key.u64 ^ key_u64), (unsigned long long)(r->key.u64 ^ key_u64), (unsigned long long)xor64, p, (unsigned long long)p->key.u64, (unsigned long long)key_u64);
 				break;
 			case CB_KT_ST:
 				CBDBG(" ^! [%04d] meth=%d plen=%ld llen=%ld rlen=%ld xlen=%ld p=%p pkey=str('%s') key=str('%s')\n", __LINE__, meth, (long)plen, (long)llen, (long)rlen, (long)xlen, p, (const char*)p->key.str, (meth == CB_WM_KEY) ? (const char*)key_ptr : "");
@@ -537,6 +539,8 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 			break;
 		}
 		plen = xlen;
+		pxor32 = xor32;
+		pxor64 = xor64;
 	}
 
 	/* if we've exited on an exact match after visiting a regular node
@@ -606,10 +610,10 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 
 	switch (key_type) {
 	case CB_KT_U32:
-		CBDBG("<<< [%04d] meth=%d pxor=%#x p=%p pkey=u32(%#x) key=u32(%#x)\n", __LINE__, meth, pxor32, p, p->key.u32, key_u32);
+		CBDBG("<<< [%04d] meth=%d pxor=%#x xxor=%#x p=%p pkey=u32(%#x) key=u32(%#x)\n", __LINE__, meth, pxor32, xor32, p, p->key.u32, key_u32);
 		break;
 	case CB_KT_U64:
-		CBDBG("<<< [%04d] meth=%d pxor=%#llx p=%p pkey=u64(%#llx) key=u64(%#llx)\n", __LINE__, meth, (unsigned long long)pxor64, p, (unsigned long long)p->key.u64, (unsigned long long)key_u64);
+		CBDBG("<<< [%04d] meth=%d pxor=%#llx xor=%#llx p=%p pkey=u64(%#llx) key=u64(%#llx)\n", __LINE__, meth, (unsigned long long)pxor64, (unsigned long long)xor64, p, (unsigned long long)p->key.u64, (unsigned long long)key_u64);
 		break;
 	case CB_KT_MB:
 		CBDBG("<<< [%04d] meth=%d plen=%ld xlen=%ld p=%p pkey=mb(%p) key=mb(%p)\n", __LINE__, meth, (long)plen, (long)xlen, p, p->key.mb, key_ptr);
