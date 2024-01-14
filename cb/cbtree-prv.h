@@ -557,7 +557,7 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 	/* we may have plen==-1 if we've got an exact match over the whole key length above */
 
 	/* update the pointers needed for modifications (insert, delete) */
-	if (ret_nside) {
+	if (ret_nside && meth == CB_WM_KEY) {
 		switch (key_type) {
 		case CB_KT_U32:
 			*ret_nside = key_u32 >= p->key.u32;
@@ -622,26 +622,32 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 		break;
 	}
 
-	/* For lookups, an equal value means an instant return. For insertions,
-	 * it is the same, we want to return the previously existing value so
-	 * that the caller can decide what to do. For deletion, we also want to
-	 * return the pointer that's about to be deleted.
-	 */
-	if (key_type == CB_KT_U32) {
-		if (key_u32 == p->key.u32)
-			return &p->node;
-	}
-	else if (key_type == CB_KT_U64) {
-		if (key_u64 == p->key.u64)
-			return &p->node;
-	}
-	else if (key_type == CB_KT_MB) {
-		if ((uint64_t)plen / 8 == key_u64 || memcmp(key_ptr + plen / 8, p->key.mb + plen / 8, key_u64 - plen / 8) == 0)
-			return &p->node;
-	}
-	else if (key_type == CB_KT_ST) {
-		if ((ssize_t)plen < 0 || strcmp(key_ptr + plen / 8, (const void *)p->key.str + plen / 8) == 0)
-			return &p->node;
+	if (meth == CB_WM_KEY) {
+		/* For lookups, an equal value means an instant return. For insertions,
+		 * it is the same, we want to return the previously existing value so
+		 * that the caller can decide what to do. For deletion, we also want to
+		 * return the pointer that's about to be deleted.
+		 */
+		if (key_type == CB_KT_U32) {
+			if (key_u32 == p->key.u32)
+				return &p->node;
+		}
+		else if (key_type == CB_KT_U64) {
+			if (key_u64 == p->key.u64)
+				return &p->node;
+		}
+		else if (key_type == CB_KT_MB) {
+			if ((uint64_t)plen / 8 == key_u64 || memcmp(key_ptr + plen / 8, p->key.mb + plen / 8, key_u64 - plen / 8) == 0)
+				return &p->node;
+		}
+		else if (key_type == CB_KT_ST) {
+			if ((ssize_t)plen < 0 || strcmp(key_ptr + plen / 8, (const void *)p->key.str + plen / 8) == 0)
+				return &p->node;
+		}
+	} else if (meth == CB_WM_FST || meth == CB_WM_LST) {
+		return &p->node;
+	} else if (meth == CB_WM_PRV || meth == CB_WM_NXT) {
+		return &p->node;//(p != root) ? &p->node : NULL;//&p->node;
 	}
 
 	/* lookups and deletes fail here */
