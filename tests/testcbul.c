@@ -53,6 +53,7 @@ int main(int argc, char **argv)
 	unsigned long v;
 	int debug = 0;
 	int found;
+	int lookup_mode = 0; // 0 = EQ; -1 = LE; 1 = GE
 	int do_count = 0;
 
 	argv++; argc--;
@@ -60,10 +61,18 @@ int main(int argc, char **argv)
 	while (argc && **argv == '-') {
 		if (strcmp(*argv, "-d") == 0)
 			debug++;
+		else if (strcmp(*argv, "-g") == 0)
+			lookup_mode=1;
+		else if (strcmp(*argv, "-l") == 0)
+			lookup_mode=-1;
+		else if (strcmp(*argv, "-G") == 0)
+			lookup_mode=2;
+		else if (strcmp(*argv, "-L") == 0)
+			lookup_mode=-2;
 		else if (strcmp(*argv, "-c") == 0)
 			do_count=1;
 		else {
-			printf("Usage: %s [-dc]* [value]*\n", argv0);
+			printf("Usage: %s [-dLlgGc]* [value]*\n", argv0);
 			exit(1);
 		}
 		argc--; argv++;
@@ -72,9 +81,21 @@ int main(int argc, char **argv)
 	orig_argv = larg = *argv;
 	while (argc > 0) {
 		v = atoll(argv[0]);
-		old = cbul_lookup(&cb_root, v);
+		if (lookup_mode == 0)
+			old = cbul_lookup(&cb_root, v);
+		else if (lookup_mode == -2)
+			old = cbul_lookup_lt(&cb_root, v);
+		else if (lookup_mode == -1)
+			old = cbul_lookup_le(&cb_root, v);
+		else if (lookup_mode == 1)
+			old = cbul_lookup_ge(&cb_root, v);
+		else if (lookup_mode == 2)
+			old = cbul_lookup_gt(&cb_root, v);
+		else
+			old = NULL;
+
 		if (old)
-			fprintf(stderr, "Note: value %lu already present at %p\n", v, old);
+			fprintf(stderr, "Note: lookup of value %lu found at %p: %lu\n", v, old, container_of(old, struct key, node)->key);
 		old = add_value(&cb_root, v);
 
 		if (debug) {

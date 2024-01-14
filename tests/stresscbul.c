@@ -181,7 +181,20 @@ void run(void *arg)
 			BUG_ON(!node1);
 			BUG_ON(node1 != &itm->node);
 
+			node1 = cbul_lookup_ge(&ctx->cb_root, itm->key);
+			BUG_ON(!node1);
+			BUG_ON(node1 != &itm->node);
+
+			node1 = cbul_lookup_le(&ctx->cb_root, itm->key);
+			BUG_ON(!node1);
+			BUG_ON(node1 != &itm->node);
+
+			node3 = cbul_lookup_lt(&ctx->cb_root, itm->key);
+			BUG_ON(node3 == node1);
+
 			node2 = cbul_prev(&ctx->cb_root, node1);
+			BUG_ON(node2 != node3); // prev() of an existing node is lt
+
 			if (!node2) {
 				/* this must be the first */
 				node3 = cbul_first(&ctx->cb_root);
@@ -191,7 +204,14 @@ void run(void *arg)
 				BUG_ON(node3 != node1);
 			}
 
+			node2 = node3; // lt
+			node3 = cbul_lookup_gt(&ctx->cb_root, itm->key);
+			BUG_ON(node3 == node1);
+			BUG_ON(node3 && node3 == node2);
+
 			node2 = cbul_next(&ctx->cb_root, node1);
+			BUG_ON(node2 != node3); // next() of an existing node is gt
+
 			if (!node2) {
 				/* this must be the last */
 				node3 = cbul_last(&ctx->cb_root);
@@ -228,7 +248,27 @@ void run(void *arg)
 			 */
 			do {
 				itm->key = v;
+				node2 = cbul_lookup_le(&ctx->cb_root, itm->key);
+				if (node2)
+					BUG_ON(container_of(node2, struct item, node)->key > itm->key);
+
+				node3 = cbul_lookup_ge(&ctx->cb_root, itm->key);
+				if (node3)
+					BUG_ON(container_of(node3, struct item, node)->key < itm->key);
+
 				node1 = cbul_insert(&ctx->cb_root, &itm->node);
+
+				if (node2 && container_of(node2, struct item, node)->key == itm->key)
+					BUG_ON(node1 != node2);
+
+				if (node3 && container_of(node3, struct item, node)->key == itm->key)
+					BUG_ON(node1 != node3);
+
+				/* if there was a collision, it must be with at least one of
+				 * these nodes.
+				 */
+				if (node1 != &itm->node)
+					BUG_ON(node1 != node2 && node1 != node3);
 			} while (node1 != &itm->node && ((v = rndl16()), 1));
 
 			BUG_ON(!cb_intree(&itm->node));
@@ -239,7 +279,20 @@ void run(void *arg)
 			BUG_ON(!node1);
 			BUG_ON(node1 != &itm->node);
 
+			node1 = cbul_lookup_ge(&ctx->cb_root, itm->key);
+			BUG_ON(!node1);
+			BUG_ON(node1 != &itm->node);
+
+			node1 = cbul_lookup_le(&ctx->cb_root, itm->key);
+			BUG_ON(!node1);
+			BUG_ON(node1 != &itm->node);
+
+			node3 = cbul_lookup_lt(&ctx->cb_root, itm->key);
+			BUG_ON(node3 == node1);
+
 			node2 = cbul_prev(&ctx->cb_root, node1);
+			BUG_ON(node2 != node3); // prev() of an existing node is lt
+
 			if (!node2) {
 				/* this must be the first */
 				node3 = cbul_first(&ctx->cb_root);
@@ -249,7 +302,14 @@ void run(void *arg)
 				BUG_ON(node3 != node1);
 			}
 
+			node2 = node3; // lt
+			node3 = cbul_lookup_gt(&ctx->cb_root, itm->key);
+			BUG_ON(node3 == node1);
+			BUG_ON(node3 && node3 == node2);
+
 			node2 = cbul_next(&ctx->cb_root, node1);
+			BUG_ON(node2 != node3); // next() of an existing node is gt
+
 			if (!node2) {
 				/* this must be the last */
 				node3 = cbul_last(&ctx->cb_root);
