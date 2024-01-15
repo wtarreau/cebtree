@@ -96,7 +96,9 @@
 
 /* tree walk method: key, left, right */
 enum cb_walk_meth {
-	CB_WM_KEY,     /* look up the node's key */
+	CB_WM_KEQ,     /* look up the node equal to the key  */
+	CB_WM_KLE,     /* look up the node lower than or equal to the key */
+	CB_WM_KGE,     /* look up the node greater than or equal to the key */
 	CB_WM_FST,     /* look up "first" (walk left only) */
 	CB_WM_NXT,     /* look up "next" (walk right once then left) */
 	CB_WM_PRV,     /* look up "prev" (walk left once then right) */
@@ -184,7 +186,7 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 		CBDBG(">>> [%04d] meth=%d plen=%ld key=mb(%llu@%p)\n", __LINE__, meth, (long)plen, (unsigned long long)key_u64, key_ptr);
 		break;
 	case CB_KT_ST:
-		CBDBG(">>> [%04d] meth=%d plen=%ld key=str('%s')\n", __LINE__, meth, (long)plen, (meth == CB_WM_KEY) ? (const char*)key_ptr : "");
+		CBDBG(">>> [%04d] meth=%d plen=%ld key=str('%s')\n", __LINE__, meth, (long)plen, (meth == CB_WM_KEQ) ? (const char*)key_ptr : "");
 		break;
 	default:
 		CBDBG(">>> [%04d] meth=%d plen=%ld\n", __LINE__, meth, plen);
@@ -237,7 +239,7 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 			CBDBG("    [%04d] meth=%d plen=%ld llen=%ld rlen=%ld xlen=%ld p=%p pkey=mb(%p) key=mb(%p)\n", __LINE__, meth, (long)plen, (long)llen, (long)rlen, (long)xlen, p, p->key.mb, key_ptr);
 			break;
 		case CB_KT_ST:
-			CBDBG("    [%04d] meth=%d plen=%ld llen=%ld rlen=%ld xlen=%ld p=%p pkey=str('%s') key=str('%s')\n", __LINE__, meth, (long)plen, (long)llen, (long)rlen, (long)xlen, p, (const char*)p->key.str, (meth == CB_WM_KEY) ? (const char*)key_ptr : "");
+			CBDBG("    [%04d] meth=%d plen=%ld llen=%ld rlen=%ld xlen=%ld p=%p pkey=str('%s') key=str('%s')\n", __LINE__, meth, (long)plen, (long)llen, (long)rlen, (long)xlen, p, (const char*)p->key.str, (meth == CB_WM_KEQ) ? (const char*)key_ptr : "");
 			break;
 		default:
 			CBDBG("    [%04d] meth=%d plen=%ld llen=%ld rlen=%ld xlen=%ld p=%p\n", __LINE__, meth, (long)plen, (long)llen, (long)rlen, (long)xlen, p);
@@ -257,7 +259,7 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 				CBDBG(" 1! [%04d] meth=%d plen=%ld llen=%ld rlen=%ld xlen=%ld p=%p pkey=mb(%p) key=mb(%p)\n", __LINE__, meth, (long)plen, (long)llen, (long)rlen, (long)xlen, p, p->key.mb, key_ptr);
 				break;
 			case CB_KT_ST:
-				CBDBG(" 1! [%04d] meth=%d plen=%ld llen=%ld rlen=%ld xlen=%ld p=%p pkey=str('%s') key=str('%s')\n", __LINE__, meth, (long)plen, (long)llen, (long)rlen, (long)xlen, p, (const char*)p->key.str, (meth == CB_WM_KEY) ? (const char*)key_ptr : "");
+				CBDBG(" 1! [%04d] meth=%d plen=%ld llen=%ld rlen=%ld xlen=%ld p=%p pkey=str('%s') key=str('%s')\n", __LINE__, meth, (long)plen, (long)llen, (long)rlen, (long)xlen, p, (const char*)p->key.str, (meth == CB_WM_KEQ) ? (const char*)key_ptr : "");
 				break;
 			default:
 				CBDBG(" 1! [%04d] meth=%d plen=%ld llen=%ld rlen=%ld xlen=%ld p=%p\n", __LINE__, meth, (long)plen, (long)llen, (long)rlen, (long)xlen, p);
@@ -275,7 +277,7 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 		 */
 
 		/* next branch is calculated here when having a key */
-		if (meth == CB_WM_KEY) {
+		if (meth == CB_WM_KEQ) {
 			if (key_type == CB_KT_U32) {
 				/* "found" is not used here */
 				brside = (key_u32 ^ l->key.u32) >= (key_u32 ^ r->key.u32);
@@ -348,12 +350,12 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 			xlen = string_equal_bits(l->key.str, r->key.str, 0);
 			if (xlen < plen) {
 				/* this is a leaf. E.g. triggered using 2 4 6 4 */
-				CBDBG(" L! [%04d] meth=%d plen=%ld llen=%ld rlen=%ld xlen=%ld p=%p pkey=str('%s') key=str('%s')\n", __LINE__, meth, (long)plen, (long)llen, (long)rlen, (long)xlen, p, (const char*)p->key.str, (meth == CB_WM_KEY) ? (const char*)key_ptr : "");
+				CBDBG(" L! [%04d] meth=%d plen=%ld llen=%ld rlen=%ld xlen=%ld p=%p pkey=str('%s') key=str('%s')\n", __LINE__, meth, (long)plen, (long)llen, (long)rlen, (long)xlen, p, (const char*)p->key.str, (meth == CB_WM_KEQ) ? (const char*)key_ptr : "");
 				break;
 			}
 		}
 
-		if (meth != CB_WM_KEY)
+		if (meth != CB_WM_KEQ)
 			goto skip_key_check;
 
 		/* We're looking up a specific key. Check the split bit. For
@@ -530,7 +532,7 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 				CBDBG(" B! [%04d] meth=%d pxor=%#llx lxor=%#llx rxor=%#llx xxor=%#llx p=%p pkey=u64(%#llx) key=u64(%#llx)\n", __LINE__, meth, (unsigned long long)pxor64, (unsigned long long)(l->key.u64 ^ key_u64), (unsigned long long)(r->key.u64 ^ key_u64), (unsigned long long)xor64, p, (unsigned long long)p->key.u64, (unsigned long long)key_u64);
 				break;
 			case CB_KT_ST:
-				CBDBG(" ^! [%04d] meth=%d plen=%ld llen=%ld rlen=%ld xlen=%ld p=%p pkey=str('%s') key=str('%s')\n", __LINE__, meth, (long)plen, (long)llen, (long)rlen, (long)xlen, p, (const char*)p->key.str, (meth == CB_WM_KEY) ? (const char*)key_ptr : "");
+				CBDBG(" ^! [%04d] meth=%d plen=%ld llen=%ld rlen=%ld xlen=%ld p=%p pkey=str('%s') key=str('%s')\n", __LINE__, meth, (long)plen, (long)llen, (long)rlen, (long)xlen, p, (const char*)p->key.str, (meth == CB_WM_KEQ) ? (const char*)key_ptr : "");
 				break;
 			default:
 				CBDBG(" ^! [%04d] meth=%d plen=%ld llen=%ld rlen=%ld xlen=%ld p=%p\n", __LINE__, meth, (long)plen, (long)llen, (long)rlen, (long)xlen, p);
@@ -552,7 +554,7 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 	 * this is needed.
 	 */
 	if (key_type == CB_KT_ST) {
-		if (found || meth != CB_WM_KEY)
+		if (found || meth != CB_WM_KEQ)
 			plen = (size_t)-1;
 		else
 			plen = (llen > rlen) ? llen : rlen;
@@ -561,7 +563,7 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 	/* we may have plen==-1 if we've got an exact match over the whole key length above */
 
 	/* update the pointers needed for modifications (insert, delete) */
-	if (ret_nside && meth == CB_WM_KEY) {
+	if (ret_nside && meth == CB_WM_KEQ) {
 		switch (key_type) {
 		case CB_KT_U32:
 			*ret_nside = key_u32 >= p->key.u32;
@@ -619,14 +621,14 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 		CBDBG("<<< [%04d] meth=%d plen=%ld xlen=%ld p=%p pkey=mb(%p) key=mb(%p)\n", __LINE__, meth, (long)plen, (long)xlen, p, p->key.mb, key_ptr);
 		break;
 	case CB_KT_ST:
-		CBDBG("<<< [%04d] meth=%d plen=%ld xlen=%ld p=%p pkey=str('%s') key=str('%s')\n", __LINE__, meth, (long)plen, (long)xlen, p, (const char*)p->key.str, (meth == CB_WM_KEY) ? (const char*)key_ptr : "");
+		CBDBG("<<< [%04d] meth=%d plen=%ld xlen=%ld p=%p pkey=str('%s') key=str('%s')\n", __LINE__, meth, (long)plen, (long)xlen, p, (const char*)p->key.str, (meth == CB_WM_KEQ) ? (const char*)key_ptr : "");
 		break;
 	default:
 		CBDBG("<<< [%04d] meth=%d plen=%ld xlen=%ld p=%p\n", __LINE__, meth, (long)plen, (long)xlen, p);
 		break;
 	}
 
-	if (meth == CB_WM_KEY) {
+	if (meth == CB_WM_KEQ) {
 		/* For lookups, an equal value means an instant return. For insertions,
 		 * it is the same, we want to return the previously existing value so
 		 * that the caller can decide what to do. For deletion, we also want to
@@ -687,7 +689,7 @@ struct cb_node *_cbu_insert(struct cb_node **root,
 		return node;
 	}
 
-	ret = _cbu_descend(root, CB_WM_KEY, key_type, key_u32, key_u64, key_ptr, &nside, &parent, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	ret = _cbu_descend(root, CB_WM_KEQ, key_type, key_u32, key_u64, key_ptr, &nside, &parent, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 
 	if (!ret) {
 		/* The key was not in the tree, we can insert it. Better use an
@@ -753,7 +755,7 @@ struct cb_node *_cbu_next(struct cb_node **root,
 	if (!*root)
 		return NULL;
 
-	_cbu_descend(root, CB_WM_KEY, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &right_branch);
+	_cbu_descend(root, CB_WM_KEQ, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &right_branch);
 	if (!right_branch)
 		return NULL;
 	return _cbu_descend(right_branch, CB_WM_NXT, key_type, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
@@ -778,7 +780,7 @@ struct cb_node *_cbu_prev(struct cb_node **root,
 	if (!*root)
 		return NULL;
 
-	_cbu_descend(root, CB_WM_KEY, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &left_branch, NULL);
+	_cbu_descend(root, CB_WM_KEQ, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &left_branch, NULL);
 	if (!left_branch)
 		return NULL;
 	return _cbu_descend(left_branch, CB_WM_PRV, key_type, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
@@ -797,7 +799,7 @@ struct cb_node *_cbu_lookup(struct cb_node **root,
 	if (!*root)
 		return NULL;
 
-	return _cbu_descend(root, CB_WM_KEY, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	return _cbu_descend(root, CB_WM_KEQ, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 }
 
 /* Searches in the tree <root> made of keys of type <key_type>, for the node
@@ -831,7 +833,7 @@ struct cb_node *_cbu_delete(struct cb_node **root,
 		goto done;
 	}
 
-	ret = _cbu_descend(root, CB_WM_KEY, key_type, key_u32, key_u64, key_ptr, NULL, NULL,
+	ret = _cbu_descend(root, CB_WM_KEQ, key_type, key_u32, key_u64, key_ptr, NULL, NULL,
 			    &lparent, &lpside, &nparent, &npside, &gparent, &gpside, NULL, NULL);
 
 	if (!ret) {
