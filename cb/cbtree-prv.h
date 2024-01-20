@@ -889,7 +889,7 @@ struct cb_node *_cbu_lookup_le(struct cb_node **root,
 		ret = _cbu_descend(root, CB_WM_KLE, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &left_branch, NULL);
 		if (ret)
 			return ret;
-		if (left_branch)
+		if (left_branch && left_branch != root)
 			ret = _cbu_descend(left_branch, CB_WM_PRV, key_type, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 	}
 	return ret;
@@ -913,7 +913,7 @@ struct cb_node *_cbu_lookup_ge(struct cb_node **root,
 		ret = _cbu_descend(root, CB_WM_KGE, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &right_branch);
 		if (ret)
 			return ret;
-		if (right_branch)
+		if (right_branch && right_branch != root)
 			ret = _cbu_descend(right_branch, CB_WM_NXT, key_type, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 	}
 	return ret;
