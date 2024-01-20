@@ -338,7 +338,7 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 		 *     set int this case for expensive types.
 		 */
 
-		if (meth != CB_WM_KEQ && meth != CB_WM_KLE && meth == CB_WM_KGE)
+		if (meth != CB_WM_KEQ && meth != CB_WM_KLE && meth != CB_WM_KGE)
 			goto skip_key_check;
 
 		if (key_type == CB_KT_U32) {
@@ -577,7 +577,7 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 	 * this is needed.
 	 */
 	if (key_type == CB_KT_ST) {
-		if (found || (meth != CB_WM_KEQ && meth != CB_WM_KLE && meth == CB_WM_KGE))
+		if (found || (meth != CB_WM_KEQ && meth != CB_WM_KLE && meth != CB_WM_KGE))
 			plen = (size_t)-1;
 		else
 			plen = (llen > rlen) ? llen : rlen;
