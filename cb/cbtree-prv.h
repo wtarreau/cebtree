@@ -268,47 +268,6 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 			break;
 		}
 
-		/* we can compute this here for scalar types, it allows the
-		 * CPU to predict next branches. We can also xor lkey/rkey
-		 * with key and use it everywhere later but it doesn't save
-		 * much. Alternately, like here, it's possible to measure
-		 * the length of identical bits. This is the solution that
-		 * will be needed on strings.
-		 */
-
-		/* next branch is calculated here when having a key */
-		if (meth == CB_WM_KEQ || meth == CB_WM_KLE || meth == CB_WM_KGE) {
-			if (key_type == CB_KT_U32) {
-				/* "found" is not used here */
-				brside = (key_u32 ^ l->key.u32) >= (key_u32 ^ r->key.u32);
-			}
-			else if (key_type == CB_KT_U64) {
-				/* "found" is not used here */
-				brside = (key_u64 ^ l->key.u64) >= (key_u64 ^ r->key.u64);
-			}
-			else if (key_type == CB_KT_MB) {
-				/* measure identical lengths */
-				llen = equal_bits(key_ptr, l->key.mb, 0, key_u64 << 3);
-				rlen = equal_bits(key_ptr, r->key.mb, 0, key_u64 << 3);
-				brside = llen <= rlen;
-				if (llen == rlen && (uint64_t)llen == key_u64 << 3)
-					found = 1;
-			}
-			else if (key_type == CB_KT_ST) {
-				/* Note that a negative length indicates an
-				 * equal value with the final zero reached, but
-				 * it is still needed to descend to find the
-				 * leaf. We take that negative length for an
-				 * infinite one, hence the uint cast.
-				 */
-				llen = string_equal_bits(key_ptr, l->key.str, 0);
-				rlen = string_equal_bits(key_ptr, r->key.str, 0);
-				brside = (size_t)llen <= (size_t)rlen;
-				if ((ssize_t)llen < 0 || (ssize_t)rlen < 0)
-					found = 1;
-			}
-		}
-
 		/* so that's either a node or a leaf. Each leaf we visit had
 		 * its node part already visited. The only way to distinguish
 		 * them is that the inter-branch xor of the leaf will be the
@@ -355,17 +314,20 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 			}
 		}
 
-		if (meth != CB_WM_KEQ && meth != CB_WM_KLE && meth == CB_WM_KGE)
-			goto skip_key_check;
-
-		/* We're looking up a specific key. Check the split bit. For
-		 * each key type, the principle is the same:
+		/* Below we'll compare the key we're looking up with the ones
+		 * we find, according to the comparison method. The walk method
+		 * is the same as long as the key matches one branch till the
+		 * split bit:
 		 *   - if the xor between the key and both sides shows a
 		 *     shorter common length than the xor between the two
-		 *     sides, we cannot go lower. We know that the searched key
-		 *     differs from the current one because p->key differs from
-		 *     at least one of its subkeys by one higher bit than the
-		 *     split bit.
+		 *     sides, we won't find the value we're looking for. In
+		 *     case of exact lookup (KEQ), we stop here. In case of
+		 *     LE lookup, we're just left of the best position so we
+		 *     go down right. In case of a GE lookup, we're just right
+		 *     of the best position so we go down left. We know that
+		 *     the searched key differs from the current one because
+		 *     the p->key differs from at least one of its subkeys by
+		 *     one higher bit than the split bit.
 		 *   - if we're doing a lookup, the key is not found and we
 		 *     fail.
 		 *   - if we are inserting, we must stop here and we have the
@@ -375,10 +337,24 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 		 *     possible to keep a copy of the node's parent. <found> is
 		 *     set int this case for expensive types.
 		 */
+
+		if (meth != CB_WM_KEQ && meth != CB_WM_KLE && meth == CB_WM_KGE)
+			goto skip_key_check;
+
 		if (key_type == CB_KT_U32) {
 			if ((key_u32 ^ l->key.u32) > xor32 && (key_u32 ^ r->key.u32) > xor32) {
-				CBDBG(" B! [%04d] meth=%d pxor=%#x lxor=%#x rxor=%#x xxor=%#x p=%p pkey=u32(%#x) key=u32(%#x)\n", __LINE__, meth, pxor32, l->key.u32 ^ key_u32, r->key.u32 ^ key_u32, xor32, p, p->key.u32, key_u32);
-				break;
+				if (meth == CB_WM_KEQ) {
+					CBDBG(" B! [%04d] meth=%d pxor=%#x lxor=%#x rxor=%#x xxor=%#x p=%p pkey=u32(%#x) key=u32(%#x)\n", __LINE__, meth, pxor32, l->key.u32 ^ key_u32, r->key.u32 ^ key_u32, xor32, p, p->key.u32, key_u32);
+					break;
+				}
+				else if (meth == CB_WM_KLE)
+					brside = 1;
+				else
+					brside = 0;
+			}
+			else {
+				/* otherwise as long as it matches, go down here */
+				brside = (key_u32 ^ l->key.u32) >= (key_u32 ^ r->key.u32);
 			}
 
 			if (meth == CB_WM_KEQ && (ret_npside || ret_nparent)) {
@@ -392,8 +368,18 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 		}
 		else if (key_type == CB_KT_U64) {
 			if ((key_u64 ^ l->key.u64) > xor64 && (key_u64 ^ r->key.u64) > xor64) {
-				CBDBG(" B! [%04d] meth=%d pxor=%#llx lxor=%#llx rxor=%#llx xxor=%#llx p=%p pkey=u64(%#llx) key=u64(%#llx)\n", __LINE__, meth, (unsigned long long)pxor64, (unsigned long long)(l->key.u64 ^ key_u64), (unsigned long long)(r->key.u64 ^ key_u64), (unsigned long long)(xor64), p, (unsigned long long)p->key.u64, (unsigned long long)key_u64);
-				break;
+				if (meth == CB_WM_KEQ) {
+					CBDBG(" B! [%04d] meth=%d pxor=%#llx lxor=%#llx rxor=%#llx xxor=%#llx p=%p pkey=u64(%#llx) key=u64(%#llx)\n", __LINE__, meth, (unsigned long long)pxor64, (unsigned long long)(l->key.u64 ^ key_u64), (unsigned long long)(r->key.u64 ^ key_u64), (unsigned long long)(xor64), p, (unsigned long long)p->key.u64, (unsigned long long)key_u64);
+					break;
+				}
+				else if (meth == CB_WM_KLE)
+					brside = 1;
+				else
+					brside = 0;
+			}
+			else {
+				/* otherwise as long as it matches, go down here */
+				brside = (key_u64 ^ l->key.u64) >= (key_u64 ^ r->key.u64);
 			}
 
 			if (meth == CB_WM_KEQ && (ret_npside || ret_nparent)) {
@@ -407,8 +393,22 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 		}
 		else if (key_type == CB_KT_MB) {
 			if (llen < xlen && rlen < xlen) {
-				CBDBG(" B! [%04d] meth=%d plen=%ld llen=%ld rlen=%ld xlen=%ld p=%p pkey=mb(%p) key=mb(%p)\n", __LINE__, meth, (long)plen, (long)llen, (long)rlen, (long)xlen, p, p->key.mb, key_ptr);
-				break;
+				if (meth == CB_WM_KEQ) {
+					CBDBG(" B! [%04d] meth=%d plen=%ld llen=%ld rlen=%ld xlen=%ld p=%p pkey=mb(%p) key=mb(%p)\n", __LINE__, meth, (long)plen, (long)llen, (long)rlen, (long)xlen, p, p->key.mb, key_ptr);
+					break;
+				}
+				else if (meth == CB_WM_KLE)
+					brside = 1;
+				else
+					brside = 0;
+			}
+			else {
+				/* measure identical lengths */
+				llen = equal_bits(key_ptr, l->key.mb, 0, key_u64 << 3);
+				rlen = equal_bits(key_ptr, r->key.mb, 0, key_u64 << 3);
+				brside = llen <= rlen;
+				if (llen == rlen && (uint64_t)llen == key_u64 << 3)
+					found = 1;
 			}
 
 			if (meth == CB_WM_KEQ && (ret_npside || ret_nparent)) { // delete ?
@@ -428,8 +428,27 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 		}
 		else if (key_type == CB_KT_ST) {
 			if ((unsigned)llen < (unsigned)xlen && (unsigned)rlen < (unsigned)xlen) {
-				CBDBG(" B! [%04d] meth=%d plen=%ld llen=%ld rlen=%ld xlen=%ld p=%p pkey=str('%s') key=str('%s')\n", __LINE__, meth, (long)plen, (long)llen, (long)rlen, (long)xlen, p, (const char*)p->key.str, (const char*)key_ptr);
-				break;
+				if (meth == CB_WM_KEQ) {
+					CBDBG(" B! [%04d] meth=%d plen=%ld llen=%ld rlen=%ld xlen=%ld p=%p pkey=str('%s') key=str('%s')\n", __LINE__, meth, (long)plen, (long)llen, (long)rlen, (long)xlen, p, (const char*)p->key.str, (const char*)key_ptr);
+					break;
+				}
+				else if (meth == CB_WM_KLE)
+					brside = 1;
+				else
+					brside = 0;
+			}
+			else {
+				/* Note that a negative length indicates an
+				 * equal value with the final zero reached, but
+				 * it is still needed to descend to find the
+				 * leaf. We take that negative length for an
+				 * infinite one, hence the uint cast.
+				 */
+				llen = string_equal_bits(key_ptr, l->key.str, 0);
+				rlen = string_equal_bits(key_ptr, r->key.str, 0);
+				brside = (size_t)llen <= (size_t)rlen;
+				if ((ssize_t)llen < 0 || (ssize_t)rlen < 0)
+					found = 1;
 			}
 
 			if (meth == CB_WM_KEQ && (ret_npside || ret_nparent)) { // delete ?
