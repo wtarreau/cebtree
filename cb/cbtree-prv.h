@@ -845,7 +845,7 @@ struct cb_node *_cbu_delete(struct cb_node **root,
 			 * deleting the nodeless leaf.
 			 */
 			*root = NULL;
-			goto done;
+			goto mark_and_leave;
 		}
 
 		/* then we necessarily have a gparent */
@@ -855,7 +855,7 @@ struct cb_node *_cbu_delete(struct cb_node **root,
 			/* we're removing the leaf and node together, nothing
 			 * more to do.
 			 */
-			goto done;
+			goto mark_and_leave;
 		}
 
 		if (ret->b[0] == ret->b[1]) {
@@ -863,7 +863,7 @@ struct cb_node *_cbu_delete(struct cb_node **root,
 			 * take this role.
 			 */
 			lparent->b[0] = lparent->b[1] = lparent;
-			goto done;
+			goto mark_and_leave;
 		}
 
 		/* more complicated, the node was split from the leaf, we have
@@ -874,6 +874,7 @@ struct cb_node *_cbu_delete(struct cb_node **root,
 		lparent->b[1] = ret->b[1];
 		nparent->b[npside] = lparent;
 
+	mark_and_leave:
 		/* now mark the node as deleted */
 		ret->b[0] = NULL;
 	}
