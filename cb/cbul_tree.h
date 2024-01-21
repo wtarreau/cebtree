@@ -30,8 +30,6 @@ struct cb_node *cbul_insert(struct cb_node **root, struct cb_node *node);
 struct cb_node *cbul_first(struct cb_node **root);
 struct cb_node *cbul_last(struct cb_node **root);
 struct cb_node *cbul_lookup(struct cb_node **root, unsigned long key);
-struct cb_node *cbul_lookup_le(struct cb_node **root, unsigned long key);
-struct cb_node *cbul_lookup_ge(struct cb_node **root, unsigned long key);
 struct cb_node *cbul_next(struct cb_node **root, struct cb_node *node);
 struct cb_node *cbul_prev(struct cb_node **root, struct cb_node *node);
 struct cb_node *cbul_delete(struct cb_node **root, struct cb_node *node);
