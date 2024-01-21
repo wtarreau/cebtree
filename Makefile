@@ -24,6 +24,9 @@ test: $(TEST_BIN)
 tests/%: tests/%.c libcbtree.a
 	$(CC) $(CFLAGS) -I$(COMMON_DIR) -I$(CB_DIR) -o $@ $< -L. -lcbtree
 
+tests/stresscbul: tests/stresscbul.c libcbtree.a
+	$(CC) $(CFLAGS) -I$(COMMON_DIR) -I$(CB_DIR) -o $@ $< -L. -lcbtree -pthread
+
 clean:
 	-rm -fv libcbtree.a $(OBJS) *~ *.rej core $(TEST_BIN) ${EXAMPLES}
 	-rm -fv $(addprefix $(CB_DIR)/,*~ *.rej core)
