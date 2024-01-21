@@ -801,54 +801,6 @@ struct cb_node *_cbu_lookup(struct cb_node **root,
 }
 
 /* Searches in the tree <root> made of keys of type <key_type>, for the node
- * containing the key <key_*> or the highest one that's lower than it. Returns
- * NULL if not found.
- */
-static inline __attribute__((always_inline))
-struct cb_node *_cbu_lookup_le(struct cb_node **root,
-			       enum cb_key_type key_type,
-			       uint32_t key_u32,
-			       uint64_t key_u64,
-			       const void *key_ptr)
-{
-	struct cb_node **left_branch = NULL;
-	struct cb_node *ret = NULL;
-
-	if (*root) {
-		ret = _cbu_descend(root, CB_WM_KEY, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &left_branch, NULL);
-		if (ret)
-			return ret;
-		if (left_branch)
-			ret = _cbu_descend(left_branch, CB_WM_PRV, key_type, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
-	}
-	return ret;
-}
-
-/* Searches in the tree <root> made of keys of type <key_type>, for the node
- * containing the key <key_*> or the smallest one that's greater than it.
- * Returns NULL if not found.
- */
-static inline __attribute__((always_inline))
-struct cb_node *_cbu_lookup_ge(struct cb_node **root,
-			       enum cb_key_type key_type,
-			       uint32_t key_u32,
-			       uint64_t key_u64,
-			       const void *key_ptr)
-{
-	struct cb_node **right_branch = NULL;
-	struct cb_node *ret = NULL;
-
-	if (*root) {
-		ret = _cbu_descend(root, CB_WM_KEY, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &right_branch);
-		if (ret)
-			return ret;
-		if (right_branch)
-			ret = _cbu_descend(right_branch, CB_WM_NXT, key_type, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
-	}
-	return ret;
-}
-
-/* Searches in the tree <root> made of keys of type <key_type>, for the node
  * that contains the key <key_*>, and deletes it. If <node> is non-NULL, a
  * check is performed and the node found is deleted only if it matches. The
  * found node is returned in any case, otherwise NULL if not found. A deleted
