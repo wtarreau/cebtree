@@ -111,7 +111,7 @@ struct cb_node *cbul_delete(struct cb_node **root, struct cb_node *node)
 	unsigned long key = container_of(node, struct cb_node_key, node)->key.ul;
 
 	if (sizeof(long) <= 4)
-		return _cbu_delete(root, node, CB_KT_U32, 0, key, NULL);
+		return _cbu_delete(root, node, CB_KT_U32, key, 0, NULL);
 	else
 		return _cbu_delete(root, node, CB_KT_U64, 0, key, NULL);
 }
