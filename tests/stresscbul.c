@@ -36,7 +36,7 @@
 /* Some utility functions */
 
 #define RND32SEED 2463534242U
-static uint32_t rnd32seed = RND32SEED;
+static __thread uint32_t rnd32seed = RND32SEED;
 static inline uint32_t rnd32()
 {
 	rnd32seed ^= rnd32seed << 13;
@@ -46,7 +46,7 @@ static inline uint32_t rnd32()
 }
 
 #define RND64SEED 0x9876543210abcdefull
-static uint64_t rnd64seed = RND64SEED;
+static __thread uint64_t rnd64seed = RND64SEED;
 static inline uint64_t rnd64()
 {
 	rnd64seed ^= rnd64seed << 13;
@@ -146,6 +146,9 @@ void run(void *arg)
 	struct item *itm;
 	struct cb_node *node1, *node2, *node3;
 	unsigned long v;
+
+	rnd32seed += tid + 1;
+	rnd64seed += tid + 1;
 
 	/* step 0: create all threads */
 	while (__atomic_load_n(&step, __ATOMIC_ACQUIRE) == 0) {
