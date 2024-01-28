@@ -335,39 +335,78 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 			break;
 		}
 
-		/* we can compute brside here for scalar types, it allows the
-		 * CPU to predict next branches. We can also xor lkey/rkey
-		 * with key and use it everywhere later but it doesn't save
-		 * much. Alternately, like here, it's possible to measure
-		 * the length of identical bits. This is the solution that
-		 * will be needed on strings.
+		/* In the following block, we're dealing with type-specific
+		 * operations which follow the same construct for each type:
+		 *   1) calculate the new side for key lookups (otherwise keep
+		 *      the current side, e.g. for first/last). Doing it early
+		 *      allows the CPU to more easily predict next branches and
+		 *      is faster by ~10%. For complex bits we keep the length
+		 *      of identical bits instead of xor. We can also xor lkey
+		 *      and rkey with key and use it everywhere later but it
+		 *      doesn't seem to bring anything.
+		 *
+		 *   2) calculate the xor between the two sides to figure the
+		 *      split bit position. If the new split bit is before the
+		 *      previous one, we've reached a leaf: each leaf we visit
+		 *      had its node part already visited. The only way to
+		 *      distinguish them is that the inter-branch xor of the
+		 *      leaf will be the node's one, and will necessarily be
+		 *      larger than the previous node's xor if the node is
+		 *      above (we've already checked for direct descendent
+		 *      below). Said differently, if an inter-branch xor is
+		 *      strictly larger than the previous one, it necessarily
+		 *      is the one of an upper node, so what we're seeing
+		 *      cannot be the node, hence it's the leaf. The case where
+		 *      they're equal was already dealt with by the test at the
+		 *      end of the loop (node points to self). For scalar keys,
+		 *      we directly store the last xor value in pxorXX. For
+		 *      arrays and strings, instead we store the previous equal
+		 *      length.
+		 *
+		 *   3) for lookups, check if the looked key still has a chance
+		 *      to be below: if it has a xor with both branches that is
+		 *      larger than the xor between them, it cannot be there,
+		 *      since it means that it differs from these branches by
+		 *      at least one bit that's higher than the split bit,
+		 *      hence not common to these branches. In such cases:
+		 *      - if we're just doing a lookup, the key is not found
+		 *        and we fail.
+		 *      - if we are inserting, we must stop here and we have
+		 *        the guarantee to be above a node.
+		 *      - if we're deleting, it could be the key we were
+		 *        looking for so we have to check for it as long as
+		 *        it's still possible to keep a copy of the node's
+		 *        parent. <found> is set int this case for expensive
+		 *        types.
 		 */
 
-		/* so that's either a node or a leaf. Each leaf we visit had
-		 * its node part already visited. The only way to distinguish
-		 * them is that the inter-branch xor of the leaf will be the
-		 * node's one, and will necessarily be larger than the previous
-		 * node's xor if the node is above (we've already checked for
-		 * direct descendent below). Said differently, if an inter-
-		 * branch xor is strictly larger than the previous one, it
-		 * necessarily is the one of an upper node, so what we're
-		 * seeing cannot be the node, hence it's the leaf. The case
-		 * where they're equal was already dealt with by the test at
-		 * the end of the loop (node points to self). For scalar keys,
-		 * we directly store the last xor value in pxorXX. For arrays
-		 * and strings, instead we store the previous equal length.
-		 */
-
-		/* next branch is calculated here when having a key */
 		if (key_type == CB_KT_U32) {
 			if (meth == CB_WM_KEY) {
 				/* "found" is not used here */
 				brside = (key_u32 ^ l->key.u32) >= (key_u32 ^ r->key.u32);
 			}
+
 			xor32 = l->key.u32 ^ r->key.u32;
 			if (xor32 > pxor32) { // test using 2 4 6 4
 				dbg(__LINE__, "xor>", meth, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 				break;
+			}
+
+			if (meth == CB_WM_KEY) {
+				/* let's stop if our key is not there */
+
+				if ((key_u32 ^ l->key.u32) > xor32 && (key_u32 ^ r->key.u32) > xor32) {
+					dbg(__LINE__, "mismatch", meth, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+					break;
+				}
+
+				if (ret_npside || ret_nparent) {
+					if (key_u32 == p->key.u32) {
+						dbg(__LINE__, "equal", meth, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+						nparent = lparent;
+						npside  = lpside;
+					}
+				}
 			}
 		}
 		else if (key_type == CB_KT_U64) {
@@ -375,10 +414,28 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 				/* "found" is not used here */
 				brside = (key_u64 ^ l->key.u64) >= (key_u64 ^ r->key.u64);
 			}
+
 			xor64 = l->key.u64 ^ r->key.u64;
 			if (xor64 > pxor64) { // test using 2 4 6 4
 				dbg(__LINE__, "xor>", meth, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 				break;
+			}
+
+			if (meth == CB_WM_KEY) {
+				/* let's stop if our key is not there */
+
+				if ((key_u64 ^ l->key.u64) > xor64 && (key_u64 ^ r->key.u64) > xor64) {
+					dbg(__LINE__, "mismatch", meth, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+					break;
+				}
+
+				if (ret_npside || ret_nparent) {
+					if (key_u64 == p->key.u64) {
+						dbg(__LINE__, "equal", meth, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+						nparent = lparent;
+						npside  = lpside;
+					}
+				}
 			}
 		}
 		else if (key_type == CB_KT_MB) {
@@ -390,11 +447,35 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 				if (llen == rlen && (uint64_t)llen == key_u64 << 3)
 					found = 1;
 			}
+
 			xlen = equal_bits(l->key.mb, r->key.mb, 0, key_u64 << 3);
 			if (xlen < plen) {
 				/* this is a leaf. E.g. triggered using 2 4 6 4 */
 				dbg(__LINE__, "xor>", meth, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 				break;
+			}
+
+			if (meth == CB_WM_KEY) {
+				/* let's stop if our key is not there */
+
+				if (llen < xlen && rlen < xlen) {
+					dbg(__LINE__, "mismatch", meth, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+					break;
+				}
+
+				if (ret_npside || ret_nparent) { // delete ?
+					size_t mlen = llen > rlen ? llen : rlen;
+
+					if (mlen > xlen)
+						mlen = xlen;
+
+					if ((uint64_t)xlen / 8 == key_u64 || memcmp(key_ptr + mlen / 8, p->key.mb + mlen / 8, key_u64 - mlen / 8) == 0) {
+						dbg(__LINE__, "equal", meth, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+						nparent = lparent;
+						npside  = lpside;
+						found = 1;
+					}
+				}
 			}
 		}
 		else if (key_type == CB_KT_ST) {
@@ -411,105 +492,39 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 				if ((ssize_t)llen < 0 || (ssize_t)rlen < 0)
 					found = 1;
 			}
+
 			xlen = string_equal_bits(l->key.str, r->key.str, 0);
 			if (xlen < plen) {
 				/* this is a leaf. E.g. triggered using 2 4 6 4 */
 				dbg(__LINE__, "xor>", meth, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 				break;
 			}
-		}
 
-		if (meth != CB_WM_KEY)
-			goto skip_key_check;
+			if (meth == CB_WM_KEY) {
+				/* let's stop if our key is not there */
 
-		/* We're looking up a specific key. Check the split bit. For
-		 * each key type, the principle is the same:
-		 *   - if the xor between the key and both sides shows a
-		 *     shorter common length than the xor between the two
-		 *     sides, we cannot go lower. We know that the searched key
-		 *     differs from the current one because p->key differs from
-		 *     at least one of its subkeys by one higher bit than the
-		 *     split bit.
-		 *   - if we're doing a lookup, the key is not found and we
-		 *     fail.
-		 *   - if we are inserting, we must stop here and we have the
-		 *     guarantee to be above a node.
-		 *   - if we're deleting, it could be the key we were looking
-		 *     for so we have to check for it as long as it's still
-		 *     possible to keep a copy of the node's parent. <found> is
-		 *     set int this case for expensive types.
-		 */
-		if (key_type == CB_KT_U32) {
-			if ((key_u32 ^ l->key.u32) > xor32 && (key_u32 ^ r->key.u32) > xor32) {
-				dbg(__LINE__, "mismatch", meth, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
-				break;
-			}
-
-			if (ret_npside || ret_nparent) {
-				if (key_u32 == p->key.u32) {
-					dbg(__LINE__, "equal", meth, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
-					nparent = lparent;
-					npside  = lpside;
+				if ((unsigned)llen < (unsigned)xlen && (unsigned)rlen < (unsigned)xlen) {
+					dbg(__LINE__, "mismatch", meth, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+					break;
 				}
-			}
-		}
-		else if (key_type == CB_KT_U64) {
-			if ((key_u64 ^ l->key.u64) > xor64 && (key_u64 ^ r->key.u64) > xor64) {
-				dbg(__LINE__, "mismatch", meth, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
-				break;
-			}
 
-			if (ret_npside || ret_nparent) {
-				if (key_u64 == p->key.u64) {
-					dbg(__LINE__, "equal", meth, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
-					nparent = lparent;
-					npside  = lpside;
-				}
-			}
-		}
-		else if (key_type == CB_KT_MB) {
-			if (llen < xlen && rlen < xlen) {
-				dbg(__LINE__, "mismatch", meth, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
-				break;
-			}
+				if (ret_npside || ret_nparent) { // delete ?
+					size_t mlen = llen > rlen ? llen : rlen;
 
-			if (ret_npside || ret_nparent) { // delete ?
-				size_t mlen = llen > rlen ? llen : rlen;
+					if (mlen > xlen)
+						mlen = xlen;
 
-				if (mlen > xlen)
-					mlen = xlen;
-
-				if ((uint64_t)xlen / 8 == key_u64 || memcmp(key_ptr + mlen / 8, p->key.mb + mlen / 8, key_u64 - mlen / 8) == 0) {
-					dbg(__LINE__, "equal", meth, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
-					nparent = lparent;
-					npside  = lpside;
-					found = 1;
-				}
-			}
-		}
-		else if (key_type == CB_KT_ST) {
-			if ((unsigned)llen < (unsigned)xlen && (unsigned)rlen < (unsigned)xlen) {
-				dbg(__LINE__, "mismatch", meth, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
-				break;
-			}
-
-			if (ret_npside || ret_nparent) { // delete ?
-				size_t mlen = llen > rlen ? llen : rlen;
-
-				if (mlen > xlen)
-					mlen = xlen;
-
-				if (strcmp(key_ptr + mlen / 8, (const void *)p->key.str + mlen / 8) == 0) {
-					/* strcmp() still needed. E.g. 1 2 3 4 10 11 4 3 2 1 10 11 fails otherwise */
-					dbg(__LINE__, "equal", meth, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
-					nparent = lparent;
-					npside  = lpside;
-					found = 1;
+					if (strcmp(key_ptr + mlen / 8, (const void *)p->key.str + mlen / 8) == 0) {
+						/* strcmp() still needed. E.g. 1 2 3 4 10 11 4 3 2 1 10 11 fails otherwise */
+						dbg(__LINE__, "equal", meth, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+						nparent = lparent;
+						npside  = lpside;
+						found = 1;
+					}
 				}
 			}
 		}
 
-	skip_key_check:
 		/* shift all copies by one */
 		gparent = lparent;
 		gpside = lpside;
