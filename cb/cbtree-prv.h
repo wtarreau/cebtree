@@ -301,10 +301,42 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 	gparent = nparent = lparent;
 	p = NULL;
 
+	/* for key-less restarts we need to set the root and pxor, then to
+	 * check if that branch is a leaf. Note that we could re-evaluate
+	 * the XOR here instead of storing it but that's more expensive.
+	 */
+	switch (meth) {
+	case CB_WM_NXT:
+	case CB_WM_PRV:
+		p = container_of(root, struct cb_node_key, node.b[0]);
+		root = &p->node.b[meth == CB_WM_NXT ? 1 : 0];
+
+		pxor32 = key_u32;    // previous xor between branches (u32)
+		pxor64 = key_u64;    // previous xor between branches (u64)
+		plen   = key_u64;    // previous xor between branches (ptr/str)
+
+		if (p == container_of(*root, struct cb_node_key, node)) {
+			/* loops over itself, it's a leaf */
+			dbg(__LINE__, "loop", meth, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+			goto after_loop;
+		}
+
+		break;
+	default:
+		break;
+	}
+
+	bxor64 = pxor64;
+
 loop_again:
 	/* for key-less descents we need to set the initial branch to take */
 	switch (meth) {
+	case CB_WM_PRV:
+		brside = 1;        // descend right for prev
+		break;
 	case CB_WM_NXT:
+		brside = 0;        // descend left for next
+		break;
 	case CB_WM_LST:
 		/* this is only used when we're looping for a second walk down */
 		if (p && p == container_of(*root, struct cb_node_key, node)) {
@@ -312,17 +344,16 @@ loop_again:
 			dbg(__LINE__, "loop", meth, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 			goto after_loop;
 		}
-		brside = 1; // start right for next/last
+		brside = 1;        // start right for next/last
 		break;
 	case CB_WM_FST:
-	case CB_WM_PRV:
 		/* this is only used when we're looping for a second walk down */
 		if (p && p == container_of(*root, struct cb_node_key, node)) {
 			/* loops over itself, it's a leaf */
 			dbg(__LINE__, "loop", meth, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 			goto after_loop;
 		}
-		brside = 0; // start left for first/prev
+		brside = 0;        // start left for first/prev
 		break;
 	default:
 		brside = 0;
@@ -671,6 +702,7 @@ after_loop:
 					 * right and walk down left.
 					 */
 					if (bnode) {
+						//return &bnode->node;
 						p = bnode;
 						root = &p->node.b[1];
 						pxor64 = bxor64;
@@ -683,6 +715,7 @@ after_loop:
 					 * right and walk down left.
 					 */
 					if (bnode) {
+						//return &bnode->node;
 						p = bnode;
 						root = &p->node.b[0];
 						pxor64 = bxor64;
