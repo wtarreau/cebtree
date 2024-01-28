@@ -276,18 +276,15 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 	struct cb_node **alt_l = NULL;
 	struct cb_node **alt_r = NULL;
 	struct cb_node *lparent;
-	uint32_t xor32;   // left vs right branch xor, 32 bit
-	uint32_t pxor32 = ~0; // previous xor between branches
-	uint64_t xor64;   // left vs right branch xor, 64-bit
+	uint32_t pxor32 = ~0U;   // previous xor between branches
 	uint64_t pxor64 = ~0ULL; // previous xor between branches
 	int gpside = 0;   // side on the grand parent
 	int npside = 0;   // side on the node's parent
 	long lpside = 0;  // side on the leaf's parent
 	long brside = 0;  // branch side when descending
-	size_t llen = 0; // left vs key matching length
-	size_t rlen = 0; // right vs key matching length
-	size_t xlen = 0; // left vs right matching length
-	size_t plen = 0; // previous xlen
+	size_t llen = 0;  // left vs key matching length
+	size_t rlen = 0;  // right vs key matching length
+	size_t plen = 0;  // previous common len between branches
 	int found = 0;    // key was found (saves an extra strcmp for arrays)
 
 	dbg(__LINE__, "_enter__", meth, key_type, root, NULL, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
@@ -381,6 +378,8 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 		 */
 
 		if (key_type == CB_KT_U32) {
+			uint32_t xor32;   // left vs right branch xor
+
 			if (meth == CB_WM_KEY) {
 				/* "found" is not used here */
 				brside = (key_u32 ^ l->key.u32) >= (key_u32 ^ r->key.u32);
@@ -408,8 +407,11 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 					}
 				}
 			}
+			pxor32 = xor32;
 		}
 		else if (key_type == CB_KT_U64) {
+			uint64_t xor64;   // left vs right branch xor
+
 			if (meth == CB_WM_KEY) {
 				/* "found" is not used here */
 				brside = (key_u64 ^ l->key.u64) >= (key_u64 ^ r->key.u64);
@@ -437,8 +439,11 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 					}
 				}
 			}
+			pxor64 = xor64;
 		}
 		else if (key_type == CB_KT_MB) {
+			size_t xlen = 0; // left vs right matching length
+
 			if (meth == CB_WM_KEY) {
 				/* measure identical lengths */
 				llen = equal_bits(key_ptr, l->key.mb, 0, key_u64 << 3);
@@ -477,8 +482,11 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 					}
 				}
 			}
+			plen = xlen;
 		}
 		else if (key_type == CB_KT_ST) {
+			size_t xlen = 0; // left vs right matching length
+
 			if (meth == CB_WM_KEY) {
 				/* Note that a negative length indicates an
 				 * equal value with the final zero reached, but
@@ -523,6 +531,7 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 					}
 				}
 			}
+			plen = xlen;
 		}
 
 		/* shift all copies by one */
@@ -558,9 +567,6 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 			dbg(__LINE__, "loop", meth, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 			break;
 		}
-		plen = xlen;
-		pxor32 = xor32;
-		pxor64 = xor64;
 	}
 
 	/* if we've exited on an exact match after visiting a regular node
