@@ -221,7 +221,7 @@ static void dbg(int line,
 		break;
 	case CB_KT_ST:
 		CBDBG("%04d (%8s) m=%s.%s key='%s' root=%p plen=%ld p=%p,%s(^%d) l=%p,%s(^%d) r=%p,%s(^%d) l^r=%d\n",
-		      line, pfx, kstr, mstr, (meth == CB_WM_KEY) ? (const char *)key_ptr : "", root, (long)plen,
+		      line, pfx, kstr, mstr, key_ptr ? (const char *)key_ptr : "", root, (long)plen,
 		      p ? &p->node : NULL, p ? (const char *)p->key.str : "-", nlen,
 		      l ? &l->node : NULL, l ? (const char *)l->key.str : "-", llen,
 		      r ? &r->node : NULL, r ? (const char *)r->key.str : "-", rlen,
