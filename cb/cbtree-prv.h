@@ -125,6 +125,123 @@ struct cb_node_key {
 	union cb_key_storage key;
 };
 
+#ifdef DEBUG
+__attribute__((unused))
+static void dbg(int line,
+		const char *pfx,
+		enum cb_walk_meth meth,
+		enum cb_key_type key_type,
+		struct cb_node * const *root,
+		const struct cb_node_key *p,
+		uint32_t key_u32,
+		uint64_t key_u64,
+		const void *key_ptr,
+		uint32_t px32,
+		uint64_t px64,
+		size_t plen)
+{
+	const char *meths[] = {
+		[CB_WM_KEY] = "KEY",
+		[CB_WM_FST] = "FST",
+		[CB_WM_NXT] = "NXT",
+		[CB_WM_PRV] = "PRV",
+		[CB_WM_LST] = "LST",
+	};
+	const char *ktypes[] = {
+		[CB_KT_NONE] = "NONE",
+		[CB_KT_U32]  = "U32",
+		[CB_KT_U64]  = "U64",
+		[CB_KT_MB]   = "MB",
+		[CB_KT_ST]   = "ST",
+	};
+	const struct cb_node_key *l = NULL;
+	const struct cb_node_key *r = NULL;
+	const char *kstr __attribute__((unused)) = ktypes[key_type];
+	const char *mstr __attribute__((unused)) = meths[meth];
+	int nlen __attribute__((unused)) = 0;
+	int llen __attribute__((unused)) = 0;
+	int rlen __attribute__((unused)) = 0;
+	int xlen __attribute__((unused)) = 0;
+
+	if (p) {
+		if (key_type == CB_KT_MB)
+			nlen = equal_bits(key_ptr, p->key.mb, 0, key_u64 << 3);
+		else if (key_type == CB_KT_ST)
+			nlen = string_equal_bits(key_ptr, p->key.str, 0);
+
+		l = container_of(p->node.b[0], struct cb_node_key, node);
+		r = container_of(p->node.b[1], struct cb_node_key, node);
+	}
+
+	if (l) {
+		if (key_type == CB_KT_MB)
+			llen = equal_bits(key_ptr, l->key.mb, 0, key_u64 << 3);
+		else if (key_type == CB_KT_ST)
+			llen = string_equal_bits(key_ptr, l->key.str, 0);
+	}
+
+	if (r) {
+		if (key_type == CB_KT_MB)
+			rlen = equal_bits(key_ptr, r->key.mb, 0, key_u64 << 3);
+		else if (key_type == CB_KT_ST)
+			rlen = string_equal_bits(key_ptr, r->key.str, 0);
+	}
+
+	if (l && r) {
+		if (key_type == CB_KT_MB)
+			xlen = equal_bits(l->key.mb, r->key.mb, 0, key_u64 << 3);
+		else if (key_type == CB_KT_ST)
+			xlen = string_equal_bits(l->key.str, r->key.str, 0);
+	}
+
+	switch (key_type) {
+	case CB_KT_U32:
+		CBDBG("%04d (%8s) m=%s.%s key=%#x root=%p pxor=%#x p=%p,%#x(^%#x) l=%p,%#x(^%#x) r=%p,%#x(^%#x) l^r=%#x\n",
+		      line, pfx, kstr, mstr, key_u32, root, px32,
+		      p ? &p->node : NULL, p ? p->key.u32 : 0, p ? p->key.u32 ^ key_u32 : 0,
+		      l ? &l->node : NULL, l ? l->key.u32 : 0, l ? l->key.u32 ^ key_u32 : 0,
+		      r ? &r->node : NULL, r ? r->key.u32 : 0, r ? r->key.u32 ^ key_u32 : 0,
+		      l && r ? l->key.u32 ^ r->key.u32 : 0);
+		break;
+	case CB_KT_U64:
+		CBDBG("%04d (%8s) m=%s.%s key=%#llx root=%p pxor=%#llx p=%p,%#llx(^%#llx) l=%p,%#llx(^%#llx) r=%p,%#llx(^%#llx) l^r=%#llx\n",
+		      line, pfx, kstr, mstr, (long long)key_u64, root, (long long)px64,
+		      p ? &p->node : NULL, (long long)(p ? p->key.u64 : 0), (long long)(p ? p->key.u64 ^ key_u64 : 0),
+		      l ? &l->node : NULL, (long long)(l ? l->key.u64 : 0), (long long)(l ? l->key.u64 ^ key_u64 : 0),
+		      r ? &r->node : NULL, (long long)(r ? r->key.u64 : 0), (long long)(r ? r->key.u64 ^ key_u64 : 0),
+		      (long long)(l && r ? l->key.u64 ^ r->key.u64 : 0));
+		break;
+	case CB_KT_MB:
+		CBDBG("%04d (%8s) m=%s.%s key=%p root=%p plen=%ld p=%p,%p(^%d) l=%p,%p(^%d) r=%p,%p(^%d) l^r=%d\n",
+		      line, pfx, kstr, mstr, key_ptr, root, (long)plen,
+		      p ? &p->node : NULL, p ? p->key.mb : 0, nlen,
+		      l ? &l->node : NULL, l ? l->key.mb : 0, llen,
+		      r ? &r->node : NULL, r ? r->key.mb : 0, rlen,
+		      xlen);
+		break;
+	case CB_KT_ST:
+		CBDBG("%04d (%8s) m=%s.%s key='%s' root=%p plen=%ld p=%p,%s(^%d) l=%p,%s(^%d) r=%p,%s(^%d) l^r=%d\n",
+		      line, pfx, kstr, mstr, (meth == CB_WM_KEY) ? (const char *)key_ptr : "", root, (long)plen,
+		      p ? &p->node : NULL, p ? (const char *)p->key.str : "-", nlen,
+		      l ? &l->node : NULL, l ? (const char *)l->key.str : "-", llen,
+		      r ? &r->node : NULL, r ? (const char *)r->key.str : "-", rlen,
+		      xlen);
+		break;
+	default:
+		/* key type is the node's address */
+		CBDBG("%04d (%8s) m=%s.%s key=%p root=%p plen=%ld p=%p,%p(^%d) l=%p,%p(^%d) r=%p,%p(^%d) l^r=%d\n",
+		      line, pfx, kstr, mstr, key_ptr, root, (long)plen,
+		      p ? &p->node : NULL, p ? &p->key : 0, nlen,
+		      l ? &l->node : NULL, l ? &l->key : 0, llen,
+		      r ? &r->node : NULL, r ? &r->key : 0, rlen,
+		      xlen);
+		break;
+	}
+}
+#else
+#define dbg(...) do { } while (0)
+#endif
+
 /* Generic tree descent function. It must absolutely be inlined so that the
  * compiler can eliminate the tests related to the various return pointers,
  * which must either point to a local variable in the caller, or be NULL.
