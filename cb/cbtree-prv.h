@@ -282,7 +282,6 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 	struct cb_node *lparent;
 	uint32_t pxor32 = ~0U;   // previous xor between branches
 	uint64_t pxor64 = ~0ULL; // previous xor between branches
-	uint64_t bxor64 = pxor64; // backup of xor between branches for restart
 	int gpside = 0;   // side on the grand parent
 	int npside = 0;   // side on the node's parent
 	long lpside = 0;  // side on the leaf's parent
@@ -290,7 +289,7 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 	size_t llen = 0;  // left vs key matching length
 	size_t rlen = 0;  // right vs key matching length
 	size_t plen = 0;  // previous common len between branches
-	int found;        // key was found (saves an extra strcmp for arrays)
+	int found = 0;    // key was found (saves an extra strcmp for arrays)
 
 	dbg(__LINE__, "_enter__", meth, key_type, root, NULL, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 
@@ -299,68 +298,19 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 	 */
 	lparent = container_of(root, struct cb_node, b[0]);
 	gparent = nparent = lparent;
-	p = NULL;
 
-	/* for key-less restarts we need to set the root and pxor, then to
-	 * check if that branch is a leaf. Note that we could re-evaluate
-	 * the XOR here instead of storing it but that's more expensive.
-	 */
-	switch (meth) {
-	case CB_WM_NXT:
-	case CB_WM_PRV:
-		p = container_of(root, struct cb_node_key, node.b[0]);
-		root = &p->node.b[meth == CB_WM_NXT ? 1 : 0];
-
-		pxor32 = key_u32;    // previous xor between branches (u32)
-		pxor64 = key_u64;    // previous xor between branches (u64)
-		plen   = key_u64;    // previous xor between branches (ptr/str)
-
-		if (p == container_of(*root, struct cb_node_key, node)) {
-			/* loops over itself, it's a leaf */
-			dbg(__LINE__, "loop", meth, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
-			goto after_loop;
-		}
-
-		break;
-	default:
-		break;
-	}
-
-	bxor64 = pxor64;
-
-loop_again:
 	/* for key-less descents we need to set the initial branch to take */
 	switch (meth) {
-	case CB_WM_PRV:
-		brside = 1;        // descend right for prev
-		break;
 	case CB_WM_NXT:
-		brside = 0;        // descend left for next
-		break;
 	case CB_WM_LST:
-		/* this is only used when we're looping for a second walk down */
-		if (p && p == container_of(*root, struct cb_node_key, node)) {
-			/* loops over itself, it's a leaf */
-			dbg(__LINE__, "loop", meth, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
-			goto after_loop;
-		}
-		brside = 1;        // start right for next/last
+		brside = 1; // start right for next/last
 		break;
 	case CB_WM_FST:
-		/* this is only used when we're looping for a second walk down */
-		if (p && p == container_of(*root, struct cb_node_key, node)) {
-			/* loops over itself, it's a leaf */
-			dbg(__LINE__, "loop", meth, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
-			goto after_loop;
-		}
-		brside = 0;        // start left for first/prev
-		break;
+	case CB_WM_PRV:
 	default:
-		brside = 0;
+		brside = 0; // start left for first/prev
 		break;
 	}
-
-	found = 0;
 
 	/* the previous xor is initialized to the largest possible inter-branch
 	 * value so that it can never match on the first test as we want to use
@@ -594,10 +544,8 @@ loop_again:
 		lparent = &p->node;
 		lpside = brside;
 		if (brside) {
-			if (meth == CB_WM_KPR) {
+			if (meth == CB_WM_KPR)
 				bnode = p;
-				bxor64 = pxor64;
-			}
 			root = &p->node.b[1];
 
 			/* change branch for key-less walks */
@@ -607,10 +555,8 @@ loop_again:
 			dbg(__LINE__, "side1", meth, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 		}
 		else {
-			if (meth == CB_WM_KNX) {
+			if (meth == CB_WM_KNX)
 				bnode = p;
-				bxor64 = pxor64;
-			}
 			root = &p->node.b[0];
 
 			/* change branch for key-less walks */
@@ -627,7 +573,6 @@ loop_again:
 		}
 	}
 
-after_loop:
 	/* if we've exited on an exact match after visiting a regular node
 	 * (i.e. not the nodeless leaf), we'll avoid checking the string again.
 	 * However if it doesn't match, we must make sure to compare from
@@ -697,32 +642,10 @@ after_loop:
 			if (key_u64 == p->key.u64) {
 				if (meth == CB_WM_KEY)
 					return &p->node;
-				else if (meth == CB_WM_KNX) {
-					/* get back to the last left turn, turn
-					 * right and walk down left.
-					 */
-					if (bnode) {
-						//return &bnode->node;
-						p = bnode;
-						root = &p->node.b[1];
-						pxor64 = bxor64;
-						meth = CB_WM_FST;
-						goto loop_again;
-					}
-				}
-				else if (meth == CB_WM_KPR) {
-					/* get back to the last left turn, turn
-					 * right and walk down left.
-					 */
-					if (bnode) {
-						//return &bnode->node;
-						p = bnode;
-						root = &p->node.b[0];
-						pxor64 = bxor64;
-						meth = CB_WM_LST;
-						goto loop_again;
-					}
-				}
+				else if (meth == CB_WM_KNX && bnode)
+					return &bnode->node;
+				else if (meth == CB_WM_KPR && bnode)
+					return &bnode->node;
 			}
 		}
 		else if (key_type == CB_KT_MB) {
@@ -833,10 +756,16 @@ struct cb_node *_cbu_next(struct cb_node **root,
 			  uint64_t key_u64,
 			  const void *key_ptr)
 {
+	struct cb_node *restart;
+
 	if (!*root)
 		return NULL;
 
-	return _cbu_descend(root, CB_WM_KNX, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	restart = _cbu_descend(root, CB_WM_KNX, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	if (!restart)
+		return NULL;
+
+	return _cbu_descend(&restart, CB_WM_NXT, key_type, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 }
 
 /* Searches in the tree <root> made of keys of type <key_type>, for the prev
@@ -853,10 +782,16 @@ struct cb_node *_cbu_prev(struct cb_node **root,
 			  uint64_t key_u64,
 			  const void *key_ptr)
 {
+	struct cb_node *restart;
+
 	if (!*root)
 		return NULL;
 
-	return _cbu_descend(root, CB_WM_KPR, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	restart = _cbu_descend(root, CB_WM_KPR, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	if (!restart)
+		return NULL;
+
+	return _cbu_descend(&restart, CB_WM_PRV, key_type, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 }
 
 /* Searches in the tree <root> made of keys of type <key_type>, for the node
