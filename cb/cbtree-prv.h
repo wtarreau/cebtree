@@ -100,8 +100,8 @@ enum cb_walk_meth {
 	CB_WM_NXT,     /* look up "next" (walk right once then left) */
 	CB_WM_PRV,     /* look up "prev" (walk left once then right) */
 	CB_WM_LST,     /* look up "last" (walk right only) */
-	/* all methods from CB_WM_KEY and above do have a key */
-	CB_WM_KEY,     /* look up the node's key */
+	/* all methods from CB_WM_KEQ and above do have a key */
+	CB_WM_KEQ,     /* look up the node equal to the key  */
 	CB_WM_KNX,     /* look up the node's key first, then find the next */
 	CB_WM_KPR,     /* look up the node's key first, then find the prev */
 };
@@ -148,7 +148,7 @@ static void dbg(int line,
 		[CB_WM_NXT] = "NXT",
 		[CB_WM_PRV] = "PRV",
 		[CB_WM_LST] = "LST",
-		[CB_WM_KEY] = "KEY",
+		[CB_WM_KEQ] = "KEQ",
 		[CB_WM_KNX] = "KNX",
 		[CB_WM_KPR] = "KPR",
 	};
@@ -383,7 +383,7 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 		if (key_type == CB_KT_U32) {
 			uint32_t xor32;   // left vs right branch xor
 
-			if (meth >= CB_WM_KEY) {
+			if (meth >= CB_WM_KEQ) {
 				/* "found" is not used here */
 				brside = (key_u32 ^ l->key.u32) >= (key_u32 ^ r->key.u32);
 			}
@@ -394,7 +394,7 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 				break;
 			}
 
-			if (meth >= CB_WM_KEY) {
+			if (meth >= CB_WM_KEQ) {
 				/* let's stop if our key is not there */
 
 				if ((key_u32 ^ l->key.u32) > xor32 && (key_u32 ^ r->key.u32) > xor32) {
@@ -415,7 +415,7 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 		else if (key_type == CB_KT_U64) {
 			uint64_t xor64;   // left vs right branch xor
 
-			if (meth >= CB_WM_KEY) {
+			if (meth >= CB_WM_KEQ) {
 				/* "found" is not used here */
 				brside = (key_u64 ^ l->key.u64) >= (key_u64 ^ r->key.u64);
 			}
@@ -426,7 +426,7 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 				break;
 			}
 
-			if (meth >= CB_WM_KEY) {
+			if (meth >= CB_WM_KEQ) {
 				/* let's stop if our key is not there */
 
 				if ((key_u64 ^ l->key.u64) > xor64 && (key_u64 ^ r->key.u64) > xor64) {
@@ -447,7 +447,7 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 		else if (key_type == CB_KT_MB) {
 			size_t xlen = 0; // left vs right matching length
 
-			if (meth >= CB_WM_KEY) {
+			if (meth >= CB_WM_KEQ) {
 				/* measure identical lengths */
 				llen = equal_bits(key_ptr, l->key.mb, 0, key_u64 << 3);
 				rlen = equal_bits(key_ptr, r->key.mb, 0, key_u64 << 3);
@@ -463,7 +463,7 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 				break;
 			}
 
-			if (meth >= CB_WM_KEY) {
+			if (meth >= CB_WM_KEQ) {
 				/* let's stop if our key is not there */
 
 				if (llen < xlen && rlen < xlen) {
@@ -490,7 +490,7 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 		else if (key_type == CB_KT_ST) {
 			size_t xlen = 0; // left vs right matching length
 
-			if (meth >= CB_WM_KEY) {
+			if (meth >= CB_WM_KEQ) {
 				/* Note that a negative length indicates an
 				 * equal value with the final zero reached, but
 				 * it is still needed to descend to find the
@@ -511,7 +511,7 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 				break;
 			}
 
-			if (meth >= CB_WM_KEY) {
+			if (meth >= CB_WM_KEQ) {
 				/* let's stop if our key is not there */
 
 				if ((unsigned)llen < (unsigned)xlen && (unsigned)rlen < (unsigned)xlen) {
@@ -586,11 +586,11 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 	 * guarantees these bits exist. Test with "100", "10", "1" to see where
 	 * this is needed.
 	 */
-	if (key_type == CB_KT_ST && meth >= CB_WM_KEY && !found)
+	if (key_type == CB_KT_ST && meth >= CB_WM_KEQ && !found)
 		plen = (llen > rlen) ? llen : rlen;
 
 	/* update the pointers needed for modifications (insert, delete) */
-	if (ret_nside && meth >= CB_WM_KEY) {
+	if (ret_nside && meth >= CB_WM_KEQ) {
 		switch (key_type) {
 		case CB_KT_U32:
 			*ret_nside = key_u32 >= p->key.u32;
@@ -636,7 +636,7 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 
 	dbg(__LINE__, "_ret____", meth, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 
-	if (meth >= CB_WM_KEY) {
+	if (meth >= CB_WM_KEQ) {
 		/* For lookups, an equal value means an instant return. For insertions,
 		 * it is the same, we want to return the previously existing value so
 		 * that the caller can decide what to do. For deletion, we also want to
@@ -697,7 +697,7 @@ struct cb_node *_cbu_insert(struct cb_node **root,
 		return node;
 	}
 
-	ret = _cbu_descend(root, CB_WM_KEY, key_type, key_u32, key_u64, key_ptr, &nside, &parent, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	ret = _cbu_descend(root, CB_WM_KEQ, key_type, key_u32, key_u64, key_ptr, &nside, &parent, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 
 	if (!ret) {
 		/* The key was not in the tree, we can insert it. Better use an
@@ -813,7 +813,7 @@ struct cb_node *_cbu_lookup(struct cb_node **root,
 	if (!*root)
 		return NULL;
 
-	return _cbu_descend(root, CB_WM_KEY, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	return _cbu_descend(root, CB_WM_KEQ, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 }
 
 /* Searches in the tree <root> made of keys of type <key_type>, for the node
@@ -847,7 +847,7 @@ struct cb_node *_cbu_delete(struct cb_node **root,
 		goto done;
 	}
 
-	ret = _cbu_descend(root, CB_WM_KEY, key_type, key_u32, key_u64, key_ptr, NULL, NULL,
+	ret = _cbu_descend(root, CB_WM_KEQ, key_type, key_u32, key_u64, key_ptr, NULL, NULL,
 			    &lparent, &lpside, &nparent, &npside, &gparent, &gpside, NULL);
 
 	if (!ret) {
