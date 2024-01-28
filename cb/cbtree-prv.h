@@ -335,46 +335,13 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 			break;
 		}
 
-		/* we can compute this here for scalar types, it allows the
+		/* we can compute brside here for scalar types, it allows the
 		 * CPU to predict next branches. We can also xor lkey/rkey
 		 * with key and use it everywhere later but it doesn't save
 		 * much. Alternately, like here, it's possible to measure
 		 * the length of identical bits. This is the solution that
 		 * will be needed on strings.
 		 */
-
-		/* next branch is calculated here when having a key */
-		if (meth == CB_WM_KEY) {
-			if (key_type == CB_KT_U32) {
-				/* "found" is not used here */
-				brside = (key_u32 ^ l->key.u32) >= (key_u32 ^ r->key.u32);
-			}
-			else if (key_type == CB_KT_U64) {
-				/* "found" is not used here */
-				brside = (key_u64 ^ l->key.u64) >= (key_u64 ^ r->key.u64);
-			}
-			else if (key_type == CB_KT_MB) {
-				/* measure identical lengths */
-				llen = equal_bits(key_ptr, l->key.mb, 0, key_u64 << 3);
-				rlen = equal_bits(key_ptr, r->key.mb, 0, key_u64 << 3);
-				brside = llen <= rlen;
-				if (llen == rlen && (uint64_t)llen == key_u64 << 3)
-					found = 1;
-			}
-			else if (key_type == CB_KT_ST) {
-				/* Note that a negative length indicates an
-				 * equal value with the final zero reached, but
-				 * it is still needed to descend to find the
-				 * leaf. We take that negative length for an
-				 * infinite one, hence the uint cast.
-				 */
-				llen = string_equal_bits(key_ptr, l->key.str, 0);
-				rlen = string_equal_bits(key_ptr, r->key.str, 0);
-				brside = (size_t)llen <= (size_t)rlen;
-				if ((ssize_t)llen < 0 || (ssize_t)rlen < 0)
-					found = 1;
-			}
-		}
 
 		/* so that's either a node or a leaf. Each leaf we visit had
 		 * its node part already visited. The only way to distinguish
@@ -391,7 +358,12 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 		 * and strings, instead we store the previous equal length.
 		 */
 
+		/* next branch is calculated here when having a key */
 		if (key_type == CB_KT_U32) {
+			if (meth == CB_WM_KEY) {
+				/* "found" is not used here */
+				brside = (key_u32 ^ l->key.u32) >= (key_u32 ^ r->key.u32);
+			}
 			xor32 = l->key.u32 ^ r->key.u32;
 			if (xor32 > pxor32) { // test using 2 4 6 4
 				dbg(__LINE__, "xor>", meth, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
@@ -399,6 +371,10 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 			}
 		}
 		else if (key_type == CB_KT_U64) {
+			if (meth == CB_WM_KEY) {
+				/* "found" is not used here */
+				brside = (key_u64 ^ l->key.u64) >= (key_u64 ^ r->key.u64);
+			}
 			xor64 = l->key.u64 ^ r->key.u64;
 			if (xor64 > pxor64) { // test using 2 4 6 4
 				dbg(__LINE__, "xor>", meth, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
@@ -406,6 +382,14 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 			}
 		}
 		else if (key_type == CB_KT_MB) {
+			if (meth == CB_WM_KEY) {
+				/* measure identical lengths */
+				llen = equal_bits(key_ptr, l->key.mb, 0, key_u64 << 3);
+				rlen = equal_bits(key_ptr, r->key.mb, 0, key_u64 << 3);
+				brside = llen <= rlen;
+				if (llen == rlen && (uint64_t)llen == key_u64 << 3)
+					found = 1;
+			}
 			xlen = equal_bits(l->key.mb, r->key.mb, 0, key_u64 << 3);
 			if (xlen < plen) {
 				/* this is a leaf. E.g. triggered using 2 4 6 4 */
@@ -414,6 +398,19 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 			}
 		}
 		else if (key_type == CB_KT_ST) {
+			if (meth == CB_WM_KEY) {
+				/* Note that a negative length indicates an
+				 * equal value with the final zero reached, but
+				 * it is still needed to descend to find the
+				 * leaf. We take that negative length for an
+				 * infinite one, hence the uint cast.
+				 */
+				llen = string_equal_bits(key_ptr, l->key.str, 0);
+				rlen = string_equal_bits(key_ptr, r->key.str, 0);
+				brside = (size_t)llen <= (size_t)rlen;
+				if ((ssize_t)llen < 0 || (ssize_t)rlen < 0)
+					found = 1;
+			}
 			xlen = string_equal_bits(l->key.str, r->key.str, 0);
 			if (xlen < plen) {
 				/* this is a leaf. E.g. triggered using 2 4 6 4 */
