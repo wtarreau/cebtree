@@ -570,21 +570,15 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 	}
 
 	/* if we've exited on an exact match after visiting a regular node
-	 * (i.e. not the nodeless leaf), avoid checking the string again.
+	 * (i.e. not the nodeless leaf), we'll avoid checking the string again.
 	 * However if it doesn't match, we must make sure to compare from
 	 * within the key (which can be shorter than the ones already there),
-	 * so we restart the check with the longest of the two lengths, which
+	 * so we restart the check from the longest of the two lengths, which
 	 * guarantees these bits exist. Test with "100", "10", "1" to see where
 	 * this is needed.
 	 */
-	if (key_type == CB_KT_ST) {
-		if (found || meth != CB_WM_KEY)
-			plen = (size_t)-1;
-		else
-			plen = (llen > rlen) ? llen : rlen;
-	}
-
-	/* we may have plen==-1 if we've got an exact match over the whole key length above */
+	if (key_type == CB_KT_ST && meth == CB_WM_KEY && !found)
+		plen = (llen > rlen) ? llen : rlen;
 
 	/* update the pointers needed for modifications (insert, delete) */
 	if (ret_nside && meth == CB_WM_KEY) {
@@ -599,7 +593,7 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 			*ret_nside = (uint64_t)plen / 8 == key_u64 || memcmp(key_ptr + plen / 8, p->key.mb + plen / 8, key_u64 - plen / 8) >= 0;
 			break;
 		case CB_KT_ST:
-			*ret_nside = ((ssize_t)plen < 0) || strcmp(key_ptr + plen / 8, (const void *)p->key.str + plen / 8) >= 0;
+			*ret_nside = found || strcmp(key_ptr + plen / 8, (const void *)p->key.str + plen / 8) >= 0;
 			break;
 		default:
 			break;
@@ -655,7 +649,7 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 				return &p->node;
 		}
 		else if (key_type == CB_KT_ST) {
-			if ((ssize_t)plen < 0 || strcmp(key_ptr + plen / 8, (const void *)p->key.str + plen / 8) == 0)
+			if (found || strcmp(key_ptr + plen / 8, (const void *)p->key.str + plen / 8) == 0)
 				return &p->node;
 		}
 	} else if (meth == CB_WM_FST || meth == CB_WM_LST) {
