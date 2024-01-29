@@ -572,6 +572,12 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 		}
 	}
 
+	/* here we're on the closest node from the requested value. It may be
+	 * slightly lower (has a zero where we expected a one) or slightly
+	 * larger has a one where we expected a zero). Thus another check is
+	 * still deserved, depending on the matching method.
+	 */
+
 	/* if we've exited on an exact match after visiting a regular node
 	 * (i.e. not the nodeless leaf), we'll avoid checking the string again.
 	 * However if it doesn't match, we must make sure to compare from
