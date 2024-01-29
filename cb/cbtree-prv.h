@@ -647,19 +647,48 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 		 * return the pointer that's about to be deleted.
 		 */
 		if (key_type == CB_KT_U32) {
-			if (key_u32 == p->key.u32)
+			if ((meth == CB_WM_KEQ && p->key.u32 == key_u32) ||
+			    (meth == CB_WM_KNX && p->key.u32 == key_u32) ||
+			    (meth == CB_WM_KPR && p->key.u32 == key_u32) ||
+			    (meth == CB_WM_KGE && p->key.u32 >= key_u32) ||
+			    (meth == CB_WM_KLE && p->key.u32 <= key_u32))
 				return &p->node;
 		}
 		else if (key_type == CB_KT_U64) {
-			if (key_u64 == p->key.u64)
+			if ((meth == CB_WM_KEQ && p->key.u64 == key_u64) ||
+			    (meth == CB_WM_KNX && p->key.u64 == key_u64) ||
+			    (meth == CB_WM_KPR && p->key.u64 == key_u64) ||
+			    (meth == CB_WM_KGE && p->key.u64 >= key_u64) ||
+			    (meth == CB_WM_KLE && p->key.u64 <= key_u64))
 				return &p->node;
 		}
 		else if (key_type == CB_KT_MB) {
-			if ((uint64_t)plen / 8 == key_u64 || memcmp(key_ptr + plen / 8, p->key.mb + plen / 8, key_u64 - plen / 8) == 0)
+			int diff;
+
+			if ((uint64_t)plen / 8 == key_u64)
+				diff = 0;
+			else
+				diff = memcmp(p->key.mb + plen / 8, key_ptr + plen / 8, key_u64 - plen / 8);
+
+			if ((meth == CB_WM_KEQ && diff == 0) ||
+			    (meth == CB_WM_KNX && diff == 0) ||
+			    (meth == CB_WM_KPR && diff == 0) ||
+			    (meth == CB_WM_KGE && diff >= 0) ||
+			    (meth == CB_WM_KLE && diff <= 0))
 				return &p->node;
 		}
 		else if (key_type == CB_KT_ST) {
-			if (found || strcmp(key_ptr + plen / 8, (const void *)p->key.str + plen / 8) == 0)
+			int diff;
+
+			if (found)
+				diff = 0;
+			else
+				diff = strcmp((const void *)p->key.str + plen / 8, key_ptr + plen / 8);
+			if ((meth == CB_WM_KEQ && diff == 0) ||
+			    (meth == CB_WM_KNX && diff == 0) ||
+			    (meth == CB_WM_KPR && diff == 0) ||
+			    (meth == CB_WM_KGE && diff >= 0) ||
+			    (meth == CB_WM_KLE && diff <= 0))
 				return &p->node;
 		}
 	} else if (meth == CB_WM_FST || meth == CB_WM_LST) {
