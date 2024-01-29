@@ -103,7 +103,9 @@ enum cb_walk_meth {
 	/* all methods from CB_WM_KEQ and above do have a key */
 	CB_WM_KEQ,     /* look up the node equal to the key  */
 	CB_WM_KGE,     /* look up the node greater than or equal to the key */
+	CB_WM_KGT,     /* look up the node greater than the key */
 	CB_WM_KLE,     /* look up the node lower than or equal to the key */
+	CB_WM_KLT,     /* look up the node lower than the key */
 	CB_WM_KNX,     /* look up the node's key first, then find the next */
 	CB_WM_KPR,     /* look up the node's key first, then find the prev */
 };
@@ -152,7 +154,9 @@ static void dbg(int line,
 		[CB_WM_LST] = "LST",
 		[CB_WM_KEQ] = "KEQ",
 		[CB_WM_KGE] = "KGE",
+		[CB_WM_KGT] = "KGT",
 		[CB_WM_KLE] = "KLE",
+		[CB_WM_KLT] = "KLT",
 		[CB_WM_KNX] = "KNX",
 		[CB_WM_KPR] = "KPR",
 	};
@@ -547,7 +551,7 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 		lparent = &p->node;
 		lpside = brside;
 		if (brside) {
-			if (meth == CB_WM_KPR || meth == CB_WM_KLE)
+			if (meth == CB_WM_KPR || meth == CB_WM_KLE || meth == CB_WM_KLT)
 				bnode = p;
 			root = &p->node.b[1];
 
@@ -558,7 +562,7 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 			dbg(__LINE__, "side1", meth, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 		}
 		else {
-			if (meth == CB_WM_KNX || meth == CB_WM_KGE)
+			if (meth == CB_WM_KNX || meth == CB_WM_KGE || meth == CB_WM_KGT)
 				bnode = p;
 			root = &p->node.b[0];
 
@@ -651,7 +655,9 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 			    (meth == CB_WM_KNX && p->key.u32 == key_u32) ||
 			    (meth == CB_WM_KPR && p->key.u32 == key_u32) ||
 			    (meth == CB_WM_KGE && p->key.u32 >= key_u32) ||
-			    (meth == CB_WM_KLE && p->key.u32 <= key_u32))
+			    (meth == CB_WM_KGT && p->key.u32 >  key_u32) ||
+			    (meth == CB_WM_KLE && p->key.u32 <= key_u32) ||
+			    (meth == CB_WM_KLT && p->key.u32 <  key_u32))
 				return &p->node;
 		}
 		else if (key_type == CB_KT_U64) {
@@ -659,7 +665,9 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 			    (meth == CB_WM_KNX && p->key.u64 == key_u64) ||
 			    (meth == CB_WM_KPR && p->key.u64 == key_u64) ||
 			    (meth == CB_WM_KGE && p->key.u64 >= key_u64) ||
-			    (meth == CB_WM_KLE && p->key.u64 <= key_u64))
+			    (meth == CB_WM_KGT && p->key.u64 >  key_u64) ||
+			    (meth == CB_WM_KLE && p->key.u64 <= key_u64) ||
+			    (meth == CB_WM_KLT && p->key.u64 <  key_u64))
 				return &p->node;
 		}
 		else if (key_type == CB_KT_MB) {
@@ -674,7 +682,9 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 			    (meth == CB_WM_KNX && diff == 0) ||
 			    (meth == CB_WM_KPR && diff == 0) ||
 			    (meth == CB_WM_KGE && diff >= 0) ||
-			    (meth == CB_WM_KLE && diff <= 0))
+			    (meth == CB_WM_KGT && diff >  0) ||
+			    (meth == CB_WM_KLE && diff <= 0) ||
+			    (meth == CB_WM_KLT && diff <  0))
 				return &p->node;
 		}
 		else if (key_type == CB_KT_ST) {
@@ -688,7 +698,9 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 			    (meth == CB_WM_KNX && diff == 0) ||
 			    (meth == CB_WM_KPR && diff == 0) ||
 			    (meth == CB_WM_KGE && diff >= 0) ||
-			    (meth == CB_WM_KLE && diff <= 0))
+			    (meth == CB_WM_KGT && diff >  0) ||
+			    (meth == CB_WM_KLE && diff <= 0) ||
+			    (meth == CB_WM_KLT && diff <  0))
 				return &p->node;
 		}
 	} else if (meth == CB_WM_FST || meth == CB_WM_LST) {
@@ -877,6 +889,34 @@ struct cb_node *_cbu_lookup_le(struct cb_node **root,
 }
 
 /* Searches in the tree <root> made of keys of type <key_type>, for the node
+ * containing the greatest key that is strictly lower than <key_*>. Returns
+ * NULL if not found. It's very similar to next() except that the looked up
+ * value doesn't need to exist.
+ */
+static inline __attribute__((always_inline))
+struct cb_node *_cbu_lookup_lt(struct cb_node **root,
+			       enum cb_key_type key_type,
+			       uint32_t key_u32,
+			       uint64_t key_u64,
+			       const void *key_ptr)
+{
+	struct cb_node *ret = NULL;
+	struct cb_node *restart;
+
+	if (!*root)
+		return NULL;
+
+	ret = _cbu_descend(root, CB_WM_KLT, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &restart);
+	if (ret)
+		return ret;
+
+	if (!restart)
+		return NULL;
+
+	return _cbu_descend(&restart, CB_WM_PRV, key_type, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+}
+
+/* Searches in the tree <root> made of keys of type <key_type>, for the node
  * containing the key <key_*> or the smallest one that's greater than it.
  * Returns NULL if not found.
  */
@@ -894,6 +934,34 @@ struct cb_node *_cbu_lookup_ge(struct cb_node **root,
 		return NULL;
 
 	ret = _cbu_descend(root, CB_WM_KGE, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &restart);
+	if (ret)
+		return ret;
+
+	if (!restart)
+		return NULL;
+
+	return _cbu_descend(&restart, CB_WM_NXT, key_type, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+}
+
+/* Searches in the tree <root> made of keys of type <key_type>, for the node
+ * containing the lowest key that is strictly greater than <key_*>. Returns
+ * NULL if not found. It's very similar to prev() except that the looked up
+ * value doesn't need to exist.
+ */
+static inline __attribute__((always_inline))
+struct cb_node *_cbu_lookup_gt(struct cb_node **root,
+			       enum cb_key_type key_type,
+			       uint32_t key_u32,
+			       uint64_t key_u64,
+			       const void *key_ptr)
+{
+	struct cb_node *ret = NULL;
+	struct cb_node *restart;
+
+	if (!*root)
+		return NULL;
+
+	ret = _cbu_descend(root, CB_WM_KGT, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &restart);
 	if (ret)
 		return ret;
 
