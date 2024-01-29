@@ -65,10 +65,14 @@ int main(int argc, char **argv)
 			lookup_mode=1;
 		else if (strcmp(*argv, "-l") == 0)
 			lookup_mode=-1;
+		else if (strcmp(*argv, "-G") == 0)
+			lookup_mode=2;
+		else if (strcmp(*argv, "-L") == 0)
+			lookup_mode=-2;
 		else if (strcmp(*argv, "-c") == 0)
 			do_count=1;
 		else {
-			printf("Usage: %s [-dlgc]* [value]*\n", argv0);
+			printf("Usage: %s [-dLlgGc]* [value]*\n", argv0);
 			exit(1);
 		}
 		argc--; argv++;
@@ -79,10 +83,14 @@ int main(int argc, char **argv)
 		v = atoll(argv[0]);
 		if (lookup_mode == 0)
 			old = cbul_lookup(&cb_root, v);
+		else if (lookup_mode == -2)
+			old = cbul_lookup_lt(&cb_root, v);
 		else if (lookup_mode == -1)
 			old = cbul_lookup_le(&cb_root, v);
 		else if (lookup_mode == 1)
 			old = cbul_lookup_ge(&cb_root, v);
+		else if (lookup_mode == 2)
+			old = cbul_lookup_gt(&cb_root, v);
 		else
 			old = NULL;
 

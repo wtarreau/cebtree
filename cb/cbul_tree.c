@@ -84,6 +84,17 @@ struct cb_node *cbul_lookup_le(struct cb_node **root, unsigned long key)
 		return _cbu_lookup_le(root, CB_KT_U64, 0, key, NULL);
 }
 
+/* look up highest key below the specified one, and returns either the
+ * node containing it, or NULL if not found.
+ */
+struct cb_node *cbul_lookup_lt(struct cb_node **root, unsigned long key)
+{
+	if (sizeof(long) <= 4)
+		return _cbu_lookup_lt(root, CB_KT_U32, key, 0, NULL);
+	else
+		return _cbu_lookup_lt(root, CB_KT_U64, 0, key, NULL);
+}
+
 /* look up the specified key or the smallest above it, and returns either the
  * node containing it, or NULL if not found.
  */
@@ -93,6 +104,17 @@ struct cb_node *cbul_lookup_ge(struct cb_node **root, unsigned long key)
 		return _cbu_lookup_ge(root, CB_KT_U32, key, 0, NULL);
 	else
 		return _cbu_lookup_ge(root, CB_KT_U64, 0, key, NULL);
+}
+
+/* look up the smallest key above the specified one, and returns either the
+ * node containing it, or NULL if not found.
+ */
+struct cb_node *cbul_lookup_gt(struct cb_node **root, unsigned long key)
+{
+	if (sizeof(long) <= 4)
+		return _cbu_lookup_gt(root, CB_KT_U32, key, 0, NULL);
+	else
+		return _cbu_lookup_gt(root, CB_KT_U64, 0, key, NULL);
 }
 
 /* search for the next node after the specified one, and return it, or NULL if
