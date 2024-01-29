@@ -272,8 +272,7 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 			     int *ret_npside,
 			     struct cb_node **ret_gparent,
 			     int *ret_gpside,
-			     struct cb_node ***ret_alt_l,
-			     struct cb_node ***ret_alt_r)
+			     struct cb_node **ret_back)
 {
 	struct cb_node_key *p, *l, *r;
 	struct cb_node *gparent = NULL;
@@ -626,6 +625,9 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 	if (ret_gparent)
 		*ret_gparent = gparent;
 
+	if (ret_back)
+		*ret_back = &bnode->node;
+
 	dbg(__LINE__, "_ret____", meth, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 
 	if (meth >= CB_WM_KEY) {
@@ -639,14 +641,8 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 				return &p->node;
 		}
 		else if (key_type == CB_KT_U64) {
-			if (key_u64 == p->key.u64) {
-				if (meth == CB_WM_KEY)
-					return &p->node;
-				else if (meth == CB_WM_KNX && bnode)
-					return &bnode->node;
-				else if (meth == CB_WM_KPR && bnode)
-					return &bnode->node;
-			}
+			if (key_u64 == p->key.u64)
+				return &p->node;
 		}
 		else if (key_type == CB_KT_MB) {
 			if ((uint64_t)plen / 8 == key_u64 || memcmp(key_ptr + plen / 8, p->key.mb + plen / 8, key_u64 - plen / 8) == 0)
@@ -659,7 +655,7 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 	} else if (meth == CB_WM_FST || meth == CB_WM_LST) {
 		return &p->node;
 	} else if (meth == CB_WM_PRV || meth == CB_WM_NXT) {
-		return &p->node;//(p != root) ? &p->node : NULL;//&p->node;
+		return &p->node;
 	}
 
 	/* lookups and deletes fail here */
@@ -695,7 +691,7 @@ struct cb_node *_cbu_insert(struct cb_node **root,
 		return node;
 	}
 
-	ret = _cbu_descend(root, CB_WM_KEY, key_type, key_u32, key_u64, key_ptr, &nside, &parent, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	ret = _cbu_descend(root, CB_WM_KEY, key_type, key_u32, key_u64, key_ptr, &nside, &parent, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 
 	if (!ret) {
 		/* The key was not in the tree, we can insert it. Better use an
@@ -726,7 +722,7 @@ struct cb_node *_cbu_first(struct cb_node **root,
 	if (!*root)
 		return NULL;
 
-	return _cbu_descend(root, CB_WM_FST, key_type, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	return _cbu_descend(root, CB_WM_FST, key_type, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 }
 
 /* Returns the last node or NULL if not found, assuming a tree made of keys of
@@ -739,7 +735,7 @@ struct cb_node *_cbu_last(struct cb_node **root,
 	if (!*root)
 		return NULL;
 
-	return _cbu_descend(root, CB_WM_LST, key_type, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	return _cbu_descend(root, CB_WM_LST, key_type, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 }
 
 /* Searches in the tree <root> made of keys of type <key_type>, for the next
@@ -761,11 +757,13 @@ struct cb_node *_cbu_next(struct cb_node **root,
 	if (!*root)
 		return NULL;
 
-	restart = _cbu_descend(root, CB_WM_KNX, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	if (!_cbu_descend(root, CB_WM_KNX, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &restart))
+		return NULL;
+
 	if (!restart)
 		return NULL;
 
-	return _cbu_descend(&restart, CB_WM_NXT, key_type, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	return _cbu_descend(&restart, CB_WM_NXT, key_type, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 }
 
 /* Searches in the tree <root> made of keys of type <key_type>, for the prev
@@ -787,11 +785,13 @@ struct cb_node *_cbu_prev(struct cb_node **root,
 	if (!*root)
 		return NULL;
 
-	restart = _cbu_descend(root, CB_WM_KPR, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	if (!_cbu_descend(root, CB_WM_KPR, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &restart))
+		return NULL;
+
 	if (!restart)
 		return NULL;
 
-	return _cbu_descend(&restart, CB_WM_PRV, key_type, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	return _cbu_descend(&restart, CB_WM_PRV, key_type, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 }
 
 /* Searches in the tree <root> made of keys of type <key_type>, for the node
@@ -807,7 +807,7 @@ struct cb_node *_cbu_lookup(struct cb_node **root,
 	if (!*root)
 		return NULL;
 
-	return _cbu_descend(root, CB_WM_KEY, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	return _cbu_descend(root, CB_WM_KEY, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 }
 
 /* Searches in the tree <root> made of keys of type <key_type>, for the node
@@ -842,7 +842,7 @@ struct cb_node *_cbu_delete(struct cb_node **root,
 	}
 
 	ret = _cbu_descend(root, CB_WM_KEY, key_type, key_u32, key_u64, key_ptr, NULL, NULL,
-			    &lparent, &lpside, &nparent, &npside, &gparent, &gpside, NULL, NULL);
+			    &lparent, &lpside, &nparent, &npside, &gparent, &gpside, NULL);
 
 	if (!ret) {
 		/* key not found */
