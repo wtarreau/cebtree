@@ -30,6 +30,10 @@ struct cb_node *cbub_insert(struct cb_node **root, struct cb_node *node, size_t 
 struct cb_node *cbub_first(struct cb_node **root);
 struct cb_node *cbub_last(struct cb_node **root);
 struct cb_node *cbub_lookup(struct cb_node **root, const void *key, size_t len);
+struct cb_node *cbub_lookup_le(struct cb_node **root, const void *key, size_t len);
+struct cb_node *cbub_lookup_lt(struct cb_node **root, const void *key, size_t len);
+struct cb_node *cbub_lookup_ge(struct cb_node **root, const void *key, size_t len);
+struct cb_node *cbub_lookup_gt(struct cb_node **root, const void *key, size_t len);
 struct cb_node *cbub_next(struct cb_node **root, struct cb_node *node, size_t len);
 struct cb_node *cbub_prev(struct cb_node **root, struct cb_node *node, size_t len);
 struct cb_node *cbub_delete(struct cb_node **root, struct cb_node *node, size_t len);
