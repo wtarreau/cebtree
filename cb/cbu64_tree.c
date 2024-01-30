@@ -61,6 +61,38 @@ struct cb_node *cbu64_lookup(struct cb_node **root, uint64_t key)
 	return _cbu_lookup(root, CB_KT_U64, 0, key, NULL);
 }
 
+/* look up the specified key or the highest below it, and returns either the
+ * node containing it, or NULL if not found.
+ */
+struct cb_node *cbu64_lookup_le(struct cb_node **root, uint64_t key)
+{
+	return _cbu_lookup_le(root, CB_KT_U64, 0, key, NULL);
+}
+
+/* look up highest key below the specified one, and returns either the
+ * node containing it, or NULL if not found.
+ */
+struct cb_node *cbu64_lookup_lt(struct cb_node **root, uint64_t key)
+{
+	return _cbu_lookup_lt(root, CB_KT_U64, 0, key, NULL);
+}
+
+/* look up the specified key or the smallest above it, and returns either the
+ * node containing it, or NULL if not found.
+ */
+struct cb_node *cbu64_lookup_ge(struct cb_node **root, uint64_t key)
+{
+	return _cbu_lookup_ge(root, CB_KT_U64, 0, key, NULL);
+}
+
+/* look up the smallest key above the specified one, and returns either the
+ * node containing it, or NULL if not found.
+ */
+struct cb_node *cbu64_lookup_gt(struct cb_node **root, uint64_t key)
+{
+	return _cbu_lookup_gt(root, CB_KT_U64, 0, key, NULL);
+}
+
 /* search for the next node after the specified one, and return it, or NULL if
  * not found. The approach consists in looking up that node, recalling the last
  * time a left turn was made, and returning the first node along the right
