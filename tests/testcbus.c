@@ -177,7 +177,8 @@ int main(int argc, char **argv)
 	printf("inserting %d entries\n", entries);
 	for (i = 0; i < entries; i++) {
 		if (i < argc - 4) {
-			strncpy(key->key, argv[i + 4], sizeof(key->key));
+			strncpy(key->key, argv[i + 4], sizeof(key->key) - 1);
+			key->key[sizeof(key->key) - 1] = 0;
 		}
 		else
 			rnd64_to_str(key->key);
