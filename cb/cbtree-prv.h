@@ -115,7 +115,8 @@ enum cb_key_type {
 	CB_KT_U32,     /* 32-bit unsigned word in key_u32 */
 	CB_KT_U64,     /* 64-bit unsigned word in key_u64 */
 	CB_KT_MB,      /* fixed size memory block in (key_u64,key_ptr) */
-	CB_KT_ST,      /* NUL-terminated string in key_ptr */
+	CB_KT_ST,      /* NUL-terminated string in key_ptr, direct storage */
+	CB_KT_IS,      /* NUL-terminated string in key_ptr, indirect storage */
 };
 
 union cb_key_storage {
@@ -124,6 +125,7 @@ union cb_key_storage {
 	unsigned long ul;
 	unsigned char mb[0];
 	unsigned char str[0];
+	unsigned char *ptr; /* for CB_KT_IS */
 };
 
 /* this structure is aliased to the common cba node during st operations */
@@ -166,6 +168,7 @@ static void dbg(int line,
 		[CB_KT_U64]  = "U64",
 		[CB_KT_MB]   = "MB",
 		[CB_KT_ST]   = "ST",
+		[CB_KT_IS]   = "IS",
 	};
 	const struct cb_node_key *l = NULL;
 	const struct cb_node_key *r = NULL;
@@ -181,6 +184,8 @@ static void dbg(int line,
 			nlen = equal_bits(key_ptr, p->key.mb, 0, key_u64 << 3);
 		else if (key_type == CB_KT_ST)
 			nlen = string_equal_bits(key_ptr, p->key.str, 0);
+		else if (key_type == CB_KT_IS)
+			nlen = string_equal_bits(key_ptr, p->key.ptr, 0);
 
 		l = container_of(p->node.b[0], struct cb_node_key, node);
 		r = container_of(p->node.b[1], struct cb_node_key, node);
@@ -191,6 +196,8 @@ static void dbg(int line,
 			llen = equal_bits(key_ptr, l->key.mb, 0, key_u64 << 3);
 		else if (key_type == CB_KT_ST)
 			llen = string_equal_bits(key_ptr, l->key.str, 0);
+		else if (key_type == CB_KT_IS)
+			llen = string_equal_bits(key_ptr, l->key.ptr, 0);
 	}
 
 	if (r) {
@@ -198,6 +205,8 @@ static void dbg(int line,
 			rlen = equal_bits(key_ptr, r->key.mb, 0, key_u64 << 3);
 		else if (key_type == CB_KT_ST)
 			rlen = string_equal_bits(key_ptr, r->key.str, 0);
+		else if (key_type == CB_KT_IS)
+			rlen = string_equal_bits(key_ptr, r->key.ptr, 0);
 	}
 
 	if (l && r) {
@@ -205,6 +214,8 @@ static void dbg(int line,
 			xlen = equal_bits(l->key.mb, r->key.mb, 0, key_u64 << 3);
 		else if (key_type == CB_KT_ST)
 			xlen = string_equal_bits(l->key.str, r->key.str, 0);
+		else if (key_type == CB_KT_IS)
+			xlen = string_equal_bits(l->key.ptr, r->key.ptr, 0);
 	}
 
 	switch (key_type) {
@@ -238,6 +249,14 @@ static void dbg(int line,
 		      p ? &p->node : NULL, p ? (const char *)p->key.str : "-", nlen,
 		      l ? &l->node : NULL, l ? (const char *)l->key.str : "-", llen,
 		      r ? &r->node : NULL, r ? (const char *)r->key.str : "-", rlen,
+		      xlen);
+		break;
+	case CB_KT_IS:
+		CBDBG("%04d (%8s) m=%s.%s key='%s' root=%p plen=%ld p=%p,%s(^%d) l=%p,%s(^%d) r=%p,%s(^%d) l^r=%d\n",
+		      line, pfx, kstr, mstr, key_ptr ? (const char *)key_ptr : "", root, (long)plen,
+		      p ? &p->node : NULL, p ? (const char *)p->key.ptr : "-", nlen,
+		      l ? &l->node : NULL, l ? (const char *)l->key.ptr : "-", llen,
+		      r ? &r->node : NULL, r ? (const char *)r->key.ptr : "-", rlen,
 		      xlen);
 		break;
 	case CB_KT_ADDR:
@@ -545,6 +564,55 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 			}
 			plen = xlen;
 		}
+		else if (key_type == CB_KT_IS) {
+			size_t xlen = 0; // left vs right matching length
+
+			if (meth >= CB_WM_KEQ) {
+				/* Note that a negative length indicates an
+				 * equal value with the final zero reached, but
+				 * it is still needed to descend to find the
+				 * leaf. We take that negative length for an
+				 * infinite one, hence the uint cast.
+				 */
+				llen = string_equal_bits(key_ptr, l->key.ptr, 0);
+				rlen = string_equal_bits(key_ptr, r->key.ptr, 0);
+				brside = (size_t)llen <= (size_t)rlen;
+				if ((ssize_t)llen < 0 || (ssize_t)rlen < 0)
+					found = 1;
+			}
+
+			xlen = string_equal_bits(l->key.ptr, r->key.ptr, 0);
+			if (xlen < plen) {
+				/* this is a leaf. E.g. triggered using 2 4 6 4 */
+				dbg(__LINE__, "xor>", meth, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+				break;
+			}
+
+			if (meth >= CB_WM_KEQ) {
+				/* let's stop if our key is not there */
+
+				if ((unsigned)llen < (unsigned)xlen && (unsigned)rlen < (unsigned)xlen) {
+					dbg(__LINE__, "mismatch", meth, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+					break;
+				}
+
+				if (ret_npside || ret_nparent) { // delete ?
+					size_t mlen = llen > rlen ? llen : rlen;
+
+					if (mlen > xlen)
+						mlen = xlen;
+
+					if (strcmp(key_ptr + mlen / 8, (const void *)p->key.ptr + mlen / 8) == 0) {
+						/* strcmp() still needed. E.g. 1 2 3 4 10 11 4 3 2 1 10 11 fails otherwise */
+						dbg(__LINE__, "equal", meth, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+						nparent = lparent;
+						npside  = lpside;
+						found = 1;
+					}
+				}
+			}
+			plen = xlen;
+		}
 		else if (key_type == CB_KT_ADDR) {
 			uintptr_t xoraddr;   // left vs right branch xor
 
@@ -627,7 +695,7 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 	 * guarantees these bits exist. Test with "100", "10", "1" to see where
 	 * this is needed.
 	 */
-	if (key_type == CB_KT_ST && meth >= CB_WM_KEQ && !found)
+	if ((key_type == CB_KT_ST || key_type == CB_KT_IS) && meth >= CB_WM_KEQ && !found)
 		plen = (llen > rlen) ? llen : rlen;
 
 	/* update the pointers needed for modifications (insert, delete) */
@@ -644,6 +712,9 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 			break;
 		case CB_KT_ST:
 			*ret_nside = found || strcmp(key_ptr + plen / 8, (const void *)p->key.str + plen / 8) >= 0;
+			break;
+		case CB_KT_IS:
+			*ret_nside = found || strcmp(key_ptr + plen / 8, (const void *)p->key.ptr + plen / 8) >= 0;
 			break;
 		case CB_KT_ADDR:
 			*ret_nside = (uintptr_t)key_ptr >= (uintptr_t)p;
@@ -728,6 +799,24 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 				diff = 0;
 			else
 				diff = strcmp((const void *)p->key.str + plen / 8, key_ptr + plen / 8);
+
+			if ((meth == CB_WM_KEQ && diff == 0) ||
+			    (meth == CB_WM_KNX && diff == 0) ||
+			    (meth == CB_WM_KPR && diff == 0) ||
+			    (meth == CB_WM_KGE && diff >= 0) ||
+			    (meth == CB_WM_KGT && diff >  0) ||
+			    (meth == CB_WM_KLE && diff <= 0) ||
+			    (meth == CB_WM_KLT && diff <  0))
+				return &p->node;
+		}
+		else if (key_type == CB_KT_IS) {
+			int diff;
+
+			if (found)
+				diff = 0;
+			else
+				diff = strcmp((const void *)p->key.ptr + plen / 8, key_ptr + plen / 8);
+
 			if ((meth == CB_WM_KEQ && diff == 0) ||
 			    (meth == CB_WM_KNX && diff == 0) ||
 			    (meth == CB_WM_KPR && diff == 0) ||
