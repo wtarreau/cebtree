@@ -135,6 +135,57 @@ struct cb_node_key {
 	union cb_key_storage key;
 };
 
+/* Returns the xor (or common length) between the two sides <l> and <r> if both
+ * are non-null, otherwise between the first non-null one and the value in the
+ * associate key. As a reminder, memory blocks place their length in key_u64.
+ * This is only intended for internal use, essentially for debugging.
+ */
+__attribute__((unused))
+static inline uint64_t _xor_branches(enum cb_key_type key_type, uint32_t key_u32,
+				     uint64_t key_u64, const void *key_ptr,
+				     const struct cb_node_key *l,
+				     const struct cb_node_key *r)
+{
+	if (l && r) {
+		if (key_type == CB_KT_MB)
+			return equal_bits(l->key.mb, r->key.mb, 0, key_u64 << 3);
+		else if (key_type == CB_KT_IM)
+			return equal_bits(l->key.mb, r->key.ptr, 0, key_u64 << 3);
+		else if (key_type == CB_KT_ST)
+			return string_equal_bits(l->key.str, r->key.str, 0);
+		else if (key_type == CB_KT_IS)
+			return string_equal_bits(l->key.ptr, r->key.ptr, 0);
+		else if (key_type == CB_KT_U64)
+			return l->key.u64 ^ r->key.u64;
+		else if (key_type == CB_KT_U32)
+			return l->key.u32 ^ r->key.u32;
+		else if (key_type == CB_KT_ADDR)
+			return ((uintptr_t)l ^ (uintptr_t)r);
+		else
+			return 0;
+	}
+
+	if (!l)
+		l = r;
+
+	if (key_type == CB_KT_MB)
+		return equal_bits(key_ptr, l->key.mb, 0, key_u64 << 3);
+	else if (key_type == CB_KT_IM)
+		return equal_bits(key_ptr, l->key.ptr, 0, key_u64 << 3);
+	else if (key_type == CB_KT_ST)
+		return string_equal_bits(key_ptr, l->key.str, 0);
+	else if (key_type == CB_KT_IS)
+		return string_equal_bits(key_ptr, l->key.ptr, 0);
+	else if (key_type == CB_KT_U64)
+		return key_u64 ^ l->key.u64;
+	else if (key_type == CB_KT_U32)
+		return key_u32 ^ l->key.u32;
+	else if (key_type == CB_KT_ADDR)
+		return ((uintptr_t)key_ptr ^ (uintptr_t)r);
+	else
+		return 0;
+}
+
 #ifdef DEBUG
 __attribute__((unused))
 static void dbg(int line,
@@ -176,77 +227,45 @@ static void dbg(int line,
 	const struct cb_node_key *r = NULL;
 	const char *kstr __attribute__((unused)) = ktypes[key_type];
 	const char *mstr __attribute__((unused)) = meths[meth];
-	int nlen __attribute__((unused)) = 0;
-	int llen __attribute__((unused)) = 0;
-	int rlen __attribute__((unused)) = 0;
-	int xlen __attribute__((unused)) = 0;
+	long long nlen __attribute__((unused)) = 0;
+	long long llen __attribute__((unused)) = 0;
+	long long rlen __attribute__((unused)) = 0;
+	long long xlen __attribute__((unused)) = 0;
 
 	if (p) {
-		if (key_type == CB_KT_MB)
-			nlen = equal_bits(key_ptr, p->key.mb, 0, key_u64 << 3);
-		else if (key_type == CB_KT_IM)
-			nlen = equal_bits(key_ptr, p->key.ptr, 0, key_u64 << 3);
-		else if (key_type == CB_KT_ST)
-			nlen = string_equal_bits(key_ptr, p->key.str, 0);
-		else if (key_type == CB_KT_IS)
-			nlen = string_equal_bits(key_ptr, p->key.ptr, 0);
-
 		l = container_of(p->node.b[0], struct cb_node_key, node);
 		r = container_of(p->node.b[1], struct cb_node_key, node);
+		nlen = _xor_branches(key_type, key_u32, key_u64, key_ptr, p, NULL);
 	}
 
-	if (l) {
-		if (key_type == CB_KT_MB)
-			llen = equal_bits(key_ptr, l->key.mb, 0, key_u64 << 3);
-		else if (key_type == CB_KT_IM)
-			llen = equal_bits(key_ptr, l->key.ptr, 0, key_u64 << 3);
-		else if (key_type == CB_KT_ST)
-			llen = string_equal_bits(key_ptr, l->key.str, 0);
-		else if (key_type == CB_KT_IS)
-			llen = string_equal_bits(key_ptr, l->key.ptr, 0);
-	}
+	if (l)
+		llen = _xor_branches(key_type, key_u32, key_u64, key_ptr, l, NULL);
 
-	if (r) {
-		if (key_type == CB_KT_MB)
-			rlen = equal_bits(key_ptr, r->key.mb, 0, key_u64 << 3);
-		else if (key_type == CB_KT_IM)
-			rlen = equal_bits(key_ptr, r->key.ptr, 0, key_u64 << 3);
-		else if (key_type == CB_KT_ST)
-			rlen = string_equal_bits(key_ptr, r->key.str, 0);
-		else if (key_type == CB_KT_IS)
-			rlen = string_equal_bits(key_ptr, r->key.ptr, 0);
-	}
+	if (r)
+		rlen = _xor_branches(key_type, key_u32, key_u64, key_ptr, NULL, r);
 
-	if (l && r) {
-		if (key_type == CB_KT_MB)
-			xlen = equal_bits(l->key.mb, r->key.mb, 0, key_u64 << 3);
-		else if (key_type == CB_KT_IM)
-			xlen = equal_bits(l->key.mb, r->key.ptr, 0, key_u64 << 3);
-		else if (key_type == CB_KT_ST)
-			xlen = string_equal_bits(l->key.str, r->key.str, 0);
-		else if (key_type == CB_KT_IS)
-			xlen = string_equal_bits(l->key.ptr, r->key.ptr, 0);
-	}
+	if (l && r)
+		xlen = _xor_branches(key_type, key_u32, key_u64, key_ptr, l, r);
 
 	switch (key_type) {
 	case CB_KT_U32:
-		CBDBG("%04d (%8s) m=%s.%s key=%#x root=%p pxor=%#x p=%p,%#x(^%#x) l=%p,%#x(^%#x) r=%p,%#x(^%#x) l^r=%#x\n",
+		CBDBG("%04d (%8s) m=%s.%s key=%#x root=%p pxor=%#x p=%p,%#x(^%#llx) l=%p,%#x(^%#llx) r=%p,%#x(^%#llx) l^r=%#llx\n",
 		      line, pfx, kstr, mstr, key_u32, root, px32,
-		      p ? &p->node : NULL, p ? p->key.u32 : 0, p ? p->key.u32 ^ key_u32 : 0,
-		      l ? &l->node : NULL, l ? l->key.u32 : 0, l ? l->key.u32 ^ key_u32 : 0,
-		      r ? &r->node : NULL, r ? r->key.u32 : 0, r ? r->key.u32 ^ key_u32 : 0,
-		      l && r ? l->key.u32 ^ r->key.u32 : 0);
+		      p ? &p->node : NULL, p ? p->key.u32 : 0, nlen,
+		      l ? &l->node : NULL, l ? l->key.u32 : 0, llen,
+		      r ? &r->node : NULL, r ? r->key.u32 : 0, rlen,
+		      xlen);
 		break;
 	case CB_KT_U64:
 		CBDBG("%04d (%8s) m=%s.%s key=%#llx root=%p pxor=%#llx p=%p,%#llx(^%#llx) l=%p,%#llx(^%#llx) r=%p,%#llx(^%#llx) l^r=%#llx\n",
 		      line, pfx, kstr, mstr, (long long)key_u64, root, (long long)px64,
-		      p ? &p->node : NULL, (long long)(p ? p->key.u64 : 0), (long long)(p ? p->key.u64 ^ key_u64 : 0),
-		      l ? &l->node : NULL, (long long)(l ? l->key.u64 : 0), (long long)(l ? l->key.u64 ^ key_u64 : 0),
-		      r ? &r->node : NULL, (long long)(r ? r->key.u64 : 0), (long long)(r ? r->key.u64 ^ key_u64 : 0),
-		      (long long)(l && r ? l->key.u64 ^ r->key.u64 : 0));
+		      p ? &p->node : NULL, (long long)(p ? p->key.u64 : 0), nlen,
+		      l ? &l->node : NULL, (long long)(l ? l->key.u64 : 0), llen,
+		      r ? &r->node : NULL, (long long)(r ? r->key.u64 : 0), rlen,
+		      xlen);
 		break;
 	case CB_KT_MB:
-		CBDBG("%04d (%8s) m=%s.%s key=%p root=%p plen=%ld p=%p,%p(^%d) l=%p,%p(^%d) r=%p,%p(^%d) l^r=%d\n",
+		CBDBG("%04d (%8s) m=%s.%s key=%p root=%p plen=%ld p=%p,%p(^%llu) l=%p,%p(^%llu) r=%p,%p(^%llu) l^r=%llu\n",
 		      line, pfx, kstr, mstr, key_ptr, root, (long)plen,
 		      p ? &p->node : NULL, p ? p->key.mb : 0, nlen,
 		      l ? &l->node : NULL, l ? l->key.mb : 0, llen,
@@ -254,7 +273,7 @@ static void dbg(int line,
 		      xlen);
 		break;
 	case CB_KT_IM:
-		CBDBG("%04d (%8s) m=%s.%s key=%p root=%p plen=%ld p=%p,%p(^%d) l=%p,%p(^%d) r=%p,%p(^%d) l^r=%d\n",
+		CBDBG("%04d (%8s) m=%s.%s key=%p root=%p plen=%ld p=%p,%p(^%llu) l=%p,%p(^%llu) r=%p,%p(^%llu) l^r=%llu\n",
 		      line, pfx, kstr, mstr, key_ptr, root, (long)plen,
 		      p ? &p->node : NULL, p ? p->key.ptr : 0, nlen,
 		      l ? &l->node : NULL, l ? l->key.ptr : 0, llen,
@@ -262,7 +281,7 @@ static void dbg(int line,
 		      xlen);
 		break;
 	case CB_KT_ST:
-		CBDBG("%04d (%8s) m=%s.%s key='%s' root=%p plen=%ld p=%p,%s(^%d) l=%p,%s(^%d) r=%p,%s(^%d) l^r=%d\n",
+		CBDBG("%04d (%8s) m=%s.%s key='%s' root=%p plen=%ld p=%p,%s(^%llu) l=%p,%s(^%llu) r=%p,%s(^%llu) l^r=%llu\n",
 		      line, pfx, kstr, mstr, key_ptr ? (const char *)key_ptr : "", root, (long)plen,
 		      p ? &p->node : NULL, p ? (const char *)p->key.str : "-", nlen,
 		      l ? &l->node : NULL, l ? (const char *)l->key.str : "-", llen,
@@ -270,7 +289,7 @@ static void dbg(int line,
 		      xlen);
 		break;
 	case CB_KT_IS:
-		CBDBG("%04d (%8s) m=%s.%s key='%s' root=%p plen=%ld p=%p,%s(^%d) l=%p,%s(^%d) r=%p,%s(^%d) l^r=%d\n",
+		CBDBG("%04d (%8s) m=%s.%s key='%s' root=%p plen=%ld p=%p,%s(^%llu) l=%p,%s(^%llu) r=%p,%s(^%llu) l^r=%llu\n",
 		      line, pfx, kstr, mstr, key_ptr ? (const char *)key_ptr : "", root, (long)plen,
 		      p ? &p->node : NULL, p ? (const char *)p->key.ptr : "-", nlen,
 		      l ? &l->node : NULL, l ? (const char *)l->key.ptr : "-", llen,
@@ -281,10 +300,10 @@ static void dbg(int line,
 		/* key type is the node's address */
 		CBDBG("%04d (%8s) m=%s.%s key=%#llx root=%p pxor=%#llx p=%p,%#llx(^%#llx) l=%p,%#llx(^%#llx) r=%p,%#llx(^%#llx) l^r=%#llx\n",
 		      line, pfx, kstr, mstr, (long long)(uintptr_t)key_ptr, root, (long long)px64,
-		      p ? &p->node : NULL, (long long)(uintptr_t)p, (long long)((uintptr_t)p ^ (uintptr_t)key_ptr),
-		      l ? &l->node : NULL, (long long)(uintptr_t)l, (long long)((uintptr_t)l ^ (uintptr_t)key_ptr),
-		      r ? &r->node : NULL, (long long)(uintptr_t)r, (long long)((uintptr_t)r ^ (uintptr_t)key_ptr),
-		      (long long)((uintptr_t)l ^ (uintptr_t)r));
+		      p ? &p->node : NULL, (long long)(uintptr_t)p, nlen,
+		      l ? &l->node : NULL, (long long)(uintptr_t)l, llen,
+		      r ? &r->node : NULL, (long long)(uintptr_t)r, rlen,
+		      xlen);
 	}
 }
 #else
