@@ -1404,5 +1404,50 @@ static void cbu_default_dump_leaf(enum cb_key_type key_type, const struct cb_nod
 	}
 }
 
+/* Dumps a tree through the specified callbacks, falling back to the default
+ * callbacks above if left NULL.
+ */
+__attribute__((unused))
+static const struct cb_node *cbu_default_dump_tree(enum cb_key_type key_type, const struct cb_node *node,
+						   uint64_t pxor, const void *last, int level, const void *ctx,
+						   void (*node_dump)(enum cb_key_type key_type, const struct cb_node *node, int level, const void *ctx),
+						   void (*leaf_dump)(enum cb_key_type key_type, const struct cb_node *node, int level, const void *ctx))
+{
+	uint64_t xor;
+
+	if (!node) /* empty tree */
+		return node;
+
+	if (!node_dump)
+		node_dump = cbu_default_dump_node;
+
+	if (!leaf_dump)
+		leaf_dump = cbu_default_dump_leaf;
+
+	/* regular nodes, all branches are canonical */
+
+	if (node->b[0] == node->b[1]) {
+		/* first inserted leaf */
+		leaf_dump(key_type, node, level, ctx);
+		return node;
+	}
+
+	xor = _xor_branches(key_type, 0, 0, NULL,
+			    container_of(node->b[0], struct cb_node_key, node),
+			    container_of(node->b[1], struct cb_node_key, node));
+
+	if (pxor && xor >= pxor) {
+		/* that's a leaf */
+		leaf_dump(key_type, node, level, ctx);
+		return node;
+	}
+
+	/* that's a regular node */
+	node_dump(key_type, node, level, ctx);
+
+	last = cbu_default_dump_tree(key_type, node->b[0], xor, last, level + 1, ctx, node_dump, leaf_dump);
+	return cbu_default_dump_tree(key_type, node->b[1], xor, last, level + 1, ctx, node_dump, leaf_dump);
+}
+
 
 #endif /* _CBTREE_PRV_H */
