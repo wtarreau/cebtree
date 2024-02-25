@@ -331,140 +331,11 @@ struct cb_node *cbu32_pick(struct cb_node **root, uint32_t key)
 //	return p;
 //}
 
-/* default node dump function */
-static void cbu32_default_dump_node(struct cb_node *node, int level, const void *ctx)
-{
-	struct cb_node_key *key = container_of(node, struct cb_node_key, node);
-	uint32_t pxor, lxor, rxor;
-
-	/* xor of the keys of the two lower branches */
-	pxor = _xor_branches(CB_KT_U32, 0, 0, NULL,
-			     container_of(__cb_clrtag(node->b[0]), struct cb_node_key, node),
-			     container_of(__cb_clrtag(node->b[1]), struct cb_node_key, node));
-
-	printf("  \"%lx_n\" [label=\"%lx\\nlev=%d bit=%d\\nkey=%u\" fillcolor=\"lightskyblue1\"%s];\n",
-	       (long)node, (long)node, level, flsnz(pxor) - 1, key->key.u32, (ctx == node) ? " color=red" : "");
-
-	/* xor of the keys of the left branch's lower branches */
-	lxor = _xor_branches(CB_KT_U32, 0, 0, NULL,
-			     container_of(__cb_clrtag(((struct cb_node*)__cb_clrtag(node->b[0]))->b[0]), struct cb_node_key, node),
-			     container_of(__cb_clrtag(((struct cb_node*)__cb_clrtag(node->b[0]))->b[1]), struct cb_node_key, node));
-
-	printf("  \"%lx_n\" -> \"%lx_%c\" [label=\"L\" arrowsize=0.66 %s];\n",
-	       (long)node, (long)__cb_clrtag(node->b[0]),
-	       (((long)node->b[0] & 1) || (lxor < pxor && ((struct cb_node*)node->b[0])->b[0] != ((struct cb_node*)node->b[0])->b[1])) ? 'n' : 'l',
-	       (node == __cb_clrtag(node->b[0])) ? " dir=both" : "");
-
-	/* xor of the keys of the right branch's lower branches */
-	rxor = _xor_branches(CB_KT_U32, 0, 0, NULL,
-			     container_of(__cb_clrtag(((struct cb_node*)__cb_clrtag(node->b[1]))->b[0]), struct cb_node_key, node),
-			     container_of(__cb_clrtag(((struct cb_node*)__cb_clrtag(node->b[1]))->b[1]), struct cb_node_key, node));
-
-	printf("  \"%lx_n\" -> \"%lx_%c\" [label=\"R\" arrowsize=0.66 %s];\n",
-	       (long)node, (long)__cb_clrtag(node->b[1]),
-	       (((long)node->b[1] & 1) || (rxor < pxor && ((struct cb_node*)node->b[1])->b[0] != ((struct cb_node*)node->b[1])->b[1])) ? 'n' : 'l',
-	       (node == __cb_clrtag(node->b[1])) ? " dir=both" : "");
-}
-
-/* default leaf dump function */
-static void cbu32_default_dump_leaf(struct cb_node *node, int level, const void *ctx)
-{
-	struct cb_node_key *key = container_of(node, struct cb_node_key, node);
-	uint32_t pxor;
-
-	/* xor of the keys of the two lower branches */
-	pxor = _xor_branches(CB_KT_U32, 0, 0, NULL,
-			     container_of(__cb_clrtag(node->b[0]), struct cb_node_key, node),
-			     container_of(__cb_clrtag(node->b[1]), struct cb_node_key, node));
-
-	if (node->b[0] == node->b[1])
-		printf("  \"%lx_l\" [label=\"%lx\\nlev=%d\\nkey=%u\\n\" fillcolor=\"green\"%s];\n",
-		       (long)node, (long)node, level, key->key.u32, (ctx == node) ? " color=red" : "");
-	else
-		printf("  \"%lx_l\" [label=\"%lx\\nlev=%d bit=%d\\nkey=%u\\n\" fillcolor=\"yellow\"%s];\n",
-		       (long)node, (long)node, level, flsnz(pxor) - 1, key->key.u32, (ctx == node) ? " color=red" : "");
-}
-
-/* Dumps a tree through the specified callbacks. */
-void *cbu32_dump_tree(struct cb_node *node, u32 pxor, void *last,
-		      int level,
-		      void (*node_dump)(struct cb_node *node, int level, const void *ctx),
-		      void (*leaf_dump)(struct cb_node *node, int level, const void *ctx),
-		      const void *ctx)
-{
-	uint32_t xor;
-
-	if (!node) /* empty tree */
-		return node;
-
-	//fprintf(stderr, "node=%p level=%d key=%u l=%p r=%p\n", node, level, *(unsigned *)((char*)(node)+16), node->b[0], node->b[1]);
-
-	if (level < 0) {
-		/* we're inside a dup tree. Tagged pointers indicate nodes,
-		 * untagged ones leaves.
-		 */
-		level--;
-		if (__cb_tagged(node->b[0])) {
-		  last = cbu32_dump_tree(__cb_untag(node->b[0]), 0, last, level, node_dump, leaf_dump, ctx);
-			if (node_dump)
-			  node_dump(__cb_untag(node->b[0]), level, ctx);
-		} else if (leaf_dump)
-			leaf_dump(node->b[0], level, ctx);
-
-		if (__cb_tagged(node->b[1])) {
-			last = cbu32_dump_tree(__cb_untag(node->b[1]), 0, last, level, node_dump, leaf_dump, ctx);
-			if (node_dump)
-				node_dump(__cb_untag(node->b[1]), level, ctx);
-		} else if (leaf_dump)
-			leaf_dump(node->b[1], level, ctx);
-		return node;
-	}
-
-	/* regular nodes, all branches are canonical */
-
-	if (node->b[0] == node->b[1]) {
-		/* first inserted leaf */
-		if (leaf_dump)
-			leaf_dump(node, level, ctx);
-		return node;
-	}
-
-	if (0/*__cb_is_dup(node)*/) {
-		if (node_dump)
-			node_dump(node, -1, ctx);
-		return cbu32_dump_tree(node, 0, last, -1, node_dump, leaf_dump, ctx);
-	}
-
-	xor = ((struct cb_node_key*)node->b[0])->key.u32 ^ ((struct cb_node_key*)node->b[1])->key.u32;
-	if (pxor && xor >= pxor) {
-		/* that's a leaf */
-		if (leaf_dump)
-			leaf_dump(node, level, ctx);
-		return node;
-	}
-
-	if (!xor) {
-		/* start of a dup */
-		if (node_dump)
-			node_dump(node, -1, ctx);
-		return cbu32_dump_tree(node, 0, last, -1, node_dump, leaf_dump, ctx);
-	}
-
-	/* that's a regular node */
-	if (node_dump)
-		node_dump(node, level, ctx);
-
-	last = cbu32_dump_tree(node->b[0], xor, last, level + 1, node_dump, leaf_dump, ctx);
-	return cbu32_dump_tree(node->b[1], xor, last, level + 1, node_dump, leaf_dump, ctx);
-}
-
 /* dumps a cb_node_key tree using the default functions above. If a node matches
  * <ctx>, this one will be highlighted in red.
  */
 void cbu32_default_dump(struct cb_node **cb_root, const char *label, const void *ctx)
 {
-	struct cb_node *node;
-
 	printf("\ndigraph cbu32_tree {\n"
 	       "  fontname=\"fixed\";\n"
 	       "  fontsize=8\n"
@@ -472,18 +343,9 @@ void cbu32_default_dump(struct cb_node **cb_root, const char *label, const void 
 	       "", label);
 
 	printf("  node [fontname=\"fixed\" fontsize=8 shape=\"box\" style=\"filled\" color=\"black\" fillcolor=\"white\"];\n"
-	       "  edge [fontname=\"fixed\" fontsize=8 style=\"solid\" color=\"magenta\" dir=\"forward\"];\n"
-	       "  \"%lx_n\" [label=\"root\\n%lx\"]\n", (long)cb_root, (long)cb_root);
+	       "  edge [fontname=\"fixed\" fontsize=8 style=\"solid\" color=\"magenta\" dir=\"forward\"];\n");
 
-	node = *cb_root;
-	if (node) {
-		/* under the root we've either a node or the first leaf */
-		printf("  \"%lx_n\" -> \"%lx_%c\" [label=\"B\" arrowsize=0.66];\n",
-		       (long)cb_root, (long)node,
-		       (node->b[0] == node->b[1]) ? 'l' : 'n');
-	}
-
-	cbu32_dump_tree(*cb_root, 0, NULL, 0, cbu32_default_dump_node, cbu32_default_dump_leaf, ctx);
+	cbu_default_dump_tree(CB_KT_U32, cb_root, 0, NULL, 0, ctx, NULL, NULL, NULL);
 
 	printf("}\n");
 }
