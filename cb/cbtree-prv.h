@@ -1290,6 +1290,23 @@ done:
  * Functions used to dump trees in Dot format.
  */
 
+/* dump the root and its link to the first node or leaf */
+__attribute__((unused))
+static void cbu_default_dump_root(enum cb_key_type key_type, struct cb_node *const *root, const void *ctx)
+{
+	const struct cb_node *node;
+
+	printf("  \"%lx_n\" [label=\"root\\n%lx\"]\n", (long)root, (long)root);
+
+	node = *root;
+	if (node) {
+		/* under the root we've either a node or the first leaf */
+		printf("  \"%lx_n\" -> \"%lx_%c\" [label=\"B\" arrowsize=0.66];\n",
+		       (long)root, (long)node,
+		       (node->b[0] == node->b[1]) ? 'l' : 'n');
+	}
+}
+
 /* dump a node */
 __attribute__((unused))
 static void cbu_default_dump_node(enum cb_key_type key_type, const struct cb_node *node, int level, const void *ctx)
@@ -1408,21 +1425,31 @@ static void cbu_default_dump_leaf(enum cb_key_type key_type, const struct cb_nod
  * callbacks above if left NULL.
  */
 __attribute__((unused))
-static const struct cb_node *cbu_default_dump_tree(enum cb_key_type key_type, const struct cb_node *node,
+static const struct cb_node *cbu_default_dump_tree(enum cb_key_type key_type, struct cb_node *const *root,
 						   uint64_t pxor, const void *last, int level, const void *ctx,
+						   void (*root_dump)(enum cb_key_type key_type, struct cb_node *const *root, const void *ctx),
 						   void (*node_dump)(enum cb_key_type key_type, const struct cb_node *node, int level, const void *ctx),
 						   void (*leaf_dump)(enum cb_key_type key_type, const struct cb_node *node, int level, const void *ctx))
 {
+	const struct cb_node *node = *root;
 	uint64_t xor;
 
 	if (!node) /* empty tree */
 		return node;
+
+	if (!root_dump)
+		root_dump = cbu_default_dump_root;
 
 	if (!node_dump)
 		node_dump = cbu_default_dump_node;
 
 	if (!leaf_dump)
 		leaf_dump = cbu_default_dump_leaf;
+
+	if (!level) {
+		/* dump the first arrow */
+		root_dump(key_type, root, ctx);
+	}
 
 	/* regular nodes, all branches are canonical */
 
@@ -1445,8 +1472,8 @@ static const struct cb_node *cbu_default_dump_tree(enum cb_key_type key_type, co
 	/* that's a regular node */
 	node_dump(key_type, node, level, ctx);
 
-	last = cbu_default_dump_tree(key_type, node->b[0], xor, last, level + 1, ctx, node_dump, leaf_dump);
-	return cbu_default_dump_tree(key_type, node->b[1], xor, last, level + 1, ctx, node_dump, leaf_dump);
+	last = cbu_default_dump_tree(key_type, &node->b[0], xor, last, level + 1, ctx, root_dump, node_dump, leaf_dump);
+	return cbu_default_dump_tree(key_type, &node->b[1], xor, last, level + 1, ctx, root_dump, node_dump, leaf_dump);
 }
 
 
