@@ -114,7 +114,8 @@ enum cb_key_type {
 	CB_KT_ADDR,    /* the key is the node's address */
 	CB_KT_U32,     /* 32-bit unsigned word in key_u32 */
 	CB_KT_U64,     /* 64-bit unsigned word in key_u64 */
-	CB_KT_MB,      /* fixed size memory block in (key_u64,key_ptr) */
+	CB_KT_MB,      /* fixed size memory block in (key_u64,key_ptr), direct storage */
+	CB_KT_IM,      /* fixed size memory block in (key_u64,key_ptr), indirect storage */
 	CB_KT_ST,      /* NUL-terminated string in key_ptr, direct storage */
 	CB_KT_IS,      /* NUL-terminated string in key_ptr, indirect storage */
 };
@@ -167,6 +168,7 @@ static void dbg(int line,
 		[CB_KT_U32]  = "U32",
 		[CB_KT_U64]  = "U64",
 		[CB_KT_MB]   = "MB",
+		[CB_KT_IM]   = "IM",
 		[CB_KT_ST]   = "ST",
 		[CB_KT_IS]   = "IS",
 	};
@@ -182,6 +184,8 @@ static void dbg(int line,
 	if (p) {
 		if (key_type == CB_KT_MB)
 			nlen = equal_bits(key_ptr, p->key.mb, 0, key_u64 << 3);
+		else if (key_type == CB_KT_IM)
+			nlen = equal_bits(key_ptr, p->key.ptr, 0, key_u64 << 3);
 		else if (key_type == CB_KT_ST)
 			nlen = string_equal_bits(key_ptr, p->key.str, 0);
 		else if (key_type == CB_KT_IS)
@@ -194,6 +198,8 @@ static void dbg(int line,
 	if (l) {
 		if (key_type == CB_KT_MB)
 			llen = equal_bits(key_ptr, l->key.mb, 0, key_u64 << 3);
+		else if (key_type == CB_KT_IM)
+			llen = equal_bits(key_ptr, l->key.ptr, 0, key_u64 << 3);
 		else if (key_type == CB_KT_ST)
 			llen = string_equal_bits(key_ptr, l->key.str, 0);
 		else if (key_type == CB_KT_IS)
@@ -203,6 +209,8 @@ static void dbg(int line,
 	if (r) {
 		if (key_type == CB_KT_MB)
 			rlen = equal_bits(key_ptr, r->key.mb, 0, key_u64 << 3);
+		else if (key_type == CB_KT_IM)
+			rlen = equal_bits(key_ptr, r->key.ptr, 0, key_u64 << 3);
 		else if (key_type == CB_KT_ST)
 			rlen = string_equal_bits(key_ptr, r->key.str, 0);
 		else if (key_type == CB_KT_IS)
@@ -212,6 +220,8 @@ static void dbg(int line,
 	if (l && r) {
 		if (key_type == CB_KT_MB)
 			xlen = equal_bits(l->key.mb, r->key.mb, 0, key_u64 << 3);
+		else if (key_type == CB_KT_IM)
+			xlen = equal_bits(l->key.mb, r->key.ptr, 0, key_u64 << 3);
 		else if (key_type == CB_KT_ST)
 			xlen = string_equal_bits(l->key.str, r->key.str, 0);
 		else if (key_type == CB_KT_IS)
@@ -241,6 +251,14 @@ static void dbg(int line,
 		      p ? &p->node : NULL, p ? p->key.mb : 0, nlen,
 		      l ? &l->node : NULL, l ? l->key.mb : 0, llen,
 		      r ? &r->node : NULL, r ? r->key.mb : 0, rlen,
+		      xlen);
+		break;
+	case CB_KT_IM:
+		CBDBG("%04d (%8s) m=%s.%s key=%p root=%p plen=%ld p=%p,%p(^%d) l=%p,%p(^%d) r=%p,%p(^%d) l^r=%d\n",
+		      line, pfx, kstr, mstr, key_ptr, root, (long)plen,
+		      p ? &p->node : NULL, p ? p->key.ptr : 0, nlen,
+		      l ? &l->node : NULL, l ? l->key.ptr : 0, llen,
+		      r ? &r->node : NULL, r ? r->key.ptr : 0, rlen,
 		      xlen);
 		break;
 	case CB_KT_ST:
@@ -515,6 +533,49 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 			}
 			plen = xlen;
 		}
+		else if (key_type == CB_KT_IM) {
+			size_t xlen = 0; // left vs right matching length
+
+			if (meth >= CB_WM_KEQ) {
+				/* measure identical lengths */
+				llen = equal_bits(key_ptr, l->key.ptr, 0, key_u64 << 3);
+				rlen = equal_bits(key_ptr, r->key.ptr, 0, key_u64 << 3);
+				brside = llen <= rlen;
+				if (llen == rlen && (uint64_t)llen == key_u64 << 3)
+					found = 1;
+			}
+
+			xlen = equal_bits(l->key.ptr, r->key.ptr, 0, key_u64 << 3);
+			if (xlen < plen) {
+				/* this is a leaf. E.g. triggered using 2 4 6 4 */
+				dbg(__LINE__, "xor>", meth, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+				break;
+			}
+
+			if (meth >= CB_WM_KEQ) {
+				/* let's stop if our key is not there */
+
+				if (llen < xlen && rlen < xlen) {
+					dbg(__LINE__, "mismatch", meth, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+					break;
+				}
+
+				if (ret_npside || ret_nparent) { // delete ?
+					size_t mlen = llen > rlen ? llen : rlen;
+
+					if (mlen > xlen)
+						mlen = xlen;
+
+					if ((uint64_t)xlen / 8 == key_u64 || memcmp(key_ptr + mlen / 8, p->key.ptr + mlen / 8, key_u64 - mlen / 8) == 0) {
+						dbg(__LINE__, "equal", meth, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+						nparent = lparent;
+						npside  = lpside;
+						found = 1;
+					}
+				}
+			}
+			plen = xlen;
+		}
 		else if (key_type == CB_KT_ST) {
 			size_t xlen = 0; // left vs right matching length
 
@@ -710,6 +771,9 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 		case CB_KT_MB:
 			*ret_nside = (uint64_t)plen / 8 == key_u64 || memcmp(key_ptr + plen / 8, p->key.mb + plen / 8, key_u64 - plen / 8) >= 0;
 			break;
+		case CB_KT_IM:
+			*ret_nside = (uint64_t)plen / 8 == key_u64 || memcmp(key_ptr + plen / 8, p->key.ptr + plen / 8, key_u64 - plen / 8) >= 0;
+			break;
 		case CB_KT_ST:
 			*ret_nside = found || strcmp(key_ptr + plen / 8, (const void *)p->key.str + plen / 8) >= 0;
 			break;
@@ -782,6 +846,23 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 				diff = 0;
 			else
 				diff = memcmp(p->key.mb + plen / 8, key_ptr + plen / 8, key_u64 - plen / 8);
+
+			if ((meth == CB_WM_KEQ && diff == 0) ||
+			    (meth == CB_WM_KNX && diff == 0) ||
+			    (meth == CB_WM_KPR && diff == 0) ||
+			    (meth == CB_WM_KGE && diff >= 0) ||
+			    (meth == CB_WM_KGT && diff >  0) ||
+			    (meth == CB_WM_KLE && diff <= 0) ||
+			    (meth == CB_WM_KLT && diff <  0))
+				return &p->node;
+		}
+		else if (key_type == CB_KT_IM) {
+			int diff;
+
+			if ((uint64_t)plen / 8 == key_u64)
+				diff = 0;
+			else
+				diff = memcmp(p->key.ptr + plen / 8, key_ptr + plen / 8, key_u64 - plen / 8);
 
 			if ((meth == CB_WM_KEQ && diff == 0) ||
 			    (meth == CB_WM_KNX && diff == 0) ||
