@@ -1366,8 +1366,32 @@ static void cbu_default_dump_node(enum cb_key_type key_type, const struct cb_nod
 	case CB_KT_IM:
 		break;
 	case CB_KT_ST:
+		printf("  \"%lx_n\" [label=\"%lx\\nlev=%d bit=%ld\\nkey=\\\"%s\\\"\" fillcolor=\"lightskyblue1\"%s];\n",
+		       (long)node, (long)node, level, (long)pxor, key->key.str, (ctx == node) ? " color=red" : "");
+
+		printf("  \"%lx_n\" -> \"%lx_%c\" [label=\"L\" arrowsize=0.66 %s];\n",
+		       (long)node, (long)node->b[0],
+		       (lxor > pxor && ((struct cb_node*)node->b[0])->b[0] != ((struct cb_node*)node->b[0])->b[1]) ? 'n' : 'l',
+		       (node == node->b[0]) ? " dir=both" : "");
+
+		printf("  \"%lx_n\" -> \"%lx_%c\" [label=\"R\" arrowsize=0.66 %s];\n",
+		       (long)node, (long)node->b[1],
+		       (rxor > pxor && ((struct cb_node*)node->b[1])->b[0] != ((struct cb_node*)node->b[1])->b[1]) ? 'n' : 'l',
+		       (node == node->b[1]) ? " dir=both" : "");
 		break;
 	case CB_KT_IS:
+		printf("  \"%lx_n\" [label=\"%lx\\nlev=%d bit=%ld\\nkey=\\\"%s\\\"\" fillcolor=\"lightskyblue1\"%s];\n",
+		       (long)node, (long)node, level, (long)pxor, key->key.ptr, (ctx == node) ? " color=red" : "");
+
+		printf("  \"%lx_n\" -> \"%lx_%c\" [label=\"L\" arrowsize=0.66 %s];\n",
+		       (long)node, (long)node->b[0],
+		       (lxor > pxor && ((struct cb_node*)node->b[0])->b[0] != ((struct cb_node*)node->b[0])->b[1]) ? 'n' : 'l',
+		       (node == node->b[0]) ? " dir=both" : "");
+
+		printf("  \"%lx_n\" -> \"%lx_%c\" [label=\"R\" arrowsize=0.66 %s];\n",
+		       (long)node, (long)node->b[1],
+		       (rxor > pxor && ((struct cb_node*)node->b[1])->b[0] != ((struct cb_node*)node->b[1])->b[1]) ? 'n' : 'l',
+		       (node == node->b[1]) ? " dir=both" : "");
 		break;
 	}
 }
@@ -1415,8 +1439,20 @@ static void cbu_default_dump_leaf(enum cb_key_type key_type, const struct cb_nod
 	case CB_KT_IM:
 		break;
 	case CB_KT_ST:
+		if (node->b[0] == node->b[1])
+			printf("  \"%lx_l\" [label=\"%lx\\nlev=%d\\nkey=\\\"%s\\\"\\n\" fillcolor=\"green\"%s];\n",
+			       (long)node, (long)node, level, key->key.str, (ctx == node) ? " color=red" : "");
+		else
+			printf("  \"%lx_l\" [label=\"%lx\\nlev=%d bit=%ld\\nkey=\\\"%s\\\"\\n\" fillcolor=\"yellow\"%s];\n",
+			       (long)node, (long)node, level, (long)pxor, key->key.str, (ctx == node) ? " color=red" : "");
 		break;
 	case CB_KT_IS:
+		if (node->b[0] == node->b[1])
+			printf("  \"%lx_l\" [label=\"%lx\\nlev=%d\\nkey=\\\"%s\\\"\\n\" fillcolor=\"green\"%s];\n",
+			       (long)node, (long)node, level, key->key.ptr, (ctx == node) ? " color=red" : "");
+		else
+			printf("  \"%lx_l\" [label=\"%lx\\nlev=%d bit=%ld\\nkey=\\\"%s\\\"\\n\" fillcolor=\"yellow\"%s];\n",
+			       (long)node, (long)node, level, (long)pxor, key->key.ptr, (ctx == node) ? " color=red" : "");
 		break;
 	}
 }
@@ -1463,10 +1499,23 @@ static const struct cb_node *cbu_default_dump_tree(enum cb_key_type key_type, st
 			    container_of(node->b[0], struct cb_node_key, node),
 			    container_of(node->b[1], struct cb_node_key, node));
 
-	if (pxor && xor >= pxor) {
-		/* that's a leaf */
-		leaf_dump(key_type, node, level, ctx);
-		return node;
+	switch (key_type) {
+	case CB_KT_ADDR:
+	case CB_KT_U32:
+	case CB_KT_U64:
+		if (pxor && xor >= pxor) {
+			/* that's a leaf for a scalar type */
+			leaf_dump(key_type, node, level, ctx);
+			return node;
+		}
+		break;
+	default:
+		if (pxor && xor <= pxor) {
+			/* that's a leaf for a non-scalar type */
+			leaf_dump(key_type, node, level, ctx);
+			return node;
+		}
+		break;
 	}
 
 	/* that's a regular node */

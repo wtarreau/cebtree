@@ -38,3 +38,4 @@ struct cb_node *cbus_next(struct cb_node **root, struct cb_node *node);
 struct cb_node *cbus_prev(struct cb_node **root, struct cb_node *node);
 struct cb_node *cbus_delete(struct cb_node **root, struct cb_node *node);
 struct cb_node *cbus_pick(struct cb_node **root, const void *key);
+void cbus_default_dump(struct cb_node **cb_root, const char *label, const void *ctx);

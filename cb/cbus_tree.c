@@ -135,3 +135,22 @@ struct cb_node *cbus_pick(struct cb_node **root, const void *key)
 {
 	return _cbu_delete(root, NULL, CB_KT_ST, 0, 0, key);
 }
+
+/* dumps a cb_node_key tree using the default functions above. If a node matches
+ * <ctx>, this one will be highlighted in red.
+ */
+void cbus_default_dump(struct cb_node **cb_root, const char *label, const void *ctx)
+{
+	printf("\ndigraph cbus_tree {\n"
+	       "  fontname=\"fixed\";\n"
+	       "  fontsize=8\n"
+	       "  label=\"%s\"\n"
+	       "", label);
+
+	printf("  node [fontname=\"fixed\" fontsize=8 shape=\"box\" style=\"filled\" color=\"black\" fillcolor=\"white\"];\n"
+	       "  edge [fontname=\"fixed\" fontsize=8 style=\"solid\" color=\"magenta\" dir=\"forward\"];\n");
+
+	cbu_default_dump_tree(CB_KT_ST, cb_root, 0, NULL, 0, ctx, NULL, NULL, NULL);
+
+	printf("}\n");
+}
