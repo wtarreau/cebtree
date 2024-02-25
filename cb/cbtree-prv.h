@@ -1286,5 +1286,123 @@ done:
 	return ret;
 }
 
+/*
+ * Functions used to dump trees in Dot format.
+ */
+
+/* dump a node */
+__attribute__((unused))
+static void cbu_default_dump_node(enum cb_key_type key_type, const struct cb_node *node, int level, const void *ctx)
+{
+	struct cb_node_key *key = container_of(node, struct cb_node_key, node);
+	unsigned long long int_key = 0;
+	uint64_t pxor, lxor, rxor;
+
+	switch (key_type) {
+	case CB_KT_ADDR:
+		int_key = (uintptr_t)node;
+		break;
+	case CB_KT_U32:
+		int_key = key->key.u32;
+		break;
+	case CB_KT_U64:
+		int_key = key->key.u64;
+		break;
+	default:
+		break;
+	}
+
+	/* xor of the keys of the two lower branches */
+	pxor = _xor_branches(key_type, 0, 0, NULL,
+			     container_of(node->b[0], struct cb_node_key, node),
+			     container_of(node->b[1], struct cb_node_key, node));
+
+	/* xor of the keys of the left branch's lower branches */
+	lxor = _xor_branches(key_type, 0, 0, NULL,
+			     container_of((((struct cb_node*)node->b[0])->b[0]), struct cb_node_key, node),
+			     container_of((((struct cb_node*)node->b[0])->b[1]), struct cb_node_key, node));
+
+	/* xor of the keys of the right branch's lower branches */
+	rxor = _xor_branches(key_type, 0, 0, NULL,
+			     container_of((((struct cb_node*)node->b[1])->b[0]), struct cb_node_key, node),
+			     container_of((((struct cb_node*)node->b[1])->b[1]), struct cb_node_key, node));
+
+	switch (key_type) {
+	case CB_KT_ADDR:
+	case CB_KT_U32:
+	case CB_KT_U64:
+		printf("  \"%lx_n\" [label=\"%lx\\nlev=%d bit=%d\\nkey=%llu\" fillcolor=\"lightskyblue1\"%s];\n",
+		       (long)node, (long)node, level, flsnz(pxor) - 1, int_key, (ctx == node) ? " color=red" : "");
+
+		printf("  \"%lx_n\" -> \"%lx_%c\" [label=\"L\" arrowsize=0.66 %s];\n",
+		       (long)node, (long)node->b[0],
+		       (lxor < pxor && ((struct cb_node*)node->b[0])->b[0] != ((struct cb_node*)node->b[0])->b[1]) ? 'n' : 'l',
+		       (node == node->b[0]) ? " dir=both" : "");
+
+		printf("  \"%lx_n\" -> \"%lx_%c\" [label=\"R\" arrowsize=0.66 %s];\n",
+		       (long)node, (long)node->b[1],
+		       (rxor < pxor && ((struct cb_node*)node->b[1])->b[0] != ((struct cb_node*)node->b[1])->b[1]) ? 'n' : 'l',
+		       (node == node->b[1]) ? " dir=both" : "");
+		break;
+	case CB_KT_MB:
+		break;
+	case CB_KT_IM:
+		break;
+	case CB_KT_ST:
+		break;
+	case CB_KT_IS:
+		break;
+	}
+}
+
+/* dump a leaf */
+__attribute__((unused))
+static void cbu_default_dump_leaf(enum cb_key_type key_type, const struct cb_node *node, int level, const void *ctx)
+{
+	struct cb_node_key *key = container_of(node, struct cb_node_key, node);
+	unsigned long long int_key = 0;
+	uint64_t pxor;
+
+	switch (key_type) {
+	case CB_KT_ADDR:
+		int_key = (uintptr_t)node;
+		break;
+	case CB_KT_U32:
+		int_key = key->key.u32;
+		break;
+	case CB_KT_U64:
+		int_key = key->key.u64;
+		break;
+	default:
+		break;
+	}
+
+	/* xor of the keys of the two lower branches */
+	pxor = _xor_branches(key_type, 0, 0, NULL,
+			     container_of(node->b[0], struct cb_node_key, node),
+			     container_of(node->b[1], struct cb_node_key, node));
+
+	switch (key_type) {
+	case CB_KT_ADDR:
+	case CB_KT_U32:
+	case CB_KT_U64:
+		if (node->b[0] == node->b[1])
+			printf("  \"%lx_l\" [label=\"%lx\\nlev=%d\\nkey=%llu\\n\" fillcolor=\"green\"%s];\n",
+			       (long)node, (long)node, level, int_key, (ctx == node) ? " color=red" : "");
+		else
+			printf("  \"%lx_l\" [label=\"%lx\\nlev=%d bit=%d\\nkey=%llu\\n\" fillcolor=\"yellow\"%s];\n",
+			       (long)node, (long)node, level, flsnz(pxor) - 1, int_key, (ctx == node) ? " color=red" : "");
+		break;
+	case CB_KT_MB:
+		break;
+	case CB_KT_IM:
+		break;
+	case CB_KT_ST:
+		break;
+	case CB_KT_IS:
+		break;
+	}
+}
+
 
 #endif /* _CBTREE_PRV_H */
