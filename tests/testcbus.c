@@ -142,7 +142,7 @@ static void rnd64_to_str(char *dst)
 
 void usage(const char *name)
 {
-	printf("Usage: %s [-d] entries lookups loops [first entries...]\n", name);
+	printf("Usage: %s [-dD] entries lookups loops [first entries...]\n", name);
 	exit(1);
 }
 
@@ -151,12 +151,16 @@ int main(int argc, char **argv)
 	int entries, lookups, loops, found, i;
 	const struct cb_node *old;
 	struct cb_node *prev, *ret;
+	char *orig_argv;
 	struct key *key;
 	int debug = 0;
+	int dump = 0;
 
 	while (argc > 1 && argv[1][0] == '-') {
 		if (argv[1][1] == 'd')
-			debug = 1;
+			debug++;
+		else if (argv[1][1] == 'D')
+			dump = 1;
 		else
 			usage(argv[0]);
 		argv[1] = argv[0];
@@ -164,6 +168,7 @@ int main(int argc, char **argv)
 		argc--;
 	}
 
+	orig_argv = *argv;
 	if (argc < 4)
 		usage(argv[0]);
 
@@ -174,7 +179,8 @@ int main(int argc, char **argv)
 
 	key = calloc(1, sizeof(*key));
 
-	printf("inserting %d entries\n", entries);
+	if (debug)
+		printf("inserting %d entries\n", entries);
 	for (i = 0; i < entries; i++) {
 		if (i < argc - 4) {
 			strncpy(key->key, argv[i + 4], sizeof(key->key) - 1);
@@ -204,7 +210,8 @@ int main(int argc, char **argv)
 		key = calloc(1, sizeof(*key));
 	}
 
-	printf("Now looking up\n");
+	if (debug)
+		printf("Now looking up\n");
 
 	while (loops-- > 0) {
 		rnd32seed = RND32SEED;
@@ -224,12 +231,13 @@ int main(int argc, char **argv)
 		}
 	}
 
-	printf("found=%d\n", found);
+	if (debug)
+		printf("found=%d\n", found);
 
 	/* now count elements */
 	found = 0;
 	ret = cbus_first(&cb_root);
-	if (debug)
+	if (debug > 1)
 		printf("%d: ret=%p\n", __LINE__, ret);
 
 	while (ret) {
@@ -239,7 +247,12 @@ int main(int argc, char **argv)
 		found++;
 		ret = prev;
 	}
-	printf("counted %d elements\n", found);
+
+	if (debug)
+		printf("counted %d elements\n", found);
+
+	if (!debug && dump)
+		cbus_default_dump(&cb_root, orig_argv, 0);
 
 	return 0;
 }
