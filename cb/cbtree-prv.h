@@ -111,7 +111,7 @@ enum cb_walk_meth {
 };
 
 enum cb_key_type {
-	CB_KT_NONE,    /* no key */
+	CB_KT_ADDR,    /* the key is the node's address */
 	CB_KT_U32,     /* 32-bit unsigned word in key_u32 */
 	CB_KT_U64,     /* 64-bit unsigned word in key_u64 */
 	CB_KT_MB,      /* fixed size memory block in (key_u64,key_ptr) */
@@ -161,7 +161,7 @@ static void dbg(int line,
 		[CB_WM_KPR] = "KPR",
 	};
 	const char *ktypes[] = {
-		[CB_KT_NONE] = "NONE",
+		[CB_KT_ADDR] = "ADDR",
 		[CB_KT_U32]  = "U32",
 		[CB_KT_U64]  = "U64",
 		[CB_KT_MB]   = "MB",
