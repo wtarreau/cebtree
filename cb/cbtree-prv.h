@@ -1,7 +1,7 @@
 /*
  * Compact Binary Trees - internal functions and types
  *
- * Copyright (C) 2014-2023 Willy Tarreau - w@1wt.eu
+ * Copyright (C) 2014-2024 Willy Tarreau - w@1wt.eu
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
@@ -240,15 +240,14 @@ static void dbg(int line,
 		      r ? &r->node : NULL, r ? (const char *)r->key.str : "-", rlen,
 		      xlen);
 		break;
-	default:
+	case CB_KT_ADDR:
 		/* key type is the node's address */
-		CBDBG("%04d (%8s) m=%s.%s key=%p root=%p plen=%ld p=%p,%p(^%d) l=%p,%p(^%d) r=%p,%p(^%d) l^r=%d\n",
-		      line, pfx, kstr, mstr, key_ptr, root, (long)plen,
-		      p ? &p->node : NULL, p ? &p->key : 0, nlen,
-		      l ? &l->node : NULL, l ? &l->key : 0, llen,
-		      r ? &r->node : NULL, r ? &r->key : 0, rlen,
-		      xlen);
-		break;
+		CBDBG("%04d (%8s) m=%s.%s key=%#llx root=%p pxor=%#llx p=%p,%#llx(^%#llx) l=%p,%#llx(^%#llx) r=%p,%#llx(^%#llx) l^r=%#llx\n",
+		      line, pfx, kstr, mstr, (long long)(uintptr_t)key_ptr, root, (long long)px64,
+		      p ? &p->node : NULL, (long long)(uintptr_t)p, (long long)((uintptr_t)p ^ (uintptr_t)key_ptr),
+		      l ? &l->node : NULL, (long long)(uintptr_t)l, (long long)((uintptr_t)l ^ (uintptr_t)key_ptr),
+		      r ? &r->node : NULL, (long long)(uintptr_t)r, (long long)((uintptr_t)r ^ (uintptr_t)key_ptr),
+		      (long long)((uintptr_t)l ^ (uintptr_t)r));
 	}
 }
 #else
@@ -263,7 +262,9 @@ static void dbg(int line,
  * pointer to the leaf (i.e. where we have to insert ourselves). The integer
  * pointed to by ret_nside will contain the side the leaf should occupy at
  * its own node, with the sibling being *ret_root. Note that keys for fixed-
- * size arrays are passed in key_ptr with their length in key_u64.
+ * size arrays are passed in key_ptr with their length in key_u64. For keyless
+ * nodes whose address serves as the key, the pointer needs to be passed in
+ * key_ptr, and pxor64 will be used internally.
  */
 static inline __attribute__((always_inline))
 struct cb_node *_cbu_descend(struct cb_node **root,
@@ -544,6 +545,38 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 			}
 			plen = xlen;
 		}
+		else if (key_type == CB_KT_ADDR) {
+			uintptr_t xoraddr;   // left vs right branch xor
+
+			if (meth >= CB_WM_KEQ) {
+				/* "found" is not used here */
+				brside = ((uintptr_t)key_ptr ^ (uintptr_t)l) >= ((uintptr_t)key_ptr ^ (uintptr_t)r);
+			}
+
+			xoraddr = (uintptr_t)l ^ (uintptr_t)r;
+			if (xoraddr > (uintptr_t)pxor64) { // test using 2 4 6 4
+				dbg(__LINE__, "xor>", meth, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+				break;
+			}
+
+			if (meth >= CB_WM_KEQ) {
+				/* let's stop if our key is not there */
+
+				if (((uintptr_t)key_ptr ^ (uintptr_t)l) > xoraddr && ((uintptr_t)key_ptr ^ (uintptr_t)r) > xoraddr) {
+					dbg(__LINE__, "mismatch", meth, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+					break;
+				}
+
+				if (ret_npside || ret_nparent) {
+					if ((uintptr_t)key_ptr == (uintptr_t)p) {
+						dbg(__LINE__, "equal", meth, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+						nparent = lparent;
+						npside  = lpside;
+					}
+				}
+			}
+			pxor64 = xoraddr;
+		}
 
 		/* shift all copies by one */
 		gparent = lparent;
@@ -612,7 +645,8 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 		case CB_KT_ST:
 			*ret_nside = found || strcmp(key_ptr + plen / 8, (const void *)p->key.str + plen / 8) >= 0;
 			break;
-		default:
+		case CB_KT_ADDR:
+			*ret_nside = (uintptr_t)key_ptr >= (uintptr_t)p;
 			break;
 		}
 	}
@@ -701,6 +735,16 @@ struct cb_node *_cbu_descend(struct cb_node **root,
 			    (meth == CB_WM_KGT && diff >  0) ||
 			    (meth == CB_WM_KLE && diff <= 0) ||
 			    (meth == CB_WM_KLT && diff <  0))
+				return &p->node;
+		}
+		else if (key_type == CB_KT_ADDR) {
+			if ((meth == CB_WM_KEQ && (uintptr_t)p == (uintptr_t)key_ptr) ||
+			    (meth == CB_WM_KNX && (uintptr_t)p == (uintptr_t)key_ptr) ||
+			    (meth == CB_WM_KPR && (uintptr_t)p == (uintptr_t)key_ptr) ||
+			    (meth == CB_WM_KGE && (uintptr_t)p >= (uintptr_t)key_ptr) ||
+			    (meth == CB_WM_KGT && (uintptr_t)p >  (uintptr_t)key_ptr) ||
+			    (meth == CB_WM_KLE && (uintptr_t)p <= (uintptr_t)key_ptr) ||
+			    (meth == CB_WM_KLT && (uintptr_t)p <  (uintptr_t)key_ptr))
 				return &p->node;
 		}
 	} else if (meth == CB_WM_FST || meth == CB_WM_LST) {
