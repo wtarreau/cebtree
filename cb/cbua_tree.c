@@ -129,17 +129,20 @@ struct cb_node *cbua_pick(struct cb_node **root, const void *key)
 /* default node dump function */
 static void cbua_default_dump_node(struct cb_node *node, int level, const void *ctx)
 {
-	u64 pxor, lxor, rxor;
+	unsigned long pxor, lxor, rxor;
 
 	/* xor of the keys of the two lower branches */
-	pxor = (uintptr_t)__cb_clrtag(node->b[0]) ^ (uintptr_t)__cb_clrtag(node->b[1]);
+	pxor = _xor_branches(CB_KT_ADDR, 0, 0, NULL,
+			     container_of(__cb_clrtag(node->b[0]), struct cb_node_key, node),
+			     container_of(__cb_clrtag(node->b[1]), struct cb_node_key, node));
 
 	printf("  \"%lx_n\" [label=\"%lx\\nlev=%d bit=%d\\nkey=%#llx\" fillcolor=\"lightskyblue1\"%s];\n",
 	       (long)node, (long)node, level, flsnz(pxor) - 1, (unsigned long long)(uintptr_t)node, (ctx == node) ? " color=red" : "");
 
 	/* xor of the keys of the left branch's lower branches */
-	lxor = (uintptr_t)__cb_clrtag(((struct cb_node*)__cb_clrtag(node->b[0]))->b[0]) ^
-		(uintptr_t)__cb_clrtag(((struct cb_node*)__cb_clrtag(node->b[0]))->b[1]);
+	lxor = _xor_branches(CB_KT_ADDR, 0, 0, NULL,
+			     container_of(__cb_clrtag(((struct cb_node*)__cb_clrtag(node->b[0]))->b[0]), struct cb_node_key, node),
+			     container_of(__cb_clrtag(((struct cb_node*)__cb_clrtag(node->b[0]))->b[1]), struct cb_node_key, node));
 
 	printf("  \"%lx_n\" -> \"%lx_%c\" [label=\"L\" arrowsize=0.66 %s];\n",
 	       (long)node, (long)__cb_clrtag(node->b[0]),
@@ -147,8 +150,9 @@ static void cbua_default_dump_node(struct cb_node *node, int level, const void *
 	       (node == __cb_clrtag(node->b[0])) ? " dir=both" : "");
 
 	/* xor of the keys of the right branch's lower branches */
-	rxor = (uintptr_t)__cb_clrtag(((struct cb_node*)__cb_clrtag(node->b[1]))->b[0]) ^
-		(uintptr_t)__cb_clrtag(((struct cb_node*)__cb_clrtag(node->b[1]))->b[1]);
+	rxor = _xor_branches(CB_KT_ADDR, 0, 0, NULL,
+			     container_of(__cb_clrtag(((struct cb_node*)__cb_clrtag(node->b[1]))->b[0]), struct cb_node_key, node),
+			     container_of(__cb_clrtag(((struct cb_node*)__cb_clrtag(node->b[1]))->b[1]), struct cb_node_key, node));
 
 	printf("  \"%lx_n\" -> \"%lx_%c\" [label=\"R\" arrowsize=0.66 %s];\n",
 	       (long)node, (long)__cb_clrtag(node->b[1]),
@@ -159,10 +163,12 @@ static void cbua_default_dump_node(struct cb_node *node, int level, const void *
 /* default leaf dump function */
 static void cbua_default_dump_leaf(struct cb_node *node, int level, const void *ctx)
 {
-	u64 pxor;
+	unsigned long pxor;
 
 	/* xor of the keys of the two lower branches */
-	pxor = (uintptr_t)__cb_clrtag(node->b[0]) ^ (uintptr_t)__cb_clrtag(node->b[1]);
+	pxor = _xor_branches(CB_KT_ADDR, 0, 0, NULL,
+			     container_of(__cb_clrtag(node->b[0]), struct cb_node_key, node),
+			     container_of(__cb_clrtag(node->b[1]), struct cb_node_key, node));
 
 	if (node->b[0] == node->b[1])
 		printf("  \"%lx_l\" [label=\"%lx\\nlev=%d\\nkey=%#llx\\n\" fillcolor=\"green\"%s];\n",

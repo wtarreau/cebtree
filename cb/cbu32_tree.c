@@ -335,18 +335,20 @@ struct cb_node *cbu32_pick(struct cb_node **root, uint32_t key)
 static void cbu32_default_dump_node(struct cb_node *node, int level, const void *ctx)
 {
 	struct cb_node_key *key = container_of(node, struct cb_node_key, node);
-	u32 pxor, lxor, rxor;
+	uint32_t pxor, lxor, rxor;
 
 	/* xor of the keys of the two lower branches */
-	pxor = container_of(__cb_clrtag(node->b[0]), struct cb_node_key, node)->key.u32 ^
-		container_of(__cb_clrtag(node->b[1]), struct cb_node_key, node)->key.u32;
+	pxor = _xor_branches(CB_KT_U32, 0, 0, NULL,
+			     container_of(__cb_clrtag(node->b[0]), struct cb_node_key, node),
+			     container_of(__cb_clrtag(node->b[1]), struct cb_node_key, node));
 
 	printf("  \"%lx_n\" [label=\"%lx\\nlev=%d bit=%d\\nkey=%u\" fillcolor=\"lightskyblue1\"%s];\n",
 	       (long)node, (long)node, level, flsnz(pxor) - 1, key->key.u32, (ctx == node) ? " color=red" : "");
 
 	/* xor of the keys of the left branch's lower branches */
-	lxor = container_of(__cb_clrtag(((struct cb_node*)__cb_clrtag(node->b[0]))->b[0]), struct cb_node_key, node)->key.u32 ^
-		container_of(__cb_clrtag(((struct cb_node*)__cb_clrtag(node->b[0]))->b[1]), struct cb_node_key, node)->key.u32;
+	lxor = _xor_branches(CB_KT_U32, 0, 0, NULL,
+			     container_of(__cb_clrtag(((struct cb_node*)__cb_clrtag(node->b[0]))->b[0]), struct cb_node_key, node),
+			     container_of(__cb_clrtag(((struct cb_node*)__cb_clrtag(node->b[0]))->b[1]), struct cb_node_key, node));
 
 	printf("  \"%lx_n\" -> \"%lx_%c\" [label=\"L\" arrowsize=0.66 %s];\n",
 	       (long)node, (long)__cb_clrtag(node->b[0]),
@@ -354,8 +356,9 @@ static void cbu32_default_dump_node(struct cb_node *node, int level, const void 
 	       (node == __cb_clrtag(node->b[0])) ? " dir=both" : "");
 
 	/* xor of the keys of the right branch's lower branches */
-	rxor = container_of(__cb_clrtag(((struct cb_node*)__cb_clrtag(node->b[1]))->b[0]), struct cb_node_key, node)->key.u32 ^
-		container_of(__cb_clrtag(((struct cb_node*)__cb_clrtag(node->b[1]))->b[1]), struct cb_node_key, node)->key.u32;
+	rxor = _xor_branches(CB_KT_U32, 0, 0, NULL,
+			     container_of(__cb_clrtag(((struct cb_node*)__cb_clrtag(node->b[1]))->b[0]), struct cb_node_key, node),
+			     container_of(__cb_clrtag(((struct cb_node*)__cb_clrtag(node->b[1]))->b[1]), struct cb_node_key, node));
 
 	printf("  \"%lx_n\" -> \"%lx_%c\" [label=\"R\" arrowsize=0.66 %s];\n",
 	       (long)node, (long)__cb_clrtag(node->b[1]),
@@ -367,11 +370,12 @@ static void cbu32_default_dump_node(struct cb_node *node, int level, const void 
 static void cbu32_default_dump_leaf(struct cb_node *node, int level, const void *ctx)
 {
 	struct cb_node_key *key = container_of(node, struct cb_node_key, node);
-	u32 pxor;
+	uint32_t pxor;
 
 	/* xor of the keys of the two lower branches */
-	pxor = container_of(__cb_clrtag(node->b[0]), struct cb_node_key, node)->key.u32 ^
-		container_of(__cb_clrtag(node->b[1]), struct cb_node_key, node)->key.u32;
+	pxor = _xor_branches(CB_KT_U32, 0, 0, NULL,
+			     container_of(__cb_clrtag(node->b[0]), struct cb_node_key, node),
+			     container_of(__cb_clrtag(node->b[1]), struct cb_node_key, node));
 
 	if (node->b[0] == node->b[1])
 		printf("  \"%lx_l\" [label=\"%lx\\nlev=%d\\nkey=%u\\n\" fillcolor=\"green\"%s];\n",
@@ -388,7 +392,7 @@ void *cbu32_dump_tree(struct cb_node *node, u32 pxor, void *last,
 		      void (*leaf_dump)(struct cb_node *node, int level, const void *ctx),
 		      const void *ctx)
 {
-	u32 xor;
+	uint32_t xor;
 
 	if (!node) /* empty tree */
 		return node;
