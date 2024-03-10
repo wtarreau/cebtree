@@ -1,7 +1,7 @@
 /*
- * Compact Binary Trees - exported functions for operations on u64 keys
+ * Compact Elastic Binary Trees - exported functions operating on addr keys
  *
- * Copyright (C) 2014-2023 Willy Tarreau - w@1wt.eu
+ * Copyright (C) 2014-2024 Willy Tarreau - w@1wt.eu
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
@@ -27,70 +27,67 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "cbtree.h"
-#include "cbtree-prv.h"
+#include "cebtree.h"
+#include "cebtree-prv.h"
 
-/* Inserts node <node> into unique tree <tree> based on its key that
- * immediately follows the node. Returns the inserted node or the one
- * that already contains the same key.
+/* Inserts node <node> into unique tree <tree> based on its own address
+ * Returns the inserted node or the one that has the same address.
  */
-struct cb_node *cbu64_insert(struct cb_node **root, struct cb_node *node)
+struct ceb_node *cebua_insert(struct ceb_node **root, struct ceb_node *node)
 {
-	uint64_t key = container_of(node, struct cb_node_key, node)->key.u64;
-
-	return _cbu_insert(root, node, CB_KT_U64, 0, key, NULL);
+	return _cebu_insert(root, node, CEB_KT_ADDR, 0, 0, node);
 }
 
 /* return the first node or NULL if not found. */
-struct cb_node *cbu64_first(struct cb_node **root)
+struct ceb_node *cebua_first(struct ceb_node **root)
 {
-	return _cbu_first(root, CB_KT_U64);
+	return _cebu_first(root, CEB_KT_ADDR);
 }
 
 /* return the last node or NULL if not found. */
-struct cb_node *cbu64_last(struct cb_node **root)
+struct ceb_node *cebua_last(struct ceb_node **root)
 {
-	return _cbu_last(root, CB_KT_U64);
+	return _cebu_last(root, CEB_KT_ADDR);
 }
 
 /* look up the specified key, and returns either the node containing it, or
  * NULL if not found.
  */
-struct cb_node *cbu64_lookup(struct cb_node **root, uint64_t key)
+struct ceb_node *cebua_lookup(struct ceb_node **root, const void *key)
 {
-	return _cbu_lookup(root, CB_KT_U64, 0, key, NULL);
+	return _cebu_lookup(root, CEB_KT_ADDR, 0, 0, key);
 }
 
 /* look up the specified key or the highest below it, and returns either the
  * node containing it, or NULL if not found.
  */
-struct cb_node *cbu64_lookup_le(struct cb_node **root, uint64_t key)
+struct ceb_node *cebua_lookup_le(struct ceb_node **root, const void *key)
 {
-	return _cbu_lookup_le(root, CB_KT_U64, 0, key, NULL);
+	return _cebu_lookup_le(root, CEB_KT_ADDR, 0, 0, key);
 }
 
 /* look up highest key below the specified one, and returns either the
  * node containing it, or NULL if not found.
  */
-struct cb_node *cbu64_lookup_lt(struct cb_node **root, uint64_t key)
+struct ceb_node *cebua_lookup_lt(struct ceb_node **root, const void *key)
 {
-	return _cbu_lookup_lt(root, CB_KT_U64, 0, key, NULL);
+	return _cebu_lookup_lt(root, CEB_KT_ADDR, 0, 0, key);
 }
 
 /* look up the specified key or the smallest above it, and returns either the
  * node containing it, or NULL if not found.
  */
-struct cb_node *cbu64_lookup_ge(struct cb_node **root, uint64_t key)
+struct ceb_node *cebua_lookup_ge(struct ceb_node **root, const void *key)
 {
-	return _cbu_lookup_ge(root, CB_KT_U64, 0, key, NULL);
+	return _cebu_lookup_ge(root, CEB_KT_ADDR, 0, 0, key);
 }
 
 /* look up the smallest key above the specified one, and returns either the
  * node containing it, or NULL if not found.
  */
-struct cb_node *cbu64_lookup_gt(struct cb_node **root, uint64_t key)
+struct ceb_node *cebua_lookup_gt(struct ceb_node **root, const void *key)
 {
-	return _cbu_lookup_gt(root, CB_KT_U64, 0, key, NULL);
+	return _cebu_lookup_gt(root, CEB_KT_ADDR, 0, 0, key);
 }
 
 /* search for the next node after the specified one, and return it, or NULL if
@@ -98,11 +95,9 @@ struct cb_node *cbu64_lookup_gt(struct cb_node **root, uint64_t key)
  * time a left turn was made, and returning the first node along the right
  * branch at that fork.
  */
-struct cb_node *cbu64_next(struct cb_node **root, struct cb_node *node)
+struct ceb_node *cebua_next(struct ceb_node **root, struct ceb_node *node)
 {
-	uint64_t key = container_of(node, struct cb_node_key, node)->key.u64;
-
-	return _cbu_next(root, CB_KT_U64, 0, key, NULL);
+	return _cebu_next(root, CEB_KT_ADDR, 0, 0, node);
 }
 
 /* search for the prev node before the specified one, and return it, or NULL if
@@ -110,37 +105,33 @@ struct cb_node *cbu64_next(struct cb_node **root, struct cb_node *node)
  * time a right turn was made, and returning the last node along the left
  * branch at that fork.
  */
-struct cb_node *cbu64_prev(struct cb_node **root, struct cb_node *node)
+struct ceb_node *cebua_prev(struct ceb_node **root, struct ceb_node *node)
 {
-	uint64_t key = container_of(node, struct cb_node_key, node)->key.u64;
-
-	return _cbu_prev(root, CB_KT_U64, 0, key, NULL);
+	return _cebu_prev(root, CEB_KT_ADDR, 0, 0, node);
 }
 
 /* look up the specified node with its key and deletes it if found, and in any
  * case, returns the node.
  */
-struct cb_node *cbu64_delete(struct cb_node **root, struct cb_node *node)
+struct ceb_node *cebua_delete(struct ceb_node **root, struct ceb_node *node)
 {
-	uint64_t key = container_of(node, struct cb_node_key, node)->key.u64;
-
-	return _cbu_delete(root, node, CB_KT_U64, 0, key, NULL);
+	return _cebu_delete(root, node, CEB_KT_ADDR, 0, 0, node);
 }
 
 /* look up the specified key, and detaches it and returns it if found, or NULL
  * if not found.
  */
-struct cb_node *cbu64_pick(struct cb_node **root, uint64_t key)
+struct ceb_node *cebua_pick(struct ceb_node **root, const void *key)
 {
-	return _cbu_delete(root, NULL, CB_KT_U64, 0, key, NULL);
+	return _cebu_delete(root, NULL, CEB_KT_ADDR, 0, 0, key);
 }
 
-/* dumps a cb_node_key tree using the default functions above. If a node matches
+/* dumps a ceb_node tree using the default functions above. If a node matches
  * <ctx>, this one will be highlighted in red.
  */
-void cbu64_default_dump(struct cb_node **cb_root, const char *label, const void *ctx)
+void cebua_default_dump(struct ceb_node **ceb_root, const char *label, const void *ctx)
 {
-	printf("\ndigraph cbu64_tree {\n"
+	printf("\ndigraph cebua_tree {\n"
 	       "  fontname=\"fixed\";\n"
 	       "  fontsize=8\n"
 	       "  label=\"%s\"\n"
@@ -149,7 +140,7 @@ void cbu64_default_dump(struct cb_node **cb_root, const char *label, const void 
 	printf("  node [fontname=\"fixed\" fontsize=8 shape=\"box\" style=\"filled\" color=\"black\" fillcolor=\"white\"];\n"
 	       "  edge [fontname=\"fixed\" fontsize=8 style=\"solid\" color=\"magenta\" dir=\"forward\"];\n");
 
-	cbu_default_dump_tree(CB_KT_U64, cb_root, 0, NULL, 0, ctx, NULL, NULL, NULL);
+	cebu_default_dump_tree(CEB_KT_ADDR, ceb_root, 0, NULL, 0, ctx, NULL, NULL, NULL);
 
 	printf("}\n");
 }

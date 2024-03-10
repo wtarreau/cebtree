@@ -9,29 +9,29 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "cbub_tree.h"
+#include "cebu32_tree.h"
 
-struct cb_node *cb_root = NULL;
+struct ceb_node *ceb_root = NULL;
 
 struct key {
-	struct cb_node node;
+	struct ceb_node node;
 	uint32_t key;
 };
 
-struct cb_node *add_value(struct cb_node **root, uint32_t value)
+struct ceb_node *add_value(struct ceb_node **root, uint32_t value)
 {
 	struct key *key;
-	struct cb_node *prev, *ret;
+	struct ceb_node *prev, *ret;
 
 	key = calloc(1, sizeof(*key));
 	key->key = value;
 	do {
-		prev = cbub_insert(root, &key->node, sizeof(uint32_t));
+		prev = cebu32_insert(root, &key->node);
 		if (prev == &key->node)
 			return prev; // was properly inserted
 		/* otherwise was already there, let's try to remove it */
 		printf("Insert failed, removing node %p before inserting again.\n", prev);
-		ret = cbub_delete(root, prev, sizeof(uint32_t));
+		ret = cebu32_delete(root, prev);
 		if (ret != prev) {
 			/* was not properly removed either: THIS IS A BUG! */
 			printf("failed to insert %p(%u) because %p has the same key and could not be removed because returns %p\n",
@@ -45,7 +45,7 @@ struct cb_node *add_value(struct cb_node **root, uint32_t value)
 
 int main(int argc, char **argv)
 {
-	const struct cb_node *old;
+	const struct ceb_node *old;
 	char *argv0 = *argv, *larg;
 	char *orig_argv;
 	char *p;
@@ -67,18 +67,18 @@ int main(int argc, char **argv)
 	orig_argv = larg = *argv;
 	while (argc > 0) {
 		v = atoi(argv[0]);
-		old = cbub_lookup(&cb_root, &v, sizeof(uint32_t));
+		old = cebu32_lookup(&ceb_root, v);
 		if (old)
 			fprintf(stderr, "Note: value %u already present at %p\n", v, old);
-		old = add_value(&cb_root, v);
+		old = add_value(&ceb_root, v);
 
 		if (debug) {
 			static int round;
 			char cmd[100];
-			int len __attribute__((unused));
+			size_t len;
 
 			len = snprintf(cmd, sizeof(cmd), "%s [%d] +%d", orig_argv, round, v);
-			//cbu32_default_dump(&cb_root, len < sizeof(cmd) ? cmd : orig_argv, old);
+			cebu32_default_dump(&ceb_root, len < sizeof(cmd) ? cmd : orig_argv, old);
 			round++;
 		}
 
@@ -90,8 +90,8 @@ int main(int argc, char **argv)
 	for (p = orig_argv; p < larg; *p++ = ' ')
 		p += strlen(p);
 
-	//if (!debug)
-	//	cbu32_default_dump(&cb_root, orig_argv, 0);
+	if (!debug)
+		cebu32_default_dump(&ceb_root, orig_argv, 0);
 
 	return 0;
 }

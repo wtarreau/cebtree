@@ -1,5 +1,5 @@
 /*
- * cbtree stress testing tool
+ * cebtree stress testing tool
  *
  * It runs several parallel threads each with their own test.
  * The test consists in picking random values, applying them a mask so that
@@ -22,7 +22,7 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "cbul_tree.h"
+#include "cebul_tree.h"
 
 /* settings for the test */
 
@@ -116,7 +116,7 @@ __attribute__((noreturn)) void die(int code, const char *format, ...)
 
 /* one item */
 struct item {
-	struct cb_node node;
+	struct ceb_node node;
 	unsigned long key;
 	unsigned long flags;
 };
@@ -124,7 +124,7 @@ struct item {
 /* thread context */
 struct ctx {
 	struct item table[TBLSIZE];
-	struct cb_node *cb_root;
+	struct ceb_node *ceb_root;
 	unsigned long min, max;
 	pthread_t thr;
 	unsigned long loops;
@@ -144,7 +144,7 @@ void run(void *arg)
 	struct ctx *ctx = &th_ctx[tid];
 	unsigned int idx;
 	struct item *itm;
-	struct cb_node *node1, *node2, *node3;
+	struct ceb_node *node1, *node2, *node3;
 	unsigned long v;
 
 	rnd32seed += tid + 1;
@@ -175,49 +175,49 @@ void run(void *arg)
 			/* the item is expected to already be in the tree, so
 			 * let's verify a few things.
 			 */
-			BUG_ON(!cb_intree(&itm->node));
+			BUG_ON(!ceb_intree(&itm->node));
 
-			node1 = cbul_lookup(&ctx->cb_root, itm->key);
+			node1 = cebul_lookup(&ctx->ceb_root, itm->key);
 			BUG_ON(!node1);
 			BUG_ON(node1 != &itm->node);
 
-			node1 = cbul_lookup_ge(&ctx->cb_root, itm->key);
+			node1 = cebul_lookup_ge(&ctx->ceb_root, itm->key);
 			BUG_ON(!node1);
 			BUG_ON(node1 != &itm->node);
 
-			node1 = cbul_lookup_le(&ctx->cb_root, itm->key);
+			node1 = cebul_lookup_le(&ctx->ceb_root, itm->key);
 			BUG_ON(!node1);
 			BUG_ON(node1 != &itm->node);
 
-			node3 = cbul_lookup_lt(&ctx->cb_root, itm->key);
+			node3 = cebul_lookup_lt(&ctx->ceb_root, itm->key);
 			BUG_ON(node3 == node1);
 
-			node2 = cbul_prev(&ctx->cb_root, node1);
+			node2 = cebul_prev(&ctx->ceb_root, node1);
 			BUG_ON(node2 != node3); // prev() of an existing node is lt
 
 			if (!node2) {
 				/* this must be the first */
-				node3 = cbul_first(&ctx->cb_root);
+				node3 = cebul_first(&ctx->ceb_root);
 				BUG_ON(node3 != node1);
 			} else {
-				node3 = cbul_next(&ctx->cb_root, node2);
+				node3 = cebul_next(&ctx->ceb_root, node2);
 				BUG_ON(node3 != node1);
 			}
 
 			node2 = node3; // lt
-			node3 = cbul_lookup_gt(&ctx->cb_root, itm->key);
+			node3 = cebul_lookup_gt(&ctx->ceb_root, itm->key);
 			BUG_ON(node3 == node1);
 			BUG_ON(node3 && node3 == node2);
 
-			node2 = cbul_next(&ctx->cb_root, node1);
+			node2 = cebul_next(&ctx->ceb_root, node1);
 			BUG_ON(node2 != node3); // next() of an existing node is gt
 
 			if (!node2) {
 				/* this must be the last */
-				node3 = cbul_last(&ctx->cb_root);
+				node3 = cebul_last(&ctx->ceb_root);
 				BUG_ON(node3 != node1);
 			} else {
-				node3 = cbul_prev(&ctx->cb_root, node2);
+				node3 = cebul_prev(&ctx->ceb_root, node2);
 				BUG_ON(node3 != node1);
 			}
 
@@ -225,21 +225,21 @@ void run(void *arg)
 			 * one, it is just removed. If it does not match,
 			 * it is removed and we try to enter the new one.
 			 */
-			node2 = cbul_delete(&ctx->cb_root, node1);
+			node2 = cebul_delete(&ctx->ceb_root, node1);
 			BUG_ON(node2 != node1);
 
 			itm->flags &= ~IN_TREE;
-			BUG_ON(cb_intree(node1));
+			BUG_ON(ceb_intree(node1));
 
 			if (v != itm->key) {
 				itm->key = v;
-				node2 = cbul_insert(&ctx->cb_root, &itm->node);
+				node2 = cebul_insert(&ctx->ceb_root, &itm->node);
 				if (node2 == &itm->node) {
-					BUG_ON(!cb_intree(&itm->node));
+					BUG_ON(!ceb_intree(&itm->node));
 					itm->flags |= IN_TREE;
 				}
 				else {
-					BUG_ON(cb_intree(&itm->node));
+					BUG_ON(ceb_intree(&itm->node));
 				}
 			}
 		} else {
@@ -248,15 +248,15 @@ void run(void *arg)
 			 */
 			do {
 				itm->key = v;
-				node2 = cbul_lookup_le(&ctx->cb_root, itm->key);
+				node2 = cebul_lookup_le(&ctx->ceb_root, itm->key);
 				if (node2)
 					BUG_ON(container_of(node2, struct item, node)->key > itm->key);
 
-				node3 = cbul_lookup_ge(&ctx->cb_root, itm->key);
+				node3 = cebul_lookup_ge(&ctx->ceb_root, itm->key);
 				if (node3)
 					BUG_ON(container_of(node3, struct item, node)->key < itm->key);
 
-				node1 = cbul_insert(&ctx->cb_root, &itm->node);
+				node1 = cebul_insert(&ctx->ceb_root, &itm->node);
 
 				if (node2 && container_of(node2, struct item, node)->key == itm->key)
 					BUG_ON(node1 != node2);
@@ -271,51 +271,51 @@ void run(void *arg)
 					BUG_ON(node1 != node2 && node1 != node3);
 			} while (node1 != &itm->node && ((v = rndl16()), 1));
 
-			BUG_ON(!cb_intree(&itm->node));
+			BUG_ON(!ceb_intree(&itm->node));
 			itm->flags |= IN_TREE;
 
 			/* perform a few post-insert checks */
-			node1 = cbul_lookup(&ctx->cb_root, itm->key);
+			node1 = cebul_lookup(&ctx->ceb_root, itm->key);
 			BUG_ON(!node1);
 			BUG_ON(node1 != &itm->node);
 
-			node1 = cbul_lookup_ge(&ctx->cb_root, itm->key);
+			node1 = cebul_lookup_ge(&ctx->ceb_root, itm->key);
 			BUG_ON(!node1);
 			BUG_ON(node1 != &itm->node);
 
-			node1 = cbul_lookup_le(&ctx->cb_root, itm->key);
+			node1 = cebul_lookup_le(&ctx->ceb_root, itm->key);
 			BUG_ON(!node1);
 			BUG_ON(node1 != &itm->node);
 
-			node3 = cbul_lookup_lt(&ctx->cb_root, itm->key);
+			node3 = cebul_lookup_lt(&ctx->ceb_root, itm->key);
 			BUG_ON(node3 == node1);
 
-			node2 = cbul_prev(&ctx->cb_root, node1);
+			node2 = cebul_prev(&ctx->ceb_root, node1);
 			BUG_ON(node2 != node3); // prev() of an existing node is lt
 
 			if (!node2) {
 				/* this must be the first */
-				node3 = cbul_first(&ctx->cb_root);
+				node3 = cebul_first(&ctx->ceb_root);
 				BUG_ON(node3 != node1);
 			} else {
-				node3 = cbul_next(&ctx->cb_root, node2);
+				node3 = cebul_next(&ctx->ceb_root, node2);
 				BUG_ON(node3 != node1);
 			}
 
 			node2 = node3; // lt
-			node3 = cbul_lookup_gt(&ctx->cb_root, itm->key);
+			node3 = cebul_lookup_gt(&ctx->ceb_root, itm->key);
 			BUG_ON(node3 == node1);
 			BUG_ON(node3 && node3 == node2);
 
-			node2 = cbul_next(&ctx->cb_root, node1);
+			node2 = cebul_next(&ctx->ceb_root, node1);
 			BUG_ON(node2 != node3); // next() of an existing node is gt
 
 			if (!node2) {
 				/* this must be the last */
-				node3 = cbul_last(&ctx->cb_root);
+				node3 = cebul_last(&ctx->ceb_root);
 				BUG_ON(node3 != node1);
 			} else {
-				node3 = cbul_prev(&ctx->cb_root, node2);
+				node3 = cebul_prev(&ctx->ceb_root, node2);
 				BUG_ON(node3 != node1);
 			}
 		}

@@ -9,28 +9,28 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "cbu32_tree.h"
+#include "cebu32_tree.h"
 
-struct cb_node *cb_root = NULL;
+struct ceb_node *ceb_root = NULL;
 
 struct key {
-	struct cb_node node;
+	struct ceb_node node;
 	uint32_t key;
 };
 
-struct cb_node *add_value(struct cb_node **root, uint32_t value)
+struct ceb_node *add_value(struct ceb_node **root, uint32_t value)
 {
 	struct key *key;
-	struct cb_node *prev, *ret;
+	struct ceb_node *prev, *ret;
 
 	key = calloc(1, sizeof(*key));
 	key->key = value;
 	do {
-		prev = cbu32_insert(root, &key->node);
+		prev = cebu32_insert(root, &key->node);
 		if (prev == &key->node)
 			return prev; // was properly inserted
 		/* otherwise was already there, let's try to remove it */
-		ret = cbu32_delete(root, prev);
+		ret = cebu32_delete(root, prev);
 		if (ret != prev) {
 			/* was not properly removed either: THIS IS A BUG! */
 			printf("failed to insert %p(%u) because %p has the same key and could not be removed because returns %p\n",
@@ -53,7 +53,7 @@ static uint32_t rnd32()
 
 int main(int argc, char **argv)
 {
-	struct cb_node *old, *back __attribute__((unused));
+	struct ceb_node *old, *back __attribute__((unused));
 	char *orig_argv, *argv0 = *argv, *larg;
 	struct key *key;
 	char *p;
@@ -96,16 +96,16 @@ int main(int argc, char **argv)
 	if (test == 0) {
 		while (count--) {
 			v = rnd32() & mask;
-			old = cbu32_lookup(&cb_root, v);
+			old = cebu32_lookup(&ceb_root, v);
 			if (old) {
-				if (cbu32_delete(&cb_root, old) != old)
+				if (cebu32_delete(&ceb_root, old) != old)
 					abort();
 				free(container_of(old, struct key, node));
 			}
 			else {
 				key = calloc(1, sizeof(*key));
 				key->key = v;
-				old = cbu32_insert(&cb_root, &key->node);
+				old = cebu32_insert(&ceb_root, &key->node);
 				if (old != &key->node)
 					abort();
 			}
@@ -113,16 +113,16 @@ int main(int argc, char **argv)
 	} else if (test == 1) {
 		while (count--) {
 			v = rnd32() & mask;
-			old = cbu32_lookup(&cb_root, v);
+			old = cebu32_lookup(&ceb_root, v);
 			if (old) {
-				if (cbu32_delete(&cb_root, old) != old)
+				if (cebu32_delete(&ceb_root, old) != old)
 					abort();
 				free(container_of(old, struct key, node));
 			}
 
 			key = calloc(1, sizeof(*key));
 			key->key = v;
-			old = cbu32_insert(&cb_root, &key->node);
+			old = cebu32_insert(&ceb_root, &key->node);
 			if (old != &key->node)
 				abort();
 
@@ -132,7 +132,7 @@ int main(int argc, char **argv)
 				size_t len;
 
 				len = snprintf(cmd, sizeof(cmd), "%s %d/%d : %p %d\n", orig_argv, round, round+count, old, v);
-				cbu32_default_dump(&cb_root, len < sizeof(cmd) ? cmd : orig_argv, old);
+				cebu32_default_dump(&ceb_root, len < sizeof(cmd) ? cmd : orig_argv, old);
 				round++;
 			}
 		}
@@ -140,21 +140,21 @@ int main(int argc, char **argv)
 		while (count--) {
 			v = rnd32() & mask;
 			if (!count && debug > 2)
-				cbu32_default_dump(&cb_root, "step1", 0);
-			old = cbu32_pick(&cb_root, v);
+				cebu32_default_dump(&ceb_root, "step1", 0);
+			old = cebu32_pick(&ceb_root, v);
 			if (!count && debug > 2)
-				cbu32_default_dump(&cb_root, "step2", 0);
+				cebu32_default_dump(&ceb_root, "step2", 0);
 			back = old;
 			while (old) {
 				if (old && !count && debug > 2)
-					cbu32_default_dump(&cb_root, "step3", 0);
-				old = cbu32_pick(&cb_root, v);
+					cebu32_default_dump(&ceb_root, "step3", 0);
+				old = cebu32_pick(&ceb_root, v);
 				//if (old)
 				//	printf("count=%d v=%u back=%p old=%p\n", count, v, back, old);
 			}
 
 			if (!count && debug > 2)
-				cbu32_default_dump(&cb_root, "step4", 0);
+				cebu32_default_dump(&ceb_root, "step4", 0);
 
 			//abort();
 			//memset(old, 0, sizeof(*key));
@@ -163,25 +163,25 @@ int main(int argc, char **argv)
 
 			key = calloc(1, sizeof(*key));
 			key->key = v;
-			old = cbu32_insert(&cb_root, &key->node);
+			old = cebu32_insert(&ceb_root, &key->node);
 			if (old != &key->node)
 				abort();
 
 			if (!count && debug > 2)
-				cbu32_default_dump(&cb_root, "step5", 0);
+				cebu32_default_dump(&ceb_root, "step5", 0);
 			else if (debug > 1) {
 				static int round;
 				char cmd[100];
 				size_t len;
 
 				len = snprintf(cmd, sizeof(cmd), "%s %d/%d : %p %d\n", orig_argv, round, round+count, old, v);
-				cbu32_default_dump(&cb_root, len < sizeof(cmd) ? cmd : orig_argv, old);
+				cebu32_default_dump(&ceb_root, len < sizeof(cmd) ? cmd : orig_argv, old);
 				round++;
 			}
 		}
 	}
 
 	if (debug == 1)
-		cbu32_default_dump(&cb_root, orig_argv, 0);
+		cebu32_default_dump(&ceb_root, orig_argv, 0);
 	return 0;
 }

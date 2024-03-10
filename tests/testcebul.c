@@ -9,29 +9,29 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "cbul_tree.h"
+#include "cebul_tree.h"
 
-struct cb_node *cb_root = NULL;
+struct ceb_node *ceb_root = NULL;
 
 struct key {
-	struct cb_node node;
+	struct ceb_node node;
 	unsigned long key;
 };
 
-struct cb_node *add_value(struct cb_node **root, unsigned long value)
+struct ceb_node *add_value(struct ceb_node **root, unsigned long value)
 {
 	struct key *key;
-	struct cb_node *prev, *ret;
+	struct ceb_node *prev, *ret;
 
 	key = calloc(1, sizeof(*key));
 	key->key = value;
 	do {
-		prev = cbul_insert(root, &key->node);
+		prev = cebul_insert(root, &key->node);
 		if (prev == &key->node)
 			return prev; // was properly inserted
 		/* otherwise was already there, let's try to remove it */
 		printf("Insert failed, removing node %p before inserting again.\n", prev);
-		ret = cbul_delete(root, prev);
+		ret = cebul_delete(root, prev);
 		if (ret != prev) {
 			/* was not properly removed either: THIS IS A BUG! */
 			printf("failed to insert %p(%lu) because %p has the same key and could not be removed because returns %p\n",
@@ -45,8 +45,8 @@ struct cb_node *add_value(struct cb_node **root, unsigned long value)
 
 int main(int argc, char **argv)
 {
-	const struct cb_node *old;
-	struct cb_node *ret, *next;
+	const struct ceb_node *old;
+	struct ceb_node *ret, *next;
 	char *argv0 = *argv, *larg;
 	char *orig_argv;
 	char *p;
@@ -82,21 +82,21 @@ int main(int argc, char **argv)
 	while (argc > 0) {
 		v = atoll(argv[0]);
 		if (lookup_mode == 0)
-			old = cbul_lookup(&cb_root, v);
+			old = cebul_lookup(&ceb_root, v);
 		else if (lookup_mode == -2)
-			old = cbul_lookup_lt(&cb_root, v);
+			old = cebul_lookup_lt(&ceb_root, v);
 		else if (lookup_mode == -1)
-			old = cbul_lookup_le(&cb_root, v);
+			old = cebul_lookup_le(&ceb_root, v);
 		else if (lookup_mode == 1)
-			old = cbul_lookup_ge(&cb_root, v);
+			old = cebul_lookup_ge(&ceb_root, v);
 		else if (lookup_mode == 2)
-			old = cbul_lookup_gt(&cb_root, v);
+			old = cebul_lookup_gt(&ceb_root, v);
 		else
 			old = NULL;
 
 		if (old)
 			fprintf(stderr, "Note: lookup of value %lu found at %p: %lu\n", v, old, container_of(old, struct key, node)->key);
-		old = add_value(&cb_root, v);
+		old = add_value(&ceb_root, v);
 
 		if (debug) {
 			static int round;
@@ -104,7 +104,7 @@ int main(int argc, char **argv)
 			size_t len;
 
 			len = snprintf(cmd, sizeof(cmd), "%s [%d] +%lu", orig_argv, round, v);
-			cbul_default_dump(&cb_root, len < sizeof(cmd) ? cmd : orig_argv, old);
+			cebul_default_dump(&ceb_root, len < sizeof(cmd) ? cmd : orig_argv, old);
 			round++;
 		}
 
@@ -119,12 +119,12 @@ int main(int argc, char **argv)
 	/* now count elements */
 	if (do_count) {
 		found = 0;
-		ret = cbul_first(&cb_root);
+		ret = cebul_first(&ceb_root);
 		if (debug)
 			fprintf(stderr, "%d: ret=%p\n", __LINE__, ret);
 
 		while (ret) {
-			next = cbul_next(&cb_root, ret);
+			next = cebul_next(&ceb_root, ret);
 			if (debug)
 				fprintf(stderr, "   %4d: @%p: <%#lx> next=%p\n", found, ret, ((const struct key *)ret)->key, next);
 			found++;
@@ -134,7 +134,7 @@ int main(int argc, char **argv)
 	}
 
 	if (!debug)
-		cbul_default_dump(&cb_root, orig_argv, 0);
+		cebul_default_dump(&ceb_root, orig_argv, 0);
 
 	return 0;
 }

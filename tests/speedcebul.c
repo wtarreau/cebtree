@@ -9,12 +9,12 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "cbul_tree.h"
+#include "cebul_tree.h"
 
-struct cb_node *cb_root = NULL;
+struct ceb_node *ceb_root = NULL;
 
 struct key {
-	struct cb_node node;
+	struct ceb_node node;
 	unsigned long key;
 };
 
@@ -39,8 +39,8 @@ static unsigned long rndl()
 int main(int argc, char **argv)
 {
 	int entries, lookups, loops, found, i;
-	const struct cb_node *old;
-	struct cb_node *prev, *ret;
+	const struct ceb_node *old;
+	struct ceb_node *prev, *ret;
 	struct key *key;
 
 	if (argc != 4) {
@@ -57,15 +57,15 @@ int main(int argc, char **argv)
 
 	for (i = 0; i < entries; i++) {
 		key->key = rndl();
-		old = cbul_lookup(&cb_root, key->key);
+		old = cebul_lookup(&ceb_root, key->key);
 		if (old)
 			fprintf(stderr, "Note: value %#lx already present at %p\n", key->key, old);
 
 	try_again:
-		prev = cbul_insert(&cb_root, &key->node);
+		prev = cebul_insert(&ceb_root, &key->node);
 		if (prev != &key->node) {
 			fprintf(stderr, "Note: failed to insert %#lx, previous was at %p\n", key->key, old);
-			ret = cbul_delete(&cb_root, prev);
+			ret = cebul_delete(&ceb_root, prev);
 			if (ret != prev) {
 				/* was not properly removed either: THIS IS A BUG! */
 				fprintf(stderr, "failed to remove %p (returned %p)\n", prev, ret);
@@ -85,7 +85,7 @@ int main(int argc, char **argv)
 		found = 0;
 		for (i = 0; i < lookups; i++) {
 			key->key = rndl();
-			old = cbul_lookup(&cb_root, key->key);
+			old = cebul_lookup(&ceb_root, key->key);
 			if (old)
 				found++;
 		}

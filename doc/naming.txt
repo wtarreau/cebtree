@@ -8,7 +8,7 @@ what is stored and how data are manipulated.
 
 Tree architecture can be one of :
   - elastic binary tree
-  - compact binary tree
+  - compact elastic binary tree
 
 Node addressing models :
   - none for absolute (pointers are locations in memory)
@@ -40,13 +40,13 @@ Key sign (for integers) :
 
 That gives :
 
-  {eb,cb}{,l,m,s}{u,}{,a,i}{,16,32,64,l,b,s}{i,}
-     \       \     \    \         \           \_ signed int y/n
-      \       \     \    \         \_ key type/size
-       \       \     \    \_ access mode ((dir)/abs/indir)
-        \       \     \_ unique y/n
-         \       \_ addressing: (abs)/large/medium/small
-          \_ tree architecture
+  {eb,ceb}{,l,m,s}{u,}{,a,i}{,16,32,64,l,b,s}{i,}
+      \       \     \    \         \           \_ signed int y/n
+       \       \     \    \         \_ key type/size
+        \       \     \    \_ access mode ((dir)/abs/indir)
+         \       \     \_ unique y/n
+          \       \_ addressing: (abs)/large/medium/small
+           \_ tree architecture
 
 Not all combinations are necessarily valid. Only integers may have the "i"
 suffix, nodes storing their own address (suffixed with "a") have no type size.
@@ -71,7 +71,7 @@ this way :
 
 New useful types should appear quickly :
 
-  eba / cba : only carry the node's address, useful for pointer-based lookups
+  eba / ceba : only carry the node's address, useful for pointer-based lookups
               (eg: "show sess 0x12345678" in haproxy)
 
 Some implementations might disappear over the long term :
@@ -90,7 +90,7 @@ Later an extension might come (locked/unlocked or shared/private use).
 
 It is uncertain yet whether it would make sense to also split the code into
 unique/non-unique trees. The nodes are the same, but it could make sense to
-have different insertion functions. That's what is currently done for CB trees.
+have different insertion functions. That's what is currently done for CEB trees.
 Also experience has shown that the code calling the tree manipulation functions
 always knows whether it expects unique entries or not and that from such places
 it's not always easy to know how the tree was configured, so having distinct
@@ -112,10 +112,10 @@ Properties :
     solution against this. Space efficient trees will typically have their
     root at position zero and no up pointer so a NULL is unambiguous.
 
-  - In their simplest form, CB trees do not offer provisions for duplicates,
+  - In their simplest form, CEB trees do not offer provisions for duplicates,
     though it was demonstrated that these can be built by arranging an almost
     doubly-linked list with the duplicate nodes and that preserves insertion
     ordering. However the algorithm has lots of special cases both for walking,
-    inserting and deleting nodes. Regardless, CB trees in unique mode remain
+    inserting and deleting nodes. Regardless, CEB trees in unique mode remain
     interesting for read-mostly data where storage size matters (LRU caches
     and memory management).

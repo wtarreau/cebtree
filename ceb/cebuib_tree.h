@@ -1,5 +1,5 @@
 /*
- * Compact Binary Trees - exported functions for operations on strings
+ * Compact Elastic Binary Trees - exported functions operating on indirect blocks
  *
  * Copyright (C) 2014-2024 Willy Tarreau - w@1wt.eu
  *
@@ -24,17 +24,17 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include "cbtree.h"
+#include "cebtree.h"
 
-struct cb_node *cbuis_insert(struct cb_node **root, struct cb_node *node);
-struct cb_node *cbuis_first(struct cb_node **root);
-struct cb_node *cbuis_last(struct cb_node **root);
-struct cb_node *cbuis_lookup(struct cb_node **root, const void *key);
-struct cb_node *cbuis_lookup_le(struct cb_node **root, const void *key);
-struct cb_node *cbuis_lookup_lt(struct cb_node **root, const void *key);
-struct cb_node *cbuis_lookup_ge(struct cb_node **root, const void *key);
-struct cb_node *cbuis_lookup_gt(struct cb_node **root, const void *key);
-struct cb_node *cbuis_next(struct cb_node **root, struct cb_node *node);
-struct cb_node *cbuis_prev(struct cb_node **root, struct cb_node *node);
-struct cb_node *cbuis_delete(struct cb_node **root, struct cb_node *node);
-struct cb_node *cbuis_pick(struct cb_node **root, const void *key);
+struct ceb_node *cebuib_insert(struct ceb_node **root, struct ceb_node *node, size_t len);
+struct ceb_node *cebuib_first(struct ceb_node **root);
+struct ceb_node *cebuib_last(struct ceb_node **root);
+struct ceb_node *cebuib_lookup(struct ceb_node **root, const void *key, size_t len);
+struct ceb_node *cebuib_lookup_le(struct ceb_node **root, const void *key, size_t len);
+struct ceb_node *cebuib_lookup_lt(struct ceb_node **root, const void *key, size_t len);
+struct ceb_node *cebuib_lookup_ge(struct ceb_node **root, const void *key, size_t len);
+struct ceb_node *cebuib_lookup_gt(struct ceb_node **root, const void *key, size_t len);
+struct ceb_node *cebuib_next(struct ceb_node **root, struct ceb_node *node, size_t len);
+struct ceb_node *cebuib_prev(struct ceb_node **root, struct ceb_node *node, size_t len);
+struct ceb_node *cebuib_delete(struct ceb_node **root, struct ceb_node *node, size_t len);
+struct ceb_node *cebuib_pick(struct ceb_node **root, const void *key, size_t len);

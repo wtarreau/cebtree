@@ -9,28 +9,28 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "cbub_tree.h"
+#include "cebub_tree.h"
 
-struct cb_node *cb_root = NULL;
+struct ceb_node *ceb_root = NULL;
 
 struct key {
-	struct cb_node node;
+	struct ceb_node node;
 	uint64_t key;
 };
 
-struct cb_node *add_value(struct cb_node **root, uint64_t value)
+struct ceb_node *add_value(struct ceb_node **root, uint64_t value)
 {
 	struct key *key;
-	struct cb_node *prev, *ret;
+	struct ceb_node *prev, *ret;
 
 	key = calloc(1, sizeof(*key));
 	key->key = value;
 	do {
-		prev = cbub_insert(root, &key->node, sizeof(key->key));
+		prev = cebub_insert(root, &key->node, sizeof(key->key));
 		if (prev == &key->node)
 			return prev; // was properly inserted
 		/* otherwise was already there, let's try to remove it */
-		ret = cbub_delete(root, prev, sizeof(key->key));
+		ret = cebub_delete(root, prev, sizeof(key->key));
 		if (ret != prev) {
 			/* was not properly removed either: THIS IS A BUG! */
 			printf("failed to insert %p(%llx) because %p has the same key and could not be removed because returns %p\n",
@@ -60,7 +60,7 @@ static uint64_t rnd64()
 int main(int argc, char **argv)
 {
 	int entries, lookups, loops, found, i;
-	const struct cb_node *old;
+	const struct ceb_node *old;
 	uint64_t v;
 
 	if (argc != 4) {
@@ -75,10 +75,10 @@ int main(int argc, char **argv)
 
 	for (i = 0; i < entries; i++) {
 		v = rnd64();
-		old = cbub_lookup(&cb_root, (const void*)&v, sizeof(v));
+		old = cebub_lookup(&ceb_root, (const void*)&v, sizeof(v));
 		if (old)
 			fprintf(stderr, "Note: value %llx already present at %p\n", (long long)v, old);
-		old = add_value(&cb_root, v);
+		old = add_value(&ceb_root, v);
 	}
 
 	while (loops-- > 0) {
@@ -86,7 +86,7 @@ int main(int argc, char **argv)
 		found = 0;
 		for (i = 0; i < lookups; i++) {
 			v = rnd64();
-			old = cbub_lookup(&cb_root, (const void*)&v, sizeof(v));
+			old = cebub_lookup(&ceb_root, (const void*)&v, sizeof(v));
 			if (old)
 				found++;
 		}

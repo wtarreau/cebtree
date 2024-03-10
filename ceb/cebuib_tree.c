@@ -1,7 +1,7 @@
 /*
- * Compact Binary Trees - exported functions for operations on mb keys
+ * Compact Elastic Binary Trees - exported functions operating on indirect blocks
  *
- * Copyright (C) 2014-2023 Willy Tarreau - w@1wt.eu
+ * Copyright (C) 2014-2024 Willy Tarreau - w@1wt.eu
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
@@ -28,70 +28,70 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "cbtree.h"
-#include "cbtree-prv.h"
+#include "cebtree.h"
+#include "cebtree-prv.h"
 
-/* Inserts node <node> into unique tree <tree> based on its key that
- * immediately follows the node and for <len> bytes. Returns the
- * inserted node or the one that already contains the same key.
+/* Inserts node <node> into unique tree <tree> based on its key whose pointer
+ * immediately follows the node and for <len> bytes. Returns the inserted node
+ * or the one that already contains the same key.
  */
-struct cb_node *cbub_insert(struct cb_node **root, struct cb_node *node, size_t len)
+struct ceb_node *cebuib_insert(struct ceb_node **root, struct ceb_node *node, size_t len)
 {
-	const void *key = &container_of(node, struct cb_node_key, node)->key.mb;
+	const void *key = container_of(node, struct ceb_node_key, node)->key.ptr;
 
-	return _cbu_insert(root, node, CB_KT_MB, 0, len, key);
+	return _cebu_insert(root, node, CEB_KT_IM, 0, len, key);
 }
 
 /* return the first node or NULL if not found. */
-struct cb_node *cbub_first(struct cb_node **root)
+struct ceb_node *cebuib_first(struct ceb_node **root)
 {
-	return _cbu_first(root, CB_KT_MB);
+	return _cebu_first(root, CEB_KT_IM);
 }
 
 /* return the last node or NULL if not found. */
-struct cb_node *cbub_last(struct cb_node **root)
+struct ceb_node *cebuib_last(struct ceb_node **root)
 {
-	return _cbu_last(root, CB_KT_MB);
+	return _cebu_last(root, CEB_KT_IM);
 }
 
 /* look up the specified key <key> of length <len>, and returns either the node
  * containing it, or NULL if not found.
  */
-struct cb_node *cbub_lookup(struct cb_node **root, const void *key, size_t len)
+struct ceb_node *cebuib_lookup(struct ceb_node **root, const void *key, size_t len)
 {
-	return _cbu_lookup(root, CB_KT_MB, 0, len, key);
+	return _cebu_lookup(root, CEB_KT_IM, 0, len, key);
 }
 
 /* look up the specified key or the highest below it, and returns either the
  * node containing it, or NULL if not found.
  */
-struct cb_node *cbub_lookup_le(struct cb_node **root, const void *key, size_t len)
+struct ceb_node *cebuib_lookup_le(struct ceb_node **root, const void *key, size_t len)
 {
-	return _cbu_lookup_le(root, CB_KT_MB, 0, len, key);
+	return _cebu_lookup_le(root, CEB_KT_IM, 0, len, key);
 }
 
 /* look up highest key below the specified one, and returns either the
  * node containing it, or NULL if not found.
  */
-struct cb_node *cbub_lookup_lt(struct cb_node **root, const void *key, size_t len)
+struct ceb_node *cebuib_lookup_lt(struct ceb_node **root, const void *key, size_t len)
 {
-	return _cbu_lookup_lt(root, CB_KT_MB, 0, len, key);
+	return _cebu_lookup_lt(root, CEB_KT_IM, 0, len, key);
 }
 
 /* look up the specified key or the smallest above it, and returns either the
  * node containing it, or NULL if not found.
  */
-struct cb_node *cbub_lookup_ge(struct cb_node **root, const void *key, size_t len)
+struct ceb_node *cebuib_lookup_ge(struct ceb_node **root, const void *key, size_t len)
 {
-	return _cbu_lookup_ge(root, CB_KT_MB, 0, len, key);
+	return _cebu_lookup_ge(root, CEB_KT_IM, 0, len, key);
 }
 
 /* look up the smallest key above the specified one, and returns either the
  * node containing it, or NULL if not found.
  */
-struct cb_node *cbub_lookup_gt(struct cb_node **root, const void *key, size_t len)
+struct ceb_node *cebuib_lookup_gt(struct ceb_node **root, const void *key, size_t len)
 {
-	return _cbu_lookup_gt(root, CB_KT_MB, 0, len, key);
+	return _cebu_lookup_gt(root, CEB_KT_IM, 0, len, key);
 }
 
 /* search for the next node after the specified one, and return it, or NULL if
@@ -100,11 +100,11 @@ struct cb_node *cbub_lookup_gt(struct cb_node **root, const void *key, size_t le
  * branch at that fork. The <len> field must correspond to the key length in
  * bytes.
  */
-struct cb_node *cbub_next(struct cb_node **root, struct cb_node *node, size_t len)
+struct ceb_node *cebuib_next(struct ceb_node **root, struct ceb_node *node, size_t len)
 {
-	const void *key = &container_of(node, struct cb_node_key, node)->key.mb;
+	const void *key = container_of(node, struct ceb_node_key, node)->key.ptr;
 
-	return _cbu_next(root, CB_KT_MB, 0, len, key);
+	return _cebu_next(root, CEB_KT_IM, 0, len, key);
 }
 
 /* search for the prev node before the specified one, and return it, or NULL if
@@ -113,28 +113,28 @@ struct cb_node *cbub_next(struct cb_node **root, struct cb_node *node, size_t le
  * branch at that fork. The <len> field must correspond to the key length in
  * bytes.
  */
-struct cb_node *cbub_prev(struct cb_node **root, struct cb_node *node, size_t len)
+struct ceb_node *cebuib_prev(struct ceb_node **root, struct ceb_node *node, size_t len)
 {
-	const void *key = &container_of(node, struct cb_node_key, node)->key.mb;
+	const void *key = container_of(node, struct ceb_node_key, node)->key.ptr;
 
-	return _cbu_prev(root, CB_KT_MB, 0, len, key);
+	return _cebu_prev(root, CEB_KT_IM, 0, len, key);
 }
 
 /* look up the specified node with its key and deletes it if found, and in any
  * case, returns the node. The <len> field must correspond to the key length in
  * bytes.
  */
-struct cb_node *cbub_delete(struct cb_node **root, struct cb_node *node, size_t len)
+struct ceb_node *cebuib_delete(struct ceb_node **root, struct ceb_node *node, size_t len)
 {
-	const void *key = &container_of(node, struct cb_node_key, node)->key.mb;
+	const void *key = container_of(node, struct ceb_node_key, node)->key.ptr;
 
-	return _cbu_delete(root, node, CB_KT_MB, 0, len, key);
+	return _cebu_delete(root, node, CEB_KT_IM, 0, len, key);
 }
 
 /* look up the specified key, and detaches it and returns it if found, or NULL
  * if not found. The <len> field must correspond to the key length in bytes.
  */
-struct cb_node *cbub_pick(struct cb_node **root, const void *key, size_t len)
+struct ceb_node *cebuib_pick(struct ceb_node **root, const void *key, size_t len)
 {
-	return _cbu_delete(root, NULL, CB_KT_MB, 0, len, key);
+	return _cebu_delete(root, NULL, CEB_KT_IM, 0, len, key);
 }

@@ -2,18 +2,18 @@ CFLAGS = -O3 -W -Wall -Wdeclaration-after-statement -Wno-unused-parameter -ggdb3
 
 COMMON_DIR = common
 
-CB_DIR = cb
-CB_SRC = $(wildcard $(CB_DIR)/cb*.c)
-CB_OBJ = $(CB_SRC:%.c=%.o)
+CEB_DIR = ceb
+CEB_SRC = $(wildcard $(CEB_DIR)/ceb*.c)
+CEB_OBJ = $(CEB_SRC:%.c=%.o)
 
-OBJS = $(CB_OBJ)
+OBJS = $(CEB_OBJ)
 
 TEST_DIR = tests
-TEST_BIN = $(addprefix $(TEST_DIR)/,stresscbu32 testcbu32 stresscbu64 testcbu64 testcbul stresscbul speedcbul testcbub speedcbub testcbus speedcbus)
+TEST_BIN = $(addprefix $(TEST_DIR)/,stresscebu32 testcebu32 stresscebu64 testcebu64 testcebul stresscebul speedcebul testcebub speedcebub testcebus speedcebus)
 
 all: test
 
-libcbtree.a: $(OBJS)
+libcebtree.a: $(OBJS)
 	$(AR) rv $@ $^
 
 %.o: %.c
@@ -21,15 +21,15 @@ libcbtree.a: $(OBJS)
 
 test: $(TEST_BIN)
 
-tests/%: tests/%.c libcbtree.a
-	$(CC) $(CFLAGS) -I$(COMMON_DIR) -I$(CB_DIR) -o $@ $< -L. -lcbtree
+tests/%: tests/%.c libcebtree.a
+	$(CC) $(CFLAGS) -I$(COMMON_DIR) -I$(CEB_DIR) -o $@ $< -L. -lcebtree
 
-tests/stresscbul: tests/stresscbul.c libcbtree.a
-	$(CC) $(CFLAGS) -I$(COMMON_DIR) -I$(CB_DIR) -o $@ $< -L. -lcbtree -pthread
+tests/stresscebul: tests/stresscebul.c libcebtree.a
+	$(CC) $(CFLAGS) -I$(COMMON_DIR) -I$(CEB_DIR) -o $@ $< -L. -lcebtree -pthread
 
 clean:
-	-rm -fv libcbtree.a $(OBJS) *~ *.rej core $(TEST_BIN) ${EXAMPLES}
-	-rm -fv $(addprefix $(CB_DIR)/,*~ *.rej core)
+	-rm -fv libcebtree.a $(OBJS) *~ *.rej core $(TEST_BIN) ${EXAMPLES}
+	-rm -fv $(addprefix $(CEB_DIR)/,*~ *.rej core)
 
 ifeq ($(wildcard .git),.git)
 VERSION := $(shell [ -d .git/. ] && ref=`(git describe --tags --match 'v*') 2>/dev/null` && ref=$${ref%-g*} && echo "$${ref\#v}")
@@ -37,6 +37,6 @@ SUBVERS := $(shell comms=`git log --no-merges v$(VERSION).. 2>/dev/null |grep -c
 endif
 
 git-tar: .git
-	git archive --format=tar --prefix="cbtree-$(VERSION)/" HEAD | gzip -9 > cbtree-$(VERSION)$(SUBVERS).tar.gz
+	git archive --format=tar --prefix="cebtree-$(VERSION)/" HEAD | gzip -9 > cebtree-$(VERSION)$(SUBVERS).tar.gz
 
 .PHONY: examples tests

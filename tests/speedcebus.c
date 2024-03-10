@@ -9,12 +9,12 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "cbus_tree.h"
+#include "cebus_tree.h"
 
-struct cb_node *cb_root = NULL;
+struct ceb_node *ceb_root = NULL;
 
 struct key {
-	struct cb_node node;
+	struct ceb_node node;
 	char key[21];
 };
 
@@ -143,8 +143,8 @@ static void rnd64_to_str(char *dst)
 int main(int argc, char **argv)
 {
 	int entries, lookups, loops, found, i;
-	const struct cb_node *old;
-	struct cb_node *prev, *ret;
+	const struct ceb_node *old;
+	struct ceb_node *prev, *ret;
 	struct key *key;
 
 	if (argc != 4) {
@@ -161,15 +161,15 @@ int main(int argc, char **argv)
 
 	for (i = 0; i < entries; i++) {
 		rnd64_to_str(key->key);
-		old = cbus_lookup(&cb_root, &key->key);
+		old = cebus_lookup(&ceb_root, &key->key);
 		if (old)
 			fprintf(stderr, "Note: value %s already present at %p\n", key->key, old);
 
 	try_again:
-		prev = cbus_insert(&cb_root, &key->node);
+		prev = cebus_insert(&ceb_root, &key->node);
 		if (prev != &key->node) {
 			fprintf(stderr, "Note: failed to insert %s, previous was at %p\n", key->key, old);
-			ret = cbus_delete(&cb_root, prev);
+			ret = cebus_delete(&ceb_root, prev);
 			if (ret != prev) {
 				/* was not properly removed either: THIS IS A BUG! */
 				fprintf(stderr, "failed to remove %p (returned %p)\n", prev, ret);
@@ -189,7 +189,7 @@ int main(int argc, char **argv)
 		found = 0;
 		for (i = 0; i < lookups; i++) {
 			rnd64_to_str(key->key);
-			old = cbus_lookup(&cb_root, &key->key);
+			old = cebus_lookup(&ceb_root, &key->key);
 			if (old)
 				found++;
 		}

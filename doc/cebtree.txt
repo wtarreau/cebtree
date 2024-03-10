@@ -1,9 +1,9 @@
-2021-08-30 -- cbtree (Compact Binary Tree)
+2021-08-30 -- cebtree (Compact Elastic Binary Tree)
 
 Summary
 -------
 
-The cbtree is a much more compact variant of the ebtree, which only contains
+The cebtree is a much more compact variant of the ebtree, which only contains
 two branch pointers. There is no upward pointers so some operations are slower
 as they will require a lookup. For example there is no next().
 
@@ -108,7 +108,7 @@ inlined and which return a wide variety of pointers depending on the use case:
   - ... or variants of these such as pointer to the pointer itself, info on the
     side and so on.
 
-These would be returned as void** or struct cbtree** that the calling functions
+These would be returned as void** or struct cebtree** that the calling functions
 (not inlined) would explicitly assign to &local_var or to NULL so that the
 compiler can trivially optimize them away.
 
