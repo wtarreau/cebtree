@@ -357,6 +357,7 @@ struct ceb_node *_cebu_descend(struct ceb_node **root,
 	size_t rlen = 0;  // right vs key matching length
 	size_t plen = 0;  // previous common len between branches
 	int found = 0;    // key was found (saves an extra strcmp for arrays)
+	ptrdiff_t kofs = sizeof(struct ceb_node);
 
 	dbg(__LINE__, "_enter__", meth, key_type, root, NULL, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 
@@ -392,9 +393,9 @@ struct ceb_node *_cebu_descend(struct ceb_node **root,
 		__builtin_prefetch(p->b[1], 0);
 
 		/* neither pointer is tagged */
-		k = &container_of(p, struct ceb_node_key, node)->key;
-		l = &container_of(p->b[0], struct ceb_node_key, node)->key;
-		r = &container_of(p->b[1], struct ceb_node_key, node)->key;
+		k = NODEK(p, kofs);
+		l = NODEK(p->b[0], kofs);
+		r = NODEK(p->b[1], kofs);
 
 		dbg(__LINE__, "newp", meth, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 
