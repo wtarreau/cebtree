@@ -1297,7 +1297,7 @@ done:
 
 /* dump the root and its link to the first node or leaf */
 __attribute__((unused))
-static void cebu_default_dump_root(enum ceb_key_type key_type, struct ceb_node *const *root, const void *ctx)
+static void cebu_default_dump_root(ptrdiff_t kofs, enum ceb_key_type key_type, struct ceb_node *const *root, const void *ctx)
 {
 	const struct ceb_node *node;
 
@@ -1314,11 +1314,10 @@ static void cebu_default_dump_root(enum ceb_key_type key_type, struct ceb_node *
 
 /* dump a node */
 __attribute__((unused))
-static void cebu_default_dump_node(enum ceb_key_type key_type, const struct ceb_node *node, int level, const void *ctx)
+static void cebu_default_dump_node(ptrdiff_t kofs, enum ceb_key_type key_type, const struct ceb_node *node, int level, const void *ctx)
 {
 	unsigned long long int_key = 0;
 	uint64_t pxor, lxor, rxor;
-	ptrdiff_t kofs = sizeof(*node);
 
 	switch (key_type) {
 	case CEB_KT_ADDR:
@@ -1335,7 +1334,7 @@ static void cebu_default_dump_node(enum ceb_key_type key_type, const struct ceb_
 	}
 
 	/* xor of the keys of the two lower branches */
-	pxor = _xor_branches(sizeof(*node), key_type, 0, 0, NULL,
+	pxor = _xor_branches(kofs, key_type, 0, 0, NULL,
 			     node->b[0], node->b[1]);
 
 	/* xor of the keys of the left branch's lower branches */
@@ -1402,10 +1401,9 @@ static void cebu_default_dump_node(enum ceb_key_type key_type, const struct ceb_
 
 /* dump a leaf */
 __attribute__((unused))
-static void cebu_default_dump_leaf(enum ceb_key_type key_type, const struct ceb_node *node, int level, const void *ctx)
+static void cebu_default_dump_leaf(ptrdiff_t kofs, enum ceb_key_type key_type, const struct ceb_node *node, int level, const void *ctx)
 {
 	unsigned long long int_key = 0;
-	ptrdiff_t kofs = sizeof(*node);
 	uint64_t pxor;
 
 	switch (key_type) {
@@ -1464,11 +1462,11 @@ static void cebu_default_dump_leaf(enum ceb_key_type key_type, const struct ceb_
  * callbacks above if left NULL.
  */
 __attribute__((unused))
-static const struct ceb_node *cebu_default_dump_tree(enum ceb_key_type key_type, struct ceb_node *const *root,
+static const struct ceb_node *cebu_default_dump_tree(ptrdiff_t kofs, enum ceb_key_type key_type, struct ceb_node *const *root,
                                                      uint64_t pxor, const void *last, int level, const void *ctx,
-                                                     void (*root_dump)(enum ceb_key_type key_type, struct ceb_node *const *root, const void *ctx),
-                                                     void (*node_dump)(enum ceb_key_type key_type, const struct ceb_node *node, int level, const void *ctx),
-                                                     void (*leaf_dump)(enum ceb_key_type key_type, const struct ceb_node *node, int level, const void *ctx))
+                                                     void (*root_dump)(ptrdiff_t kofs, enum ceb_key_type key_type, struct ceb_node *const *root, const void *ctx),
+                                                     void (*node_dump)(ptrdiff_t kofs, enum ceb_key_type key_type, const struct ceb_node *node, int level, const void *ctx),
+                                                     void (*leaf_dump)(ptrdiff_t kofs, enum ceb_key_type key_type, const struct ceb_node *node, int level, const void *ctx))
 {
 	const struct ceb_node *node = *root;
 	uint64_t xor;
@@ -1487,18 +1485,18 @@ static const struct ceb_node *cebu_default_dump_tree(enum ceb_key_type key_type,
 
 	if (!level) {
 		/* dump the first arrow */
-		root_dump(key_type, root, ctx);
+		root_dump(kofs, key_type, root, ctx);
 	}
 
 	/* regular nodes, all branches are canonical */
 
 	if (node->b[0] == node->b[1]) {
 		/* first inserted leaf */
-		leaf_dump(key_type, node, level, ctx);
+		leaf_dump(kofs, key_type, node, level, ctx);
 		return node;
 	}
 
-	xor = _xor_branches(sizeof(*node), key_type, 0, 0, NULL,
+	xor = _xor_branches(kofs, key_type, 0, 0, NULL,
 			    node->b[0], node->b[1]);
 
 	switch (key_type) {
@@ -1507,24 +1505,24 @@ static const struct ceb_node *cebu_default_dump_tree(enum ceb_key_type key_type,
 	case CEB_KT_U64:
 		if (pxor && xor >= pxor) {
 			/* that's a leaf for a scalar type */
-			leaf_dump(key_type, node, level, ctx);
+			leaf_dump(kofs, key_type, node, level, ctx);
 			return node;
 		}
 		break;
 	default:
 		if (pxor && xor <= pxor) {
 			/* that's a leaf for a non-scalar type */
-			leaf_dump(key_type, node, level, ctx);
+			leaf_dump(kofs, key_type, node, level, ctx);
 			return node;
 		}
 		break;
 	}
 
 	/* that's a regular node */
-	node_dump(key_type, node, level, ctx);
+	node_dump(kofs, key_type, node, level, ctx);
 
-	last = cebu_default_dump_tree(key_type, &node->b[0], xor, last, level + 1, ctx, root_dump, node_dump, leaf_dump);
-	return cebu_default_dump_tree(key_type, &node->b[1], xor, last, level + 1, ctx, root_dump, node_dump, leaf_dump);
+	last = cebu_default_dump_tree(kofs, key_type, &node->b[0], xor, last, level + 1, ctx, root_dump, node_dump, leaf_dump);
+	return cebu_default_dump_tree(kofs, key_type, &node->b[1], xor, last, level + 1, ctx, root_dump, node_dump, leaf_dump);
 }
 
 

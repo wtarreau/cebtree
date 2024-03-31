@@ -149,7 +149,7 @@ void cebu64_default_dump(struct ceb_node **ceb_root, const char *label, const vo
 	printf("  node [fontname=\"fixed\" fontsize=8 shape=\"box\" style=\"filled\" color=\"black\" fillcolor=\"white\"];\n"
 	       "  edge [fontname=\"fixed\" fontsize=8 style=\"solid\" color=\"magenta\" dir=\"forward\"];\n");
 
-	cebu_default_dump_tree(CEB_KT_U64, ceb_root, 0, NULL, 0, ctx, NULL, NULL, NULL);
+	cebu_default_dump_tree(sizeof(struct ceb_node), CEB_KT_U64, ceb_root, 0, NULL, 0, ctx, NULL, NULL, NULL);
 
 	printf("}\n");
 }
