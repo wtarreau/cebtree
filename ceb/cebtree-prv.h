@@ -199,7 +199,7 @@ static void dbg(int line,
                 enum ceb_walk_meth meth,
                 enum ceb_key_type key_type,
                 struct ceb_node * const *root,
-                const struct ceb_node_key *p,
+                const struct ceb_node *p,
                 uint32_t key_u32,
                 uint64_t key_u64,
                 const void *key_ptr,
@@ -231,33 +231,36 @@ static void dbg(int line,
 	};
 	const struct ceb_node_key *l = NULL;
 	const struct ceb_node_key *r = NULL;
+	union ceb_key_storage *k = NULL;
 	const char *kstr __attribute__((unused)) = ktypes[key_type];
 	const char *mstr __attribute__((unused)) = meths[meth];
 	long long nlen __attribute__((unused)) = 0;
 	long long llen __attribute__((unused)) = 0;
 	long long rlen __attribute__((unused)) = 0;
 	long long xlen __attribute__((unused)) = 0;
+	ptrdiff_t kofs = sizeof(struct ceb_node);
 
 	if (p) {
-		l = container_of(p->node.b[0], struct ceb_node_key, node);
-		r = container_of(p->node.b[1], struct ceb_node_key, node);
-		nlen = _xor_branches(sizeof(p->node), key_type, key_u32, key_u64, key_ptr, &p->node, NULL);
+		k = &container_of(p, struct ceb_node_key, node)->key;
+		l = container_of(p->b[0], struct ceb_node_key, node);
+		r = container_of(p->b[1], struct ceb_node_key, node);
+		nlen = _xor_branches(kofs, key_type, key_u32, key_u64, key_ptr, p, NULL);
 	}
 
 	if (l)
-		llen = _xor_branches(sizeof(p->node), key_type, key_u32, key_u64, key_ptr, &l->node, NULL);
+		llen = _xor_branches(kofs, key_type, key_u32, key_u64, key_ptr, &l->node, NULL);
 
 	if (r)
-		rlen = _xor_branches(sizeof(p->node), key_type, key_u32, key_u64, key_ptr, NULL, &r->node);
+		rlen = _xor_branches(kofs, key_type, key_u32, key_u64, key_ptr, NULL, &r->node);
 
 	if (l && r)
-		xlen = _xor_branches(sizeof(p->node), key_type, key_u32, key_u64, key_ptr, &l->node, &r->node);
+		xlen = _xor_branches(kofs, key_type, key_u32, key_u64, key_ptr, &l->node, &r->node);
 
 	switch (key_type) {
 	case CEB_KT_U32:
 		CEBDBG("%04d (%8s) m=%s.%s key=%#x root=%p pxor=%#x p=%p,%#x(^%#llx) l=%p,%#x(^%#llx) r=%p,%#x(^%#llx) l^r=%#llx\n",
 		      line, pfx, kstr, mstr, key_u32, root, px32,
-		      p ? &p->node : NULL, p ? p->key.u32 : 0, nlen,
+		      p, k ? k->u32 : 0, nlen,
 		      l ? &l->node : NULL, l ? l->key.u32 : 0, llen,
 		      r ? &r->node : NULL, r ? r->key.u32 : 0, rlen,
 		      xlen);
@@ -265,7 +268,7 @@ static void dbg(int line,
 	case CEB_KT_U64:
 		CEBDBG("%04d (%8s) m=%s.%s key=%#llx root=%p pxor=%#llx p=%p,%#llx(^%#llx) l=%p,%#llx(^%#llx) r=%p,%#llx(^%#llx) l^r=%#llx\n",
 		      line, pfx, kstr, mstr, (long long)key_u64, root, (long long)px64,
-		      p ? &p->node : NULL, (long long)(p ? p->key.u64 : 0), nlen,
+		      p, (long long)(k ? k->u64 : 0), nlen,
 		      l ? &l->node : NULL, (long long)(l ? l->key.u64 : 0), llen,
 		      r ? &r->node : NULL, (long long)(r ? r->key.u64 : 0), rlen,
 		      xlen);
@@ -273,7 +276,7 @@ static void dbg(int line,
 	case CEB_KT_MB:
 		CEBDBG("%04d (%8s) m=%s.%s key=%p root=%p plen=%ld p=%p,%p(^%llu) l=%p,%p(^%llu) r=%p,%p(^%llu) l^r=%llu\n",
 		      line, pfx, kstr, mstr, key_ptr, root, (long)plen,
-		      p ? &p->node : NULL, p ? p->key.mb : 0, nlen,
+		      p, k ? k->mb : 0, nlen,
 		      l ? &l->node : NULL, l ? l->key.mb : 0, llen,
 		      r ? &r->node : NULL, r ? r->key.mb : 0, rlen,
 		      xlen);
@@ -281,7 +284,7 @@ static void dbg(int line,
 	case CEB_KT_IM:
 		CEBDBG("%04d (%8s) m=%s.%s key=%p root=%p plen=%ld p=%p,%p(^%llu) l=%p,%p(^%llu) r=%p,%p(^%llu) l^r=%llu\n",
 		      line, pfx, kstr, mstr, key_ptr, root, (long)plen,
-		      p ? &p->node : NULL, p ? p->key.ptr : 0, nlen,
+		      p, k ? k->ptr : 0, nlen,
 		      l ? &l->node : NULL, l ? l->key.ptr : 0, llen,
 		      r ? &r->node : NULL, r ? r->key.ptr : 0, rlen,
 		      xlen);
@@ -289,7 +292,7 @@ static void dbg(int line,
 	case CEB_KT_ST:
 		CEBDBG("%04d (%8s) m=%s.%s key='%s' root=%p plen=%ld p=%p,%s(^%llu) l=%p,%s(^%llu) r=%p,%s(^%llu) l^r=%llu\n",
 		      line, pfx, kstr, mstr, key_ptr ? (const char *)key_ptr : "", root, (long)plen,
-		      p ? &p->node : NULL, p ? (const char *)p->key.str : "-", nlen,
+		      p, k ? (const char *)k->str : "-", nlen,
 		      l ? &l->node : NULL, l ? (const char *)l->key.str : "-", llen,
 		      r ? &r->node : NULL, r ? (const char *)r->key.str : "-", rlen,
 		      xlen);
@@ -297,7 +300,7 @@ static void dbg(int line,
 	case CEB_KT_IS:
 		CEBDBG("%04d (%8s) m=%s.%s key='%s' root=%p plen=%ld p=%p,%s(^%llu) l=%p,%s(^%llu) r=%p,%s(^%llu) l^r=%llu\n",
 		      line, pfx, kstr, mstr, key_ptr ? (const char *)key_ptr : "", root, (long)plen,
-		      p ? &p->node : NULL, p ? (const char *)p->key.ptr : "-", nlen,
+		      p, k ? (const char *)k->ptr : "-", nlen,
 		      l ? &l->node : NULL, l ? (const char *)l->key.ptr : "-", llen,
 		      r ? &r->node : NULL, r ? (const char *)r->key.ptr : "-", rlen,
 		      xlen);
@@ -306,7 +309,7 @@ static void dbg(int line,
 		/* key type is the node's address */
 		CEBDBG("%04d (%8s) m=%s.%s key=%#llx root=%p pxor=%#llx p=%p,%#llx(^%#llx) l=%p,%#llx(^%#llx) r=%p,%#llx(^%#llx) l^r=%#llx\n",
 		      line, pfx, kstr, mstr, (long long)(uintptr_t)key_ptr, root, (long long)px64,
-		      p ? &p->node : NULL, (long long)(uintptr_t)p, nlen,
+		      p, (long long)(uintptr_t)p, nlen,
 		      l ? &l->node : NULL, (long long)(uintptr_t)l, llen,
 		      r ? &r->node : NULL, (long long)(uintptr_t)r, rlen,
 		      xlen);
@@ -399,11 +402,11 @@ struct ceb_node *_cebu_descend(struct ceb_node **root,
 		l = &container_of(p->node.b[0], struct ceb_node_key, node)->key;
 		r = &container_of(p->node.b[1], struct ceb_node_key, node)->key;
 
-		dbg(__LINE__, "newp", meth, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+		dbg(__LINE__, "newp", meth, key_type, root, &p->node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 
 		/* two equal pointers identifies the nodeless leaf. */
 		if (l == r) {
-			dbg(__LINE__, "l==r", meth, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+			dbg(__LINE__, "l==r", meth, key_type, root, &p->node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 			break;
 		}
 
@@ -462,7 +465,7 @@ struct ceb_node *_cebu_descend(struct ceb_node **root,
 
 			xor32 = l->u32 ^ r->u32;
 			if (xor32 > pxor32) { // test using 2 4 6 4
-				dbg(__LINE__, "xor>", meth, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+				dbg(__LINE__, "xor>", meth, key_type, root, &p->node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 				break;
 			}
 
@@ -470,13 +473,13 @@ struct ceb_node *_cebu_descend(struct ceb_node **root,
 				/* let's stop if our key is not there */
 
 				if ((key_u32 ^ l->u32) > xor32 && (key_u32 ^ r->u32) > xor32) {
-					dbg(__LINE__, "mismatch", meth, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+					dbg(__LINE__, "mismatch", meth, key_type, root, &p->node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 					break;
 				}
 
 				if (ret_npside || ret_nparent) {
 					if (key_u32 == p->key.u32) {
-						dbg(__LINE__, "equal", meth, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+						dbg(__LINE__, "equal", meth, key_type, root, &p->node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 						nparent = lparent;
 						npside  = lpside;
 					}
@@ -494,7 +497,7 @@ struct ceb_node *_cebu_descend(struct ceb_node **root,
 
 			xor64 = l->u64 ^ r->u64;
 			if (xor64 > pxor64) { // test using 2 4 6 4
-				dbg(__LINE__, "xor>", meth, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+				dbg(__LINE__, "xor>", meth, key_type, root, &p->node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 				break;
 			}
 
@@ -502,13 +505,13 @@ struct ceb_node *_cebu_descend(struct ceb_node **root,
 				/* let's stop if our key is not there */
 
 				if ((key_u64 ^ l->u64) > xor64 && (key_u64 ^ r->u64) > xor64) {
-					dbg(__LINE__, "mismatch", meth, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+					dbg(__LINE__, "mismatch", meth, key_type, root, &p->node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 					break;
 				}
 
 				if (ret_npside || ret_nparent) {
 					if (key_u64 == p->key.u64) {
-						dbg(__LINE__, "equal", meth, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+						dbg(__LINE__, "equal", meth, key_type, root, &p->node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 						nparent = lparent;
 						npside  = lpside;
 					}
@@ -531,7 +534,7 @@ struct ceb_node *_cebu_descend(struct ceb_node **root,
 			xlen = equal_bits(l->mb, r->mb, 0, key_u64 << 3);
 			if (xlen < plen) {
 				/* this is a leaf. E.g. triggered using 2 4 6 4 */
-				dbg(__LINE__, "xor>", meth, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+				dbg(__LINE__, "xor>", meth, key_type, root, &p->node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 				break;
 			}
 
@@ -539,7 +542,7 @@ struct ceb_node *_cebu_descend(struct ceb_node **root,
 				/* let's stop if our key is not there */
 
 				if (llen < xlen && rlen < xlen) {
-					dbg(__LINE__, "mismatch", meth, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+					dbg(__LINE__, "mismatch", meth, key_type, root, &p->node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 					break;
 				}
 
@@ -550,7 +553,7 @@ struct ceb_node *_cebu_descend(struct ceb_node **root,
 						mlen = xlen;
 
 					if ((uint64_t)xlen / 8 == key_u64 || memcmp(key_ptr + mlen / 8, p->key.mb + mlen / 8, key_u64 - mlen / 8) == 0) {
-						dbg(__LINE__, "equal", meth, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+						dbg(__LINE__, "equal", meth, key_type, root, &p->node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 						nparent = lparent;
 						npside  = lpside;
 						found = 1;
@@ -574,7 +577,7 @@ struct ceb_node *_cebu_descend(struct ceb_node **root,
 			xlen = equal_bits(l->ptr, r->ptr, 0, key_u64 << 3);
 			if (xlen < plen) {
 				/* this is a leaf. E.g. triggered using 2 4 6 4 */
-				dbg(__LINE__, "xor>", meth, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+				dbg(__LINE__, "xor>", meth, key_type, root, &p->node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 				break;
 			}
 
@@ -582,7 +585,7 @@ struct ceb_node *_cebu_descend(struct ceb_node **root,
 				/* let's stop if our key is not there */
 
 				if (llen < xlen && rlen < xlen) {
-					dbg(__LINE__, "mismatch", meth, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+					dbg(__LINE__, "mismatch", meth, key_type, root, &p->node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 					break;
 				}
 
@@ -593,7 +596,7 @@ struct ceb_node *_cebu_descend(struct ceb_node **root,
 						mlen = xlen;
 
 					if ((uint64_t)xlen / 8 == key_u64 || memcmp(key_ptr + mlen / 8, p->key.ptr + mlen / 8, key_u64 - mlen / 8) == 0) {
-						dbg(__LINE__, "equal", meth, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+						dbg(__LINE__, "equal", meth, key_type, root, &p->node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 						nparent = lparent;
 						npside  = lpside;
 						found = 1;
@@ -622,7 +625,7 @@ struct ceb_node *_cebu_descend(struct ceb_node **root,
 			xlen = string_equal_bits(l->str, r->str, 0);
 			if (xlen < plen) {
 				/* this is a leaf. E.g. triggered using 2 4 6 4 */
-				dbg(__LINE__, "xor>", meth, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+				dbg(__LINE__, "xor>", meth, key_type, root, &p->node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 				break;
 			}
 
@@ -630,7 +633,7 @@ struct ceb_node *_cebu_descend(struct ceb_node **root,
 				/* let's stop if our key is not there */
 
 				if ((unsigned)llen < (unsigned)xlen && (unsigned)rlen < (unsigned)xlen) {
-					dbg(__LINE__, "mismatch", meth, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+					dbg(__LINE__, "mismatch", meth, key_type, root, &p->node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 					break;
 				}
 
@@ -642,7 +645,7 @@ struct ceb_node *_cebu_descend(struct ceb_node **root,
 
 					if (strcmp(key_ptr + mlen / 8, (const void *)p->key.str + mlen / 8) == 0) {
 						/* strcmp() still needed. E.g. 1 2 3 4 10 11 4 3 2 1 10 11 fails otherwise */
-						dbg(__LINE__, "equal", meth, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+						dbg(__LINE__, "equal", meth, key_type, root, &p->node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 						nparent = lparent;
 						npside  = lpside;
 						found = 1;
@@ -671,7 +674,7 @@ struct ceb_node *_cebu_descend(struct ceb_node **root,
 			xlen = string_equal_bits(l->ptr, r->ptr, 0);
 			if (xlen < plen) {
 				/* this is a leaf. E.g. triggered using 2 4 6 4 */
-				dbg(__LINE__, "xor>", meth, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+				dbg(__LINE__, "xor>", meth, key_type, root, &p->node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 				break;
 			}
 
@@ -679,7 +682,7 @@ struct ceb_node *_cebu_descend(struct ceb_node **root,
 				/* let's stop if our key is not there */
 
 				if ((unsigned)llen < (unsigned)xlen && (unsigned)rlen < (unsigned)xlen) {
-					dbg(__LINE__, "mismatch", meth, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+					dbg(__LINE__, "mismatch", meth, key_type, root, &p->node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 					break;
 				}
 
@@ -691,7 +694,7 @@ struct ceb_node *_cebu_descend(struct ceb_node **root,
 
 					if (strcmp(key_ptr + mlen / 8, (const void *)p->key.ptr + mlen / 8) == 0) {
 						/* strcmp() still needed. E.g. 1 2 3 4 10 11 4 3 2 1 10 11 fails otherwise */
-						dbg(__LINE__, "equal", meth, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+						dbg(__LINE__, "equal", meth, key_type, root, &p->node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 						nparent = lparent;
 						npside  = lpside;
 						found = 1;
@@ -710,7 +713,7 @@ struct ceb_node *_cebu_descend(struct ceb_node **root,
 
 			xoraddr = (uintptr_t)l ^ (uintptr_t)r;
 			if (xoraddr > (uintptr_t)pxor64) { // test using 2 4 6 4
-				dbg(__LINE__, "xor>", meth, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+				dbg(__LINE__, "xor>", meth, key_type, root, &p->node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 				break;
 			}
 
@@ -718,13 +721,13 @@ struct ceb_node *_cebu_descend(struct ceb_node **root,
 				/* let's stop if our key is not there */
 
 				if (((uintptr_t)key_ptr ^ (uintptr_t)l) > xoraddr && ((uintptr_t)key_ptr ^ (uintptr_t)r) > xoraddr) {
-					dbg(__LINE__, "mismatch", meth, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+					dbg(__LINE__, "mismatch", meth, key_type, root, &p->node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 					break;
 				}
 
 				if (ret_npside || ret_nparent) {
 					if ((uintptr_t)key_ptr == (uintptr_t)p) {
-						dbg(__LINE__, "equal", meth, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+						dbg(__LINE__, "equal", meth, key_type, root, &p->node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 						nparent = lparent;
 						npside  = lpside;
 					}
@@ -747,7 +750,7 @@ struct ceb_node *_cebu_descend(struct ceb_node **root,
 			if (meth == CEB_WM_NXT)
 				brside = 0;
 
-			dbg(__LINE__, "side1", meth, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+			dbg(__LINE__, "side1", meth, key_type, root, &p->node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 		}
 		else {
 			if (meth == CEB_WM_KNX || meth == CEB_WM_KGE || meth == CEB_WM_KGT)
@@ -758,12 +761,12 @@ struct ceb_node *_cebu_descend(struct ceb_node **root,
 			if (meth == CEB_WM_PRV)
 				brside = 1;
 
-			dbg(__LINE__, "side0", meth, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+			dbg(__LINE__, "side0", meth, key_type, root, &p->node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 		}
 
 		if (p == container_of(*root, struct ceb_node_key, node)) {
 			/* loops over itself, it's a leaf */
-			dbg(__LINE__, "loop", meth, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+			dbg(__LINE__, "loop", meth, key_type, root, &p->node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 			break;
 		}
 	}
@@ -837,7 +840,7 @@ struct ceb_node *_cebu_descend(struct ceb_node **root,
 	if (ret_back)
 		*ret_back = &bnode->node;
 
-	dbg(__LINE__, "_ret____", meth, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+	dbg(__LINE__, "_ret____", meth, key_type, root, &p->node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 
 	if (meth >= CEB_WM_KEQ) {
 		/* For lookups, an equal value means an instant return. For insertions,
