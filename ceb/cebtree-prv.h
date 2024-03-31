@@ -135,30 +135,36 @@ struct ceb_node_key {
 	union ceb_key_storage key;
 };
 
+/* returns the ceb_key_storage pointer for node <n> and offset <o> */
+#define NODEK(n, o) ((union ceb_key_storage*)(((char *)(n)) + (o)))
+
 /* Returns the xor (or common length) between the two sides <l> and <r> if both
  * are non-null, otherwise between the first non-null one and the value in the
  * associate key. As a reminder, memory blocks place their length in key_u64.
  * This is only intended for internal use, essentially for debugging.
+ *
+ * <kofs> contains the offset between the key and the node's base. When simply
+ * adjacent, this would just be sizeof(ceb_node).
  */
 __attribute__((unused))
-static inline uint64_t _xor_branches(enum ceb_key_type key_type, uint32_t key_u32,
+static inline uint64_t _xor_branches(ptrdiff_t kofs, enum ceb_key_type key_type, uint32_t key_u32,
                                      uint64_t key_u64, const void *key_ptr,
-                                     const struct ceb_node_key *l,
-                                     const struct ceb_node_key *r)
+                                     const struct ceb_node *l,
+                                     const struct ceb_node *r)
 {
 	if (l && r) {
 		if (key_type == CEB_KT_MB)
-			return equal_bits(l->key.mb, r->key.mb, 0, key_u64 << 3);
+			return equal_bits(NODEK(l, kofs)->mb, NODEK(r, kofs)->mb, 0, key_u64 << 3);
 		else if (key_type == CEB_KT_IM)
-			return equal_bits(l->key.mb, r->key.ptr, 0, key_u64 << 3);
+			return equal_bits(NODEK(l, kofs)->mb, NODEK(r, kofs)->ptr, 0, key_u64 << 3);
 		else if (key_type == CEB_KT_ST)
-			return string_equal_bits(l->key.str, r->key.str, 0);
+			return string_equal_bits(NODEK(l, kofs)->str, NODEK(r, kofs)->str, 0);
 		else if (key_type == CEB_KT_IS)
-			return string_equal_bits(l->key.ptr, r->key.ptr, 0);
+			return string_equal_bits(NODEK(l, kofs)->ptr, NODEK(r, kofs)->ptr, 0);
 		else if (key_type == CEB_KT_U64)
-			return l->key.u64 ^ r->key.u64;
+			return NODEK(l, kofs)->u64 ^ NODEK(r, kofs)->u64;
 		else if (key_type == CEB_KT_U32)
-			return l->key.u32 ^ r->key.u32;
+			return NODEK(l, kofs)->u32 ^ NODEK(r, kofs)->u32;
 		else if (key_type == CEB_KT_ADDR)
 			return ((uintptr_t)l ^ (uintptr_t)r);
 		else
@@ -169,17 +175,17 @@ static inline uint64_t _xor_branches(enum ceb_key_type key_type, uint32_t key_u3
 		l = r;
 
 	if (key_type == CEB_KT_MB)
-		return equal_bits(key_ptr, l->key.mb, 0, key_u64 << 3);
+		return equal_bits(key_ptr, NODEK(l, kofs)->mb, 0, key_u64 << 3);
 	else if (key_type == CEB_KT_IM)
-		return equal_bits(key_ptr, l->key.ptr, 0, key_u64 << 3);
+		return equal_bits(key_ptr, NODEK(l, kofs)->ptr, 0, key_u64 << 3);
 	else if (key_type == CEB_KT_ST)
-		return string_equal_bits(key_ptr, l->key.str, 0);
+		return string_equal_bits(key_ptr, NODEK(l, kofs)->str, 0);
 	else if (key_type == CEB_KT_IS)
-		return string_equal_bits(key_ptr, l->key.ptr, 0);
+		return string_equal_bits(key_ptr, NODEK(l, kofs)->ptr, 0);
 	else if (key_type == CEB_KT_U64)
-		return key_u64 ^ l->key.u64;
+		return key_u64 ^ NODEK(l, kofs)->u64;
 	else if (key_type == CEB_KT_U32)
-		return key_u32 ^ l->key.u32;
+		return key_u32 ^ NODEK(l, kofs)->u32;
 	else if (key_type == CEB_KT_ADDR)
 		return ((uintptr_t)key_ptr ^ (uintptr_t)r);
 	else
@@ -235,17 +241,17 @@ static void dbg(int line,
 	if (p) {
 		l = container_of(p->node.b[0], struct ceb_node_key, node);
 		r = container_of(p->node.b[1], struct ceb_node_key, node);
-		nlen = _xor_branches(key_type, key_u32, key_u64, key_ptr, p, NULL);
+		nlen = _xor_branches(sizeof(p->node), key_type, key_u32, key_u64, key_ptr, &p->node, NULL);
 	}
 
 	if (l)
-		llen = _xor_branches(key_type, key_u32, key_u64, key_ptr, l, NULL);
+		llen = _xor_branches(sizeof(p->node), key_type, key_u32, key_u64, key_ptr, &l->node, NULL);
 
 	if (r)
-		rlen = _xor_branches(key_type, key_u32, key_u64, key_ptr, NULL, r);
+		rlen = _xor_branches(sizeof(p->node), key_type, key_u32, key_u64, key_ptr, NULL, &r->node);
 
 	if (l && r)
-		xlen = _xor_branches(key_type, key_u32, key_u64, key_ptr, l, r);
+		xlen = _xor_branches(sizeof(p->node), key_type, key_u32, key_u64, key_ptr, &l->node, &r->node);
 
 	switch (key_type) {
 	case CEB_KT_U32:
@@ -1330,19 +1336,18 @@ static void cebu_default_dump_node(enum ceb_key_type key_type, const struct ceb_
 	}
 
 	/* xor of the keys of the two lower branches */
-	pxor = _xor_branches(key_type, 0, 0, NULL,
-			     container_of(node->b[0], struct ceb_node_key, node),
-			     container_of(node->b[1], struct ceb_node_key, node));
+	pxor = _xor_branches(sizeof(*node), key_type, 0, 0, NULL,
+			     node->b[0], node->b[1]);
 
 	/* xor of the keys of the left branch's lower branches */
-	lxor = _xor_branches(key_type, 0, 0, NULL,
-			     container_of((((struct ceb_node*)node->b[0])->b[0]), struct ceb_node_key, node),
-			     container_of((((struct ceb_node*)node->b[0])->b[1]), struct ceb_node_key, node));
+	lxor = _xor_branches(sizeof(*node), key_type, 0, 0, NULL,
+			     (((struct ceb_node*)node->b[0])->b[0]),
+			     (((struct ceb_node*)node->b[0])->b[1]));
 
 	/* xor of the keys of the right branch's lower branches */
-	rxor = _xor_branches(key_type, 0, 0, NULL,
-			     container_of((((struct ceb_node*)node->b[1])->b[0]), struct ceb_node_key, node),
-			     container_of((((struct ceb_node*)node->b[1])->b[1]), struct ceb_node_key, node));
+	rxor = _xor_branches(sizeof(*node), key_type, 0, 0, NULL,
+			     (((struct ceb_node*)node->b[1])->b[0]),
+			     (((struct ceb_node*)node->b[1])->b[1]));
 
 	switch (key_type) {
 	case CEB_KT_ADDR:
@@ -1419,9 +1424,8 @@ static void cebu_default_dump_leaf(enum ceb_key_type key_type, const struct ceb_
 	}
 
 	/* xor of the keys of the two lower branches */
-	pxor = _xor_branches(key_type, 0, 0, NULL,
-			     container_of(node->b[0], struct ceb_node_key, node),
-			     container_of(node->b[1], struct ceb_node_key, node));
+	pxor = _xor_branches(sizeof(*node), key_type, 0, 0, NULL,
+			     node->b[0], node->b[1]);
 
 	switch (key_type) {
 	case CEB_KT_ADDR:
@@ -1495,9 +1499,8 @@ static const struct ceb_node *cebu_default_dump_tree(enum ceb_key_type key_type,
 		return node;
 	}
 
-	xor = _xor_branches(key_type, 0, 0, NULL,
-			    container_of(node->b[0], struct ceb_node_key, node),
-			    container_of(node->b[1], struct ceb_node_key, node));
+	xor = _xor_branches(sizeof(*node), key_type, 0, 0, NULL,
+			    node->b[0], node->b[1]);
 
 	switch (key_type) {
 	case CEB_KT_ADDR:
