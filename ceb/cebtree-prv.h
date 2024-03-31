@@ -964,12 +964,12 @@ struct ceb_node *_cebu_descend(struct ceb_node **root,
 static inline __attribute__((always_inline))
 struct ceb_node *_cebu_insert(struct ceb_node **root,
                               struct ceb_node *node,
+                              ptrdiff_t kofs,
                               enum ceb_key_type key_type,
                               uint32_t key_u32,
                               uint64_t key_u64,
                               const void *key_ptr)
 {
-	ptrdiff_t kofs = sizeof(struct ceb_node);
 	struct ceb_node **parent;
 	struct ceb_node *ret;
 	int nside;
@@ -1007,10 +1007,9 @@ struct ceb_node *_cebu_insert(struct ceb_node **root,
  */
 static inline __attribute__((always_inline))
 struct ceb_node *_cebu_first(struct ceb_node **root,
+                             ptrdiff_t kofs,
                              enum ceb_key_type key_type)
 {
-	ptrdiff_t kofs = sizeof(struct ceb_node);
-
 	if (!*root)
 		return NULL;
 
@@ -1022,10 +1021,9 @@ struct ceb_node *_cebu_first(struct ceb_node **root,
  */
 static inline __attribute__((always_inline))
 struct ceb_node *_cebu_last(struct ceb_node **root,
+                            ptrdiff_t kofs,
                             enum ceb_key_type key_type)
 {
-	ptrdiff_t kofs = sizeof(struct ceb_node);
-
 	if (!*root)
 		return NULL;
 
@@ -1041,12 +1039,12 @@ struct ceb_node *_cebu_last(struct ceb_node **root,
  */
 static inline __attribute__((always_inline))
 struct ceb_node *_cebu_next(struct ceb_node **root,
+                            ptrdiff_t kofs,
                             enum ceb_key_type key_type,
                             uint32_t key_u32,
                             uint64_t key_u64,
                             const void *key_ptr)
 {
-	ptrdiff_t kofs = sizeof(struct ceb_node);
 	struct ceb_node *restart;
 
 	if (!*root)
@@ -1070,12 +1068,12 @@ struct ceb_node *_cebu_next(struct ceb_node **root,
  */
 static inline __attribute__((always_inline))
 struct ceb_node *_cebu_prev(struct ceb_node **root,
+                            ptrdiff_t kofs,
                             enum ceb_key_type key_type,
                             uint32_t key_u32,
                             uint64_t key_u64,
                             const void *key_ptr)
 {
-	ptrdiff_t kofs = sizeof(struct ceb_node);
 	struct ceb_node *restart;
 
 	if (!*root)
@@ -1095,13 +1093,12 @@ struct ceb_node *_cebu_prev(struct ceb_node **root,
  */
 static inline __attribute__((always_inline))
 struct ceb_node *_cebu_lookup(struct ceb_node **root,
+                              ptrdiff_t kofs,
                               enum ceb_key_type key_type,
                               uint32_t key_u32,
                               uint64_t key_u64,
                               const void *key_ptr)
 {
-	ptrdiff_t kofs = sizeof(struct ceb_node);
-
 	if (!*root)
 		return NULL;
 
@@ -1114,12 +1111,12 @@ struct ceb_node *_cebu_lookup(struct ceb_node **root,
  */
 static inline __attribute__((always_inline))
 struct ceb_node *_cebu_lookup_le(struct ceb_node **root,
+                                 ptrdiff_t kofs,
                                  enum ceb_key_type key_type,
                                  uint32_t key_u32,
                                  uint64_t key_u64,
                                  const void *key_ptr)
 {
-	ptrdiff_t kofs = sizeof(struct ceb_node);
 	struct ceb_node *ret = NULL;
 	struct ceb_node *restart;
 
@@ -1143,12 +1140,12 @@ struct ceb_node *_cebu_lookup_le(struct ceb_node **root,
  */
 static inline __attribute__((always_inline))
 struct ceb_node *_cebu_lookup_lt(struct ceb_node **root,
+                                 ptrdiff_t kofs,
                                  enum ceb_key_type key_type,
                                  uint32_t key_u32,
                                  uint64_t key_u64,
                                  const void *key_ptr)
 {
-	ptrdiff_t kofs = sizeof(struct ceb_node);
 	struct ceb_node *ret = NULL;
 	struct ceb_node *restart;
 
@@ -1171,12 +1168,12 @@ struct ceb_node *_cebu_lookup_lt(struct ceb_node **root,
  */
 static inline __attribute__((always_inline))
 struct ceb_node *_cebu_lookup_ge(struct ceb_node **root,
+                                 ptrdiff_t kofs,
                                  enum ceb_key_type key_type,
                                  uint32_t key_u32,
                                  uint64_t key_u64,
                                  const void *key_ptr)
 {
-	ptrdiff_t kofs = sizeof(struct ceb_node);
 	struct ceb_node *ret = NULL;
 	struct ceb_node *restart;
 
@@ -1200,12 +1197,12 @@ struct ceb_node *_cebu_lookup_ge(struct ceb_node **root,
  */
 static inline __attribute__((always_inline))
 struct ceb_node *_cebu_lookup_gt(struct ceb_node **root,
+                                 ptrdiff_t kofs,
                                  enum ceb_key_type key_type,
                                  uint32_t key_u32,
                                  uint64_t key_u64,
                                  const void *key_ptr)
 {
-	ptrdiff_t kofs = sizeof(struct ceb_node);
 	struct ceb_node *ret = NULL;
 	struct ceb_node *restart;
 
@@ -1234,13 +1231,13 @@ struct ceb_node *_cebu_lookup_gt(struct ceb_node **root,
 static inline __attribute__((always_inline))
 struct ceb_node *_cebu_delete(struct ceb_node **root,
                               struct ceb_node *node,
+                              ptrdiff_t kofs,
                               enum ceb_key_type key_type,
                               uint32_t key_u32,
                               uint64_t key_u64,
                               const void *key_ptr)
 {
 	struct ceb_node *lparent, *nparent, *gparent;
-	ptrdiff_t kofs = sizeof(struct ceb_node);
 	int lpside, npside, gpside;
 	struct ceb_node *ret = NULL;
 

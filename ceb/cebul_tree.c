@@ -36,30 +36,35 @@
  */
 struct ceb_node *cebul_insert(struct ceb_node **root, struct ceb_node *node)
 {
+	ptrdiff_t kofs = sizeof(struct ceb_node);
 	unsigned long key = container_of(node, struct ceb_node_key, node)->key.ul;
 
 	if (sizeof(long) <= 4)
-		return _cebu_insert(root, node, CEB_KT_U32, key, 0, NULL);
+		return _cebu_insert(root, node, kofs, CEB_KT_U32, key, 0, NULL);
 	else
-		return _cebu_insert(root, node, CEB_KT_U64, 0, key, NULL);
+		return _cebu_insert(root, node, kofs, CEB_KT_U64, 0, key, NULL);
 }
 
 /* return the first node or NULL if not found. */
 struct ceb_node *cebul_first(struct ceb_node **root)
 {
+	ptrdiff_t kofs = sizeof(struct ceb_node);
+
 	if (sizeof(long) <= 4)
-		return _cebu_first(root, CEB_KT_U32);
+		return _cebu_first(root, kofs, CEB_KT_U32);
 	else
-		return _cebu_first(root, CEB_KT_U64);
+		return _cebu_first(root, kofs, CEB_KT_U64);
 }
 
 /* return the last node or NULL if not found. */
 struct ceb_node *cebul_last(struct ceb_node **root)
 {
+	ptrdiff_t kofs = sizeof(struct ceb_node);
+
 	if (sizeof(long) <= 4)
-		return _cebu_last(root, CEB_KT_U32);
+		return _cebu_last(root, kofs, CEB_KT_U32);
 	else
-		return _cebu_last(root, CEB_KT_U64);
+		return _cebu_last(root, kofs, CEB_KT_U64);
 }
 
 /* look up the specified key, and returns either the node containing it, or
@@ -67,10 +72,12 @@ struct ceb_node *cebul_last(struct ceb_node **root)
  */
 struct ceb_node *cebul_lookup(struct ceb_node **root, unsigned long key)
 {
+	ptrdiff_t kofs = sizeof(struct ceb_node);
+
 	if (sizeof(long) <= 4)
-		return _cebu_lookup(root, CEB_KT_U32, key, 0, NULL);
+		return _cebu_lookup(root, kofs, CEB_KT_U32, key, 0, NULL);
 	else
-		return _cebu_lookup(root, CEB_KT_U64, 0, key, NULL);
+		return _cebu_lookup(root, kofs, CEB_KT_U64, 0, key, NULL);
 }
 
 /* look up the specified key or the highest below it, and returns either the
@@ -78,10 +85,12 @@ struct ceb_node *cebul_lookup(struct ceb_node **root, unsigned long key)
  */
 struct ceb_node *cebul_lookup_le(struct ceb_node **root, unsigned long key)
 {
+	ptrdiff_t kofs = sizeof(struct ceb_node);
+
 	if (sizeof(long) <= 4)
-		return _cebu_lookup_le(root, CEB_KT_U32, key, 0, NULL);
+		return _cebu_lookup_le(root, kofs, CEB_KT_U32, key, 0, NULL);
 	else
-		return _cebu_lookup_le(root, CEB_KT_U64, 0, key, NULL);
+		return _cebu_lookup_le(root, kofs, CEB_KT_U64, 0, key, NULL);
 }
 
 /* look up highest key below the specified one, and returns either the
@@ -89,10 +98,12 @@ struct ceb_node *cebul_lookup_le(struct ceb_node **root, unsigned long key)
  */
 struct ceb_node *cebul_lookup_lt(struct ceb_node **root, unsigned long key)
 {
+	ptrdiff_t kofs = sizeof(struct ceb_node);
+
 	if (sizeof(long) <= 4)
-		return _cebu_lookup_lt(root, CEB_KT_U32, key, 0, NULL);
+		return _cebu_lookup_lt(root, kofs, CEB_KT_U32, key, 0, NULL);
 	else
-		return _cebu_lookup_lt(root, CEB_KT_U64, 0, key, NULL);
+		return _cebu_lookup_lt(root, kofs, CEB_KT_U64, 0, key, NULL);
 }
 
 /* look up the specified key or the smallest above it, and returns either the
@@ -100,10 +111,12 @@ struct ceb_node *cebul_lookup_lt(struct ceb_node **root, unsigned long key)
  */
 struct ceb_node *cebul_lookup_ge(struct ceb_node **root, unsigned long key)
 {
+	ptrdiff_t kofs = sizeof(struct ceb_node);
+
 	if (sizeof(long) <= 4)
-		return _cebu_lookup_ge(root, CEB_KT_U32, key, 0, NULL);
+		return _cebu_lookup_ge(root, kofs, CEB_KT_U32, key, 0, NULL);
 	else
-		return _cebu_lookup_ge(root, CEB_KT_U64, 0, key, NULL);
+		return _cebu_lookup_ge(root, kofs, CEB_KT_U64, 0, key, NULL);
 }
 
 /* look up the smallest key above the specified one, and returns either the
@@ -111,10 +124,12 @@ struct ceb_node *cebul_lookup_ge(struct ceb_node **root, unsigned long key)
  */
 struct ceb_node *cebul_lookup_gt(struct ceb_node **root, unsigned long key)
 {
+	ptrdiff_t kofs = sizeof(struct ceb_node);
+
 	if (sizeof(long) <= 4)
-		return _cebu_lookup_gt(root, CEB_KT_U32, key, 0, NULL);
+		return _cebu_lookup_gt(root, kofs, CEB_KT_U32, key, 0, NULL);
 	else
-		return _cebu_lookup_gt(root, CEB_KT_U64, 0, key, NULL);
+		return _cebu_lookup_gt(root, kofs, CEB_KT_U64, 0, key, NULL);
 }
 
 /* search for the next node after the specified one, and return it, or NULL if
@@ -124,12 +139,13 @@ struct ceb_node *cebul_lookup_gt(struct ceb_node **root, unsigned long key)
  */
 struct ceb_node *cebul_next(struct ceb_node **root, struct ceb_node *node)
 {
+	ptrdiff_t kofs = sizeof(struct ceb_node);
 	unsigned long key = container_of(node, struct ceb_node_key, node)->key.ul;
 
 	if (sizeof(long) <= 4)
-		return _cebu_next(root, CEB_KT_U32, key, 0, NULL);
+		return _cebu_next(root, kofs, CEB_KT_U32, key, 0, NULL);
 	else
-		return _cebu_next(root, CEB_KT_U64, 0, key, NULL);
+		return _cebu_next(root, kofs, CEB_KT_U64, 0, key, NULL);
 }
 
 /* search for the prev node before the specified one, and return it, or NULL if
@@ -139,12 +155,13 @@ struct ceb_node *cebul_next(struct ceb_node **root, struct ceb_node *node)
  */
 struct ceb_node *cebul_prev(struct ceb_node **root, struct ceb_node *node)
 {
+	ptrdiff_t kofs = sizeof(struct ceb_node);
 	unsigned long key = container_of(node, struct ceb_node_key, node)->key.ul;
 
 	if (sizeof(long) <= 4)
-		return _cebu_prev(root, CEB_KT_U32, key, 0, NULL);
+		return _cebu_prev(root, kofs, CEB_KT_U32, key, 0, NULL);
 	else
-		return _cebu_prev(root, CEB_KT_U64, 0, key, NULL);
+		return _cebu_prev(root, kofs, CEB_KT_U64, 0, key, NULL);
 }
 
 /* look up the specified node with its key and deletes it if found, and in any
@@ -152,12 +169,13 @@ struct ceb_node *cebul_prev(struct ceb_node **root, struct ceb_node *node)
  */
 struct ceb_node *cebul_delete(struct ceb_node **root, struct ceb_node *node)
 {
+	ptrdiff_t kofs = sizeof(struct ceb_node);
 	unsigned long key = container_of(node, struct ceb_node_key, node)->key.ul;
 
 	if (sizeof(long) <= 4)
-		return _cebu_delete(root, node, CEB_KT_U32, key, 0, NULL);
+		return _cebu_delete(root, node, kofs, CEB_KT_U32, key, 0, NULL);
 	else
-		return _cebu_delete(root, node, CEB_KT_U64, 0, key, NULL);
+		return _cebu_delete(root, node, kofs, CEB_KT_U64, 0, key, NULL);
 }
 
 /* look up the specified key, and detaches it and returns it if found, or NULL
@@ -165,10 +183,12 @@ struct ceb_node *cebul_delete(struct ceb_node **root, struct ceb_node *node)
  */
 struct ceb_node *cebul_pick(struct ceb_node **root, unsigned long key)
 {
+	ptrdiff_t kofs = sizeof(struct ceb_node);
+
 	if (sizeof(long) <= 4)
-		return _cebu_delete(root, NULL, CEB_KT_U32, key, 0, NULL);
+		return _cebu_delete(root, NULL, kofs, CEB_KT_U32, key, 0, NULL);
 	else
-		return _cebu_delete(root, NULL, CEB_KT_U64, 0, key, NULL);
+		return _cebu_delete(root, NULL, kofs, CEB_KT_U64, 0, key, NULL);
 }
 
 /* dumps a ceb_node_key tree using the default functions above. If a node matches
@@ -176,6 +196,8 @@ struct ceb_node *cebul_pick(struct ceb_node **root, unsigned long key)
  */
 void cebul_default_dump(struct ceb_node **ceb_root, const char *label, const void *ctx)
 {
+	ptrdiff_t kofs = sizeof(struct ceb_node);
+
 	printf("\ndigraph cebul_tree {\n"
 	       "  fontname=\"fixed\";\n"
 	       "  fontsize=8\n"
@@ -185,7 +207,7 @@ void cebul_default_dump(struct ceb_node **ceb_root, const char *label, const voi
 	printf("  node [fontname=\"fixed\" fontsize=8 shape=\"box\" style=\"filled\" color=\"black\" fillcolor=\"white\"];\n"
 	       "  edge [fontname=\"fixed\" fontsize=8 style=\"solid\" color=\"magenta\" dir=\"forward\"];\n");
 
-	cebu_default_dump_tree(sizeof(struct ceb_node), sizeof(long) <= 4 ? CEB_KT_U32 : CEB_KT_U64, ceb_root, 0, NULL, 0, ctx, NULL, NULL, NULL);
+	cebu_default_dump_tree(kofs, sizeof(long) <= 4 ? CEB_KT_U32 : CEB_KT_U64, ceb_root, 0, NULL, 0, ctx, NULL, NULL, NULL);
 
 	printf("}\n");
 }

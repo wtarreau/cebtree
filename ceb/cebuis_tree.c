@@ -37,21 +37,26 @@
  */
 struct ceb_node *cebuis_insert(struct ceb_node **root, struct ceb_node *node)
 {
+	ptrdiff_t kofs = sizeof(struct ceb_node);
 	const void *key = container_of(node, struct ceb_node_key, node)->key.ptr;
 
-	return _cebu_insert(root, node, CEB_KT_IS, 0, 0, key);
+	return _cebu_insert(root, node, kofs, CEB_KT_IS, 0, 0, key);
 }
 
 /* return the first node or NULL if not found. */
 struct ceb_node *cebuis_first(struct ceb_node **root)
 {
-	return _cebu_first(root, CEB_KT_IS);
+	ptrdiff_t kofs = sizeof(struct ceb_node);
+
+	return _cebu_first(root, kofs, CEB_KT_IS);
 }
 
 /* return the last node or NULL if not found. */
 struct ceb_node *cebuis_last(struct ceb_node **root)
 {
-	return _cebu_last(root, CEB_KT_IS);
+	ptrdiff_t kofs = sizeof(struct ceb_node);
+
+	return _cebu_last(root, kofs, CEB_KT_IS);
 }
 
 /* look up the specified key, and returns either the node containing it, or
@@ -59,7 +64,9 @@ struct ceb_node *cebuis_last(struct ceb_node **root)
  */
 struct ceb_node *cebuis_lookup(struct ceb_node **root, const void *key)
 {
-	return _cebu_lookup(root, CEB_KT_IS, 0, 0, key);
+	ptrdiff_t kofs = sizeof(struct ceb_node);
+
+	return _cebu_lookup(root, kofs, CEB_KT_IS, 0, 0, key);
 }
 
 /* look up the specified key or the highest below it, and returns either the
@@ -67,7 +74,9 @@ struct ceb_node *cebuis_lookup(struct ceb_node **root, const void *key)
  */
 struct ceb_node *cebuis_lookup_le(struct ceb_node **root, const void *key)
 {
-	return _cebu_lookup_le(root, CEB_KT_IS, 0, 0, key);
+	ptrdiff_t kofs = sizeof(struct ceb_node);
+
+	return _cebu_lookup_le(root, kofs, CEB_KT_IS, 0, 0, key);
 }
 
 /* look up highest key below the specified one, and returns either the
@@ -75,7 +84,9 @@ struct ceb_node *cebuis_lookup_le(struct ceb_node **root, const void *key)
  */
 struct ceb_node *cebuis_lookup_lt(struct ceb_node **root, const void *key)
 {
-	return _cebu_lookup_lt(root, CEB_KT_IS, 0, 0, key);
+	ptrdiff_t kofs = sizeof(struct ceb_node);
+
+	return _cebu_lookup_lt(root, kofs, CEB_KT_IS, 0, 0, key);
 }
 
 /* look up the specified key or the smallest above it, and returns either the
@@ -83,7 +94,9 @@ struct ceb_node *cebuis_lookup_lt(struct ceb_node **root, const void *key)
  */
 struct ceb_node *cebuis_lookup_ge(struct ceb_node **root, const void *key)
 {
-	return _cebu_lookup_ge(root, CEB_KT_IS, 0, 0, key);
+	ptrdiff_t kofs = sizeof(struct ceb_node);
+
+	return _cebu_lookup_ge(root, kofs, CEB_KT_IS, 0, 0, key);
 }
 
 /* look up the smallest key above the specified one, and returns either the
@@ -91,7 +104,9 @@ struct ceb_node *cebuis_lookup_ge(struct ceb_node **root, const void *key)
  */
 struct ceb_node *cebuis_lookup_gt(struct ceb_node **root, const void *key)
 {
-	return _cebu_lookup_gt(root, CEB_KT_IS, 0, 0, key);
+	ptrdiff_t kofs = sizeof(struct ceb_node);
+
+	return _cebu_lookup_gt(root, kofs, CEB_KT_IS, 0, 0, key);
 }
 
 /* search for the next node after the specified one, and return it, or NULL if
@@ -101,9 +116,10 @@ struct ceb_node *cebuis_lookup_gt(struct ceb_node **root, const void *key)
  */
 struct ceb_node *cebuis_next(struct ceb_node **root, struct ceb_node *node)
 {
+	ptrdiff_t kofs = sizeof(struct ceb_node);
 	const void *key = container_of(node, struct ceb_node_key, node)->key.ptr;
 
-	return _cebu_next(root, CEB_KT_IS, 0, 0, key);
+	return _cebu_next(root, kofs, CEB_KT_IS, 0, 0, key);
 }
 
 /* search for the prev node before the specified one, and return it, or NULL if
@@ -113,9 +129,10 @@ struct ceb_node *cebuis_next(struct ceb_node **root, struct ceb_node *node)
  */
 struct ceb_node *cebuis_prev(struct ceb_node **root, struct ceb_node *node)
 {
+	ptrdiff_t kofs = sizeof(struct ceb_node);
 	const void *key = container_of(node, struct ceb_node_key, node)->key.ptr;
 
-	return _cebu_prev(root, CEB_KT_IS, 0, 0, key);
+	return _cebu_prev(root, kofs, CEB_KT_IS, 0, 0, key);
 }
 
 /* look up the specified node with its key and deletes it if found, and in any
@@ -123,9 +140,10 @@ struct ceb_node *cebuis_prev(struct ceb_node **root, struct ceb_node *node)
  */
 struct ceb_node *cebuis_delete(struct ceb_node **root, struct ceb_node *node)
 {
+	ptrdiff_t kofs = sizeof(struct ceb_node);
 	const void *key = container_of(node, struct ceb_node_key, node)->key.ptr;
 
-	return _cebu_delete(root, node, CEB_KT_IS, 0, 0, key);
+	return _cebu_delete(root, node, kofs, CEB_KT_IS, 0, 0, key);
 }
 
 /* look up the specified key, and detaches it and returns it if found, or NULL
@@ -133,5 +151,7 @@ struct ceb_node *cebuis_delete(struct ceb_node **root, struct ceb_node *node)
  */
 struct ceb_node *cebuis_pick(struct ceb_node **root, const void *key)
 {
-	return _cebu_delete(root, NULL, CEB_KT_IS, 0, 0, key);
+	ptrdiff_t kofs = sizeof(struct ceb_node);
+
+	return _cebu_delete(root, NULL, kofs, CEB_KT_IS, 0, 0, key);
 }
