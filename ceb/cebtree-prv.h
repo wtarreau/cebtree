@@ -229,7 +229,6 @@ static void dbg(int line,
 		[CEB_KT_ST]   = "ST",
 		[CEB_KT_IS]   = "IS",
 	};
-	union ceb_key_storage *k = NULL;
 	const char *kstr __attribute__((unused)) = ktypes[key_type];
 	const char *mstr __attribute__((unused)) = meths[meth];
 	long long nlen __attribute__((unused)) = 0;
@@ -238,10 +237,8 @@ static void dbg(int line,
 	long long xlen __attribute__((unused)) = 0;
 	ptrdiff_t kofs = sizeof(struct ceb_node);
 
-	if (p) {
-		k = &container_of(p, struct ceb_node_key, node)->key;
+	if (p)
 		nlen = _xor_branches(kofs, key_type, key_u32, key_u64, key_ptr, p, NULL);
-	}
 
 	if (p && p->b[0])
 		llen = _xor_branches(kofs, key_type, key_u32, key_u64, key_ptr, p->b[0], NULL);
@@ -256,7 +253,7 @@ static void dbg(int line,
 	case CEB_KT_U32:
 		CEBDBG("%04d (%8s) m=%s.%s key=%#x root=%p pxor=%#x p=%p,%#x(^%#llx) l=%p,%#x(^%#llx) r=%p,%#x(^%#llx) l^r=%#llx\n",
 		      line, pfx, kstr, mstr, key_u32, root, px32,
-		      p, k ? k->u32 : 0, nlen,
+		      p, p ? NODEK(p, kofs)->u32 : 0, nlen,
 		      p ? p->b[0] : NULL, p ? NODEK(p->b[0], kofs)->u32 : 0, llen,
 		      p ? p->b[1] : NULL, p ? NODEK(p->b[1], kofs)->u32 : 0, rlen,
 		      xlen);
@@ -264,7 +261,7 @@ static void dbg(int line,
 	case CEB_KT_U64:
 		CEBDBG("%04d (%8s) m=%s.%s key=%#llx root=%p pxor=%#llx p=%p,%#llx(^%#llx) l=%p,%#llx(^%#llx) r=%p,%#llx(^%#llx) l^r=%#llx\n",
 		      line, pfx, kstr, mstr, (long long)key_u64, root, (long long)px64,
-		      p, (long long)(k ? k->u64 : 0), nlen,
+		      p, (long long)(p ? NODEK(p, kofs)->u64 : 0), nlen,
 		      p ? p->b[0] : NULL, (long long)(p ? NODEK(p->b[0], kofs)->u64 : 0), llen,
 		      p ? p->b[1] : NULL, (long long)(p ? NODEK(p->b[1], kofs)->u64 : 0), rlen,
 		      xlen);
@@ -272,7 +269,7 @@ static void dbg(int line,
 	case CEB_KT_MB:
 		CEBDBG("%04d (%8s) m=%s.%s key=%p root=%p plen=%ld p=%p,%p(^%llu) l=%p,%p(^%llu) r=%p,%p(^%llu) l^r=%llu\n",
 		      line, pfx, kstr, mstr, key_ptr, root, (long)plen,
-		      p, k ? k->mb : 0, nlen,
+		      p, p ? NODEK(p, kofs)->mb : 0, nlen,
 		      p ? p->b[0] : NULL, p ? NODEK(p->b[0], kofs)->mb : 0, llen,
 		      p ? p->b[1] : NULL, p ? NODEK(p->b[1], kofs)->mb : 0, rlen,
 		      xlen);
@@ -280,7 +277,7 @@ static void dbg(int line,
 	case CEB_KT_IM:
 		CEBDBG("%04d (%8s) m=%s.%s key=%p root=%p plen=%ld p=%p,%p(^%llu) l=%p,%p(^%llu) r=%p,%p(^%llu) l^r=%llu\n",
 		      line, pfx, kstr, mstr, key_ptr, root, (long)plen,
-		      p, k ? k->ptr : 0, nlen,
+		      p, p ? NODEK(p, kofs)->ptr : 0, nlen,
 		      p ? p->b[0] : NULL, p ? NODEK(p->b[0], kofs)->ptr : 0, llen,
 		      p ? p->b[1] : NULL, p ? NODEK(p->b[1], kofs)->ptr : 0, rlen,
 		      xlen);
@@ -288,7 +285,7 @@ static void dbg(int line,
 	case CEB_KT_ST:
 		CEBDBG("%04d (%8s) m=%s.%s key='%s' root=%p plen=%ld p=%p,%s(^%llu) l=%p,%s(^%llu) r=%p,%s(^%llu) l^r=%llu\n",
 		      line, pfx, kstr, mstr, key_ptr ? (const char *)key_ptr : "", root, (long)plen,
-		      p, k ? (const char *)k->str : "-", nlen,
+		      p, p ? (const char *)NODEK(p, kofs)->str : "-", nlen,
 		      p ? p->b[0] : NULL, p ? (const char *)NODEK(p->b[0], kofs)->str : "-", llen,
 		      p ? p->b[1] : NULL, p ? (const char *)NODEK(p->b[1], kofs)->str : "-", rlen,
 		      xlen);
@@ -296,7 +293,7 @@ static void dbg(int line,
 	case CEB_KT_IS:
 		CEBDBG("%04d (%8s) m=%s.%s key='%s' root=%p plen=%ld p=%p,%s(^%llu) l=%p,%s(^%llu) r=%p,%s(^%llu) l^r=%llu\n",
 		      line, pfx, kstr, mstr, key_ptr ? (const char *)key_ptr : "", root, (long)plen,
-		      p, k ? (const char *)k->ptr : "-", nlen,
+		      p, p ? (const char *)NODEK(p, kofs)->ptr : "-", nlen,
 		      p ? p->b[0] : NULL, p ? (const char *)NODEK(p->b[0], kofs)->ptr : "-", llen,
 		      p ? p->b[1] : NULL, p ? (const char *)NODEK(p->b[1], kofs)->ptr : "-", rlen,
 		      xlen);
