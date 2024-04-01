@@ -129,12 +129,6 @@ union ceb_key_storage {
 	unsigned char *ptr; /* for CEB_KT_IS */
 };
 
-/* this structure is aliased to the common ceba node during st operations */
-struct ceb_node_key {
-	struct ceb_node node;
-	union ceb_key_storage key;
-};
-
 /* returns the ceb_key_storage pointer for node <n> and offset <o> */
 #define NODEK(n, o) ((union ceb_key_storage*)(((char *)(n)) + (o)))
 
