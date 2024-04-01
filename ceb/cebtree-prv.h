@@ -93,6 +93,58 @@
 #define CEBDBG(x, ...) do { } while (0)
 #endif
 
+/* These macros are used by upper level files to create two variants of their
+ * exported functions:
+ *   - one which uses sizeof(struct ceb_node) as the key offset, for nodes with
+ *     adjacent keys ; these ones are named <pfx><sfx>(root, ...)
+ *   - one with an explicit key offset passed by the caller right after the
+ *     root.
+ * Both rely on a forced inline version with a body that immediately follows
+ * the declaration, so that the declaration looks like a single decorated
+ * function while 2 are built in practice. There are variants for the basic one
+ * with 0, 1 and 2 extra arguments after the root. The root and the key offset
+ * are always the first two arguments, and the key offset never appears in the
+ * first variant, it's always replaced by sizeof(struct ceb_node) in the calls
+ * to the inline version.
+ */
+#define CEB_FDECL2(type, pfx, sfx, type1, arg1, type2, arg2)		\
+	static inline __attribute__((always_inline))			\
+	type _##pfx##sfx(type1 arg1, type2 arg2);			\
+	type pfx##sfx(type1 arg1) {					\
+		return _##pfx##sfx(arg1, sizeof(struct ceb_node));	\
+	}								\
+	type pfx##_ofs##sfx(type1 arg1, type2 arg2) {			\
+		return _##pfx##sfx(arg1, arg2);				\
+	}								\
+	static inline __attribute__((always_inline))			\
+	type _##pfx##sfx(type1 arg1, type2 arg2)
+	/* function body follows */
+
+#define CEB_FDECL3(type, pfx, sfx, type1, arg1, type2, arg2, type3, arg3) \
+	static inline __attribute__((always_inline))			\
+	type _##pfx##sfx(type1 arg1, type2 arg2, type3 arg3);		\
+	type pfx##sfx(type1 arg1, type3 arg3) {				\
+		return _##pfx##sfx(arg1, sizeof(struct ceb_node), arg3); \
+	}								\
+	type pfx##_ofs##sfx(type1 arg1, type2 arg2, type3 arg3) {	\
+		return _##pfx##sfx(arg1, arg2, arg3);			\
+	}								\
+	static inline __attribute__((always_inline))			\
+	type _##pfx##sfx(type1 arg1, type2 arg2, type3 arg3)
+	/* function body follows */
+
+#define CEB_FDECL4(type, pfx, sfx, type1, arg1, type2, arg2, type3, arg3, type4, arg4) \
+	static inline __attribute__((always_inline))			\
+	type _##pfx##sfx(type1 arg1, type2 arg2, type3 arg3, type4 arg4); \
+	type pfx##sfx(type1 arg1, type3 arg3, type4 arg4) {		\
+		return _##pfx##sfx(arg1, sizeof(struct ceb_node), arg3, arg4); \
+	}								\
+	type pfx##_ofs##sfx(type1 arg1, type2 arg2, type3 arg3, type4 arg4) { \
+		return _##pfx##sfx(arg1, arg2, arg3, arg4);		\
+	}								\
+	static inline __attribute__((always_inline))			\
+	type _##pfx##sfx(type1 arg1, type2 arg2, type3 arg3, type4 arg4)
+	/* function body follows */
 
 /* tree walk method: key, left, right */
 enum ceb_walk_meth {
