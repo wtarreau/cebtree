@@ -37,7 +37,7 @@
 struct ceb_node *cebu64_insert(struct ceb_node **root, struct ceb_node *node)
 {
 	ptrdiff_t kofs = sizeof(struct ceb_node);
-	uint64_t key = container_of(node, struct ceb_node_key, node)->key.u64;
+	uint64_t key = NODEK(node, kofs)->u64;
 
 	return _cebu_insert(root, node, kofs, CEB_KT_U64, 0, key, NULL);
 }
@@ -116,7 +116,7 @@ struct ceb_node *cebu64_lookup_gt(struct ceb_node **root, uint64_t key)
 struct ceb_node *cebu64_next(struct ceb_node **root, struct ceb_node *node)
 {
 	ptrdiff_t kofs = sizeof(struct ceb_node);
-	uint64_t key = container_of(node, struct ceb_node_key, node)->key.u64;
+	uint64_t key = NODEK(node, kofs)->u64;
 
 	return _cebu_next(root, kofs, CEB_KT_U64, 0, key, NULL);
 }
@@ -129,7 +129,7 @@ struct ceb_node *cebu64_next(struct ceb_node **root, struct ceb_node *node)
 struct ceb_node *cebu64_prev(struct ceb_node **root, struct ceb_node *node)
 {
 	ptrdiff_t kofs = sizeof(struct ceb_node);
-	uint64_t key = container_of(node, struct ceb_node_key, node)->key.u64;
+	uint64_t key = NODEK(node, kofs)->u64;
 
 	return _cebu_prev(root, kofs, CEB_KT_U64, 0, key, NULL);
 }
@@ -140,7 +140,7 @@ struct ceb_node *cebu64_prev(struct ceb_node **root, struct ceb_node *node)
 struct ceb_node *cebu64_delete(struct ceb_node **root, struct ceb_node *node)
 {
 	ptrdiff_t kofs = sizeof(struct ceb_node);
-	uint64_t key = container_of(node, struct ceb_node_key, node)->key.u64;
+	uint64_t key = NODEK(node, kofs)->u64;
 
 	return _cebu_delete(root, node, kofs, CEB_KT_U64, 0, key, NULL);
 }
@@ -155,7 +155,7 @@ struct ceb_node *cebu64_pick(struct ceb_node **root, uint64_t key)
 	return _cebu_delete(root, NULL, kofs, CEB_KT_U64, 0, key, NULL);
 }
 
-/* dumps a ceb_node_key tree using the default functions above. If a node matches
+/* dumps a ceb_node tree using the default functions above. If a node matches
  * <ctx>, this one will be highlighted in red.
  */
 void cebu64_default_dump(struct ceb_node **ceb_root, const char *label, const void *ctx)

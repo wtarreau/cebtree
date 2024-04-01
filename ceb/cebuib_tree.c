@@ -38,7 +38,7 @@
 struct ceb_node *cebuib_insert(struct ceb_node **root, struct ceb_node *node, size_t len)
 {
 	ptrdiff_t kofs = sizeof(struct ceb_node);
-	const void *key = container_of(node, struct ceb_node_key, node)->key.ptr;
+	const void *key = NODEK(node, kofs)->ptr;
 
 	return _cebu_insert(root, node, kofs, CEB_KT_IM, 0, len, key);
 }
@@ -118,7 +118,7 @@ struct ceb_node *cebuib_lookup_gt(struct ceb_node **root, const void *key, size_
 struct ceb_node *cebuib_next(struct ceb_node **root, struct ceb_node *node, size_t len)
 {
 	ptrdiff_t kofs = sizeof(struct ceb_node);
-	const void *key = container_of(node, struct ceb_node_key, node)->key.ptr;
+	const void *key = NODEK(node, kofs)->ptr;
 
 	return _cebu_next(root, kofs, CEB_KT_IM, 0, len, key);
 }
@@ -132,7 +132,7 @@ struct ceb_node *cebuib_next(struct ceb_node **root, struct ceb_node *node, size
 struct ceb_node *cebuib_prev(struct ceb_node **root, struct ceb_node *node, size_t len)
 {
 	ptrdiff_t kofs = sizeof(struct ceb_node);
-	const void *key = container_of(node, struct ceb_node_key, node)->key.ptr;
+	const void *key = NODEK(node, kofs)->ptr;
 
 	return _cebu_prev(root, kofs, CEB_KT_IM, 0, len, key);
 }
@@ -144,7 +144,7 @@ struct ceb_node *cebuib_prev(struct ceb_node **root, struct ceb_node *node, size
 struct ceb_node *cebuib_delete(struct ceb_node **root, struct ceb_node *node, size_t len)
 {
 	ptrdiff_t kofs = sizeof(struct ceb_node);
-	const void *key = container_of(node, struct ceb_node_key, node)->key.ptr;
+	const void *key = NODEK(node, kofs)->ptr;
 
 	return _cebu_delete(root, node, kofs, CEB_KT_IM, 0, len, key);
 }

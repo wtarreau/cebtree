@@ -38,7 +38,7 @@
 struct ceb_node *cebus_insert(struct ceb_node **root, struct ceb_node *node)
 {
 	ptrdiff_t kofs = sizeof(struct ceb_node);
-	const void *key = &container_of(node, struct ceb_node_key, node)->key.str;
+	const void *key = NODEK(node, kofs)->str;
 
 	return _cebu_insert(root, node, kofs, CEB_KT_ST, 0, 0, key);
 }
@@ -117,7 +117,7 @@ struct ceb_node *cebus_lookup_gt(struct ceb_node **root, const void *key)
 struct ceb_node *cebus_next(struct ceb_node **root, struct ceb_node *node)
 {
 	ptrdiff_t kofs = sizeof(struct ceb_node);
-	const void *key = &container_of(node, struct ceb_node_key, node)->key.str;
+	const void *key = NODEK(node, kofs)->str;
 
 	return _cebu_next(root, kofs, CEB_KT_ST, 0, 0, key);
 }
@@ -130,7 +130,7 @@ struct ceb_node *cebus_next(struct ceb_node **root, struct ceb_node *node)
 struct ceb_node *cebus_prev(struct ceb_node **root, struct ceb_node *node)
 {
 	ptrdiff_t kofs = sizeof(struct ceb_node);
-	const void *key = &container_of(node, struct ceb_node_key, node)->key.str;
+	const void *key = NODEK(node, kofs)->str;
 
 	return _cebu_prev(root, kofs, CEB_KT_ST, 0, 0, key);
 }
@@ -141,7 +141,7 @@ struct ceb_node *cebus_prev(struct ceb_node **root, struct ceb_node *node)
 struct ceb_node *cebus_delete(struct ceb_node **root, struct ceb_node *node)
 {
 	ptrdiff_t kofs = sizeof(struct ceb_node);
-	const void *key = &container_of(node, struct ceb_node_key, node)->key.str;
+	const void *key = NODEK(node, kofs)->str;
 
 	return _cebu_delete(root, node, kofs, CEB_KT_ST, 0, 0, key);
 }
@@ -156,7 +156,7 @@ struct ceb_node *cebus_pick(struct ceb_node **root, const void *key)
 	return _cebu_delete(root, NULL, kofs, CEB_KT_ST, 0, 0, key);
 }
 
-/* dumps a ceb_node_key tree using the default functions above. If a node matches
+/* dumps a ceb_node tree using the default functions above. If a node matches
  * <ctx>, this one will be highlighted in red.
  */
 void cebus_default_dump(struct ceb_node **ceb_root, const char *label, const void *ctx)
