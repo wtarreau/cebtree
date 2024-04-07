@@ -31,81 +31,74 @@
 #include "cebtree.h"
 #include "cebtree-prv.h"
 
+/*****************************************************************************\
+ * The declarations below always cause two functions to be declared, one     *
+ * starting with "cebub_*" and one with "cebub_ofs_*" which takes a key      *
+ * offset just after the root. The one without kofs just has this argument   *
+ * omitted from its declaration and replaced with sizeof(struct ceb_node) in *
+ * the call to the underlying functions.                                     *
+\*****************************************************************************/
+
 /* Inserts node <node> into unique tree <tree> based on its key that
  * immediately follows the node and for <len> bytes. Returns the
  * inserted node or the one that already contains the same key.
  */
-struct ceb_node *cebub_insert(struct ceb_node **root, struct ceb_node *node, size_t len)
+CEB_FDECL4(struct ceb_node *, cebub, _insert, struct ceb_node **, root, ptrdiff_t, kofs, struct ceb_node *, node, size_t, len)
 {
-	ptrdiff_t kofs = sizeof(struct ceb_node);
 	const void *key = NODEK(node, kofs)->mb;
 
 	return _cebu_insert(root, node, kofs, CEB_KT_MB, 0, len, key);
 }
 
 /* return the first node or NULL if not found. */
-struct ceb_node *cebub_first(struct ceb_node **root)
+CEB_FDECL2(struct ceb_node *, cebub, _first, struct ceb_node **, root, ptrdiff_t, kofs)
 {
-	ptrdiff_t kofs = sizeof(struct ceb_node);
-
 	return _cebu_first(root, kofs, CEB_KT_MB);
 }
 
 /* return the last node or NULL if not found. */
-struct ceb_node *cebub_last(struct ceb_node **root)
+CEB_FDECL2(struct ceb_node *, cebub, _last, struct ceb_node **, root, ptrdiff_t, kofs)
 {
-	ptrdiff_t kofs = sizeof(struct ceb_node);
-
 	return _cebu_last(root, kofs, CEB_KT_MB);
 }
 
 /* look up the specified key <key> of length <len>, and returns either the node
  * containing it, or NULL if not found.
  */
-struct ceb_node *cebub_lookup(struct ceb_node **root, const void *key, size_t len)
+CEB_FDECL4(struct ceb_node *, cebub, _lookup, struct ceb_node **, root, ptrdiff_t, kofs, const void *, key, size_t, len)
 {
-	ptrdiff_t kofs = sizeof(struct ceb_node);
-
 	return _cebu_lookup(root, kofs, CEB_KT_MB, 0, len, key);
 }
 
 /* look up the specified key or the highest below it, and returns either the
  * node containing it, or NULL if not found.
  */
-struct ceb_node *cebub_lookup_le(struct ceb_node **root, const void *key, size_t len)
+CEB_FDECL4(struct ceb_node *, cebub, _lookup_le, struct ceb_node **, root, ptrdiff_t, kofs, const void *, key, size_t, len)
 {
-	ptrdiff_t kofs = sizeof(struct ceb_node);
-
 	return _cebu_lookup_le(root, kofs, CEB_KT_MB, 0, len, key);
 }
 
 /* look up highest key below the specified one, and returns either the
  * node containing it, or NULL if not found.
  */
-struct ceb_node *cebub_lookup_lt(struct ceb_node **root, const void *key, size_t len)
+CEB_FDECL4(struct ceb_node *, cebub, _lookup_lt, struct ceb_node **, root, ptrdiff_t, kofs, const void *, key, size_t, len)
 {
-	ptrdiff_t kofs = sizeof(struct ceb_node);
-
 	return _cebu_lookup_lt(root, kofs, CEB_KT_MB, 0, len, key);
 }
 
 /* look up the specified key or the smallest above it, and returns either the
  * node containing it, or NULL if not found.
  */
-struct ceb_node *cebub_lookup_ge(struct ceb_node **root, const void *key, size_t len)
+CEB_FDECL4(struct ceb_node *, cebub, _lookup_ge, struct ceb_node **, root, ptrdiff_t, kofs, const void *, key, size_t, len)
 {
-	ptrdiff_t kofs = sizeof(struct ceb_node);
-
 	return _cebu_lookup_ge(root, kofs, CEB_KT_MB, 0, len, key);
 }
 
 /* look up the smallest key above the specified one, and returns either the
  * node containing it, or NULL if not found.
  */
-struct ceb_node *cebub_lookup_gt(struct ceb_node **root, const void *key, size_t len)
+CEB_FDECL4(struct ceb_node *, cebub, _lookup_gt, struct ceb_node **, root, ptrdiff_t, kofs, const void *, key, size_t, len)
 {
-	ptrdiff_t kofs = sizeof(struct ceb_node);
-
 	return _cebu_lookup_gt(root, kofs, CEB_KT_MB, 0, len, key);
 }
 
@@ -115,9 +108,8 @@ struct ceb_node *cebub_lookup_gt(struct ceb_node **root, const void *key, size_t
  * branch at that fork. The <len> field must correspond to the key length in
  * bytes.
  */
-struct ceb_node *cebub_next(struct ceb_node **root, struct ceb_node *node, size_t len)
+CEB_FDECL4(struct ceb_node *, cebub, _next, struct ceb_node **, root, ptrdiff_t, kofs, struct ceb_node *, node, size_t, len)
 {
-	ptrdiff_t kofs = sizeof(struct ceb_node);
 	const void *key = NODEK(node, kofs)->mb;
 
 	return _cebu_next(root, kofs, CEB_KT_MB, 0, len, key);
@@ -129,9 +121,8 @@ struct ceb_node *cebub_next(struct ceb_node **root, struct ceb_node *node, size_
  * branch at that fork. The <len> field must correspond to the key length in
  * bytes.
  */
-struct ceb_node *cebub_prev(struct ceb_node **root, struct ceb_node *node, size_t len)
+CEB_FDECL4(struct ceb_node *, cebub, _prev, struct ceb_node **, root, ptrdiff_t, kofs, struct ceb_node *, node, size_t, len)
 {
-	ptrdiff_t kofs = sizeof(struct ceb_node);
 	const void *key = NODEK(node, kofs)->mb;
 
 	return _cebu_prev(root, kofs, CEB_KT_MB, 0, len, key);
@@ -141,9 +132,8 @@ struct ceb_node *cebub_prev(struct ceb_node **root, struct ceb_node *node, size_
  * case, returns the node. The <len> field must correspond to the key length in
  * bytes.
  */
-struct ceb_node *cebub_delete(struct ceb_node **root, struct ceb_node *node, size_t len)
+CEB_FDECL4(struct ceb_node *, cebub, _delete, struct ceb_node **, root, ptrdiff_t, kofs, struct ceb_node *, node, size_t, len)
 {
-	ptrdiff_t kofs = sizeof(struct ceb_node);
 	const void *key = NODEK(node, kofs)->mb;
 
 	return _cebu_delete(root, node, kofs, CEB_KT_MB, 0, len, key);
@@ -152,9 +142,7 @@ struct ceb_node *cebub_delete(struct ceb_node **root, struct ceb_node *node, siz
 /* look up the specified key, and detaches it and returns it if found, or NULL
  * if not found. The <len> field must correspond to the key length in bytes.
  */
-struct ceb_node *cebub_pick(struct ceb_node **root, const void *key, size_t len)
+CEB_FDECL4(struct ceb_node *, cebub, _pick, struct ceb_node **, root, ptrdiff_t, kofs, const void *, key, size_t, len)
 {
-	ptrdiff_t kofs = sizeof(struct ceb_node);
-
 	return _cebu_delete(root, NULL, kofs, CEB_KT_MB, 0, len, key);
 }
