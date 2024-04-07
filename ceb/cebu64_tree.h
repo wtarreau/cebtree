@@ -25,6 +25,7 @@
  */
 
 #include "cebtree.h"
+#include <inttypes.h>
 
 struct ceb_node *cebu64_insert(struct ceb_node **root, struct ceb_node *node);
 struct ceb_node *cebu64_first(struct ceb_node **root);
