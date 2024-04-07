@@ -434,9 +434,17 @@ struct ceb_node *_cebu_descend(struct ceb_node **root,
 	while (1) {
 		p = *root;
 
-		/* let's prefetch the lower nodes for the keys */
-		__builtin_prefetch(p->b[0], 0);
-		__builtin_prefetch(p->b[1], 0);
+		/* let's prefetch the lower nodes's next nodes so that the keys
+		 * are present in the next round. We'll instantly have the
+		 * pointers thanks to the previous round which already
+		 * prefetched the current nodes. This is super important due to
+		 * the nature of such trees: values are compared to the ones of
+		 * the sub-trees and not having them stalls the descent.
+		 */
+		__builtin_prefetch(p->b[0]->b[0], 0);
+		__builtin_prefetch(p->b[0]->b[1], 0);
+		__builtin_prefetch(p->b[1]->b[0], 0);
+		__builtin_prefetch(p->b[1]->b[1], 0);
 
 		/* neither pointer is tagged */
 		k = NODEK(p, kofs);
