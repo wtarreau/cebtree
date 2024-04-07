@@ -38,9 +38,4 @@ struct ceb_node *cebua_next(struct ceb_node **root, struct ceb_node *node);
 struct ceb_node *cebua_prev(struct ceb_node **root, struct ceb_node *node);
 struct ceb_node *cebua_delete(struct ceb_node **root, struct ceb_node *node);
 struct ceb_node *cebua_pick(struct ceb_node **root, const void *key);
-void *cebua_dump_tree(struct ceb_node *node, u64 pxor, void *last,
-                      int level,
-                      void (*node_dump)(struct ceb_node *node, int level, const void *ctx),
-                      void (*leaf_dump)(struct ceb_node *node, int level, const void *ctx),
-                      const void *ctx);
 void cebua_default_dump(struct ceb_node **ceb_root, const char *label, const void *ctx);
