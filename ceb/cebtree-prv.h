@@ -506,22 +506,24 @@ struct ceb_node *_cebu_descend(struct ceb_node **root,
 
 		if (key_type == CEB_KT_U32) {
 			uint32_t xor32;   // left vs right branch xor
+			uint32_t kl, kr;
 
-			if (meth >= CEB_WM_KEQ) {
-				/* "found" is not used here */
-				brside = (key_u32 ^ l->u32) >= (key_u32 ^ r->u32);
-			}
+			kl = l->u32; kr = r->u32;
+			xor32 = kl ^ kr;
 
-			xor32 = l->u32 ^ r->u32;
 			if (xor32 > pxor32) { // test using 2 4 6 4
 				dbg(__LINE__, "xor>", meth, kofs, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 				break;
 			}
 
 			if (meth >= CEB_WM_KEQ) {
+				/* "found" is not used here */
+				kl ^= key_u32; kr ^= key_u32;
+				brside = kl >= kr;
+
 				/* let's stop if our key is not there */
 
-				if ((key_u32 ^ l->u32) > xor32 && (key_u32 ^ r->u32) > xor32) {
+				if (kl > xor32 && kr > xor32) {
 					dbg(__LINE__, "mismatch", meth, kofs, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 					break;
 				}
@@ -538,22 +540,24 @@ struct ceb_node *_cebu_descend(struct ceb_node **root,
 		}
 		else if (key_type == CEB_KT_U64) {
 			uint64_t xor64;   // left vs right branch xor
+			uint64_t kl, kr;
 
-			if (meth >= CEB_WM_KEQ) {
-				/* "found" is not used here */
-				brside = (key_u64 ^ l->u64) >= (key_u64 ^ r->u64);
-			}
+			kl = l->u64; kr = r->u64;
+			xor64 = kl ^ kr;
 
-			xor64 = l->u64 ^ r->u64;
 			if (xor64 > pxor64) { // test using 2 4 6 4
 				dbg(__LINE__, "xor>", meth, kofs, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 				break;
 			}
 
 			if (meth >= CEB_WM_KEQ) {
+				/* "found" is not used here */
+				kl ^= key_u64; kr ^= key_u64;
+				brside = kl >= kr;
+
 				/* let's stop if our key is not there */
 
-				if ((key_u64 ^ l->u64) > xor64 && (key_u64 ^ r->u64) > xor64) {
+				if (kl > xor64 && kr > xor64) {
 					dbg(__LINE__, "mismatch", meth, kofs, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 					break;
 				}
@@ -754,22 +758,24 @@ struct ceb_node *_cebu_descend(struct ceb_node **root,
 		}
 		else if (key_type == CEB_KT_ADDR) {
 			uintptr_t xoraddr;   // left vs right branch xor
+			uintptr_t kl, kr;
 
-			if (meth >= CEB_WM_KEQ) {
-				/* "found" is not used here */
-				brside = ((uintptr_t)key_ptr ^ (uintptr_t)l) >= ((uintptr_t)key_ptr ^ (uintptr_t)r);
-			}
+			kl = (uintptr_t)l; kr = (uintptr_t)r;
+			xoraddr = kl ^ kr;
 
-			xoraddr = (uintptr_t)l ^ (uintptr_t)r;
 			if (xoraddr > (uintptr_t)pxor64) { // test using 2 4 6 4
 				dbg(__LINE__, "xor>", meth, kofs, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 				break;
 			}
 
 			if (meth >= CEB_WM_KEQ) {
+				/* "found" is not used here */
+				kl ^= (uintptr_t)key_ptr; kr ^= (uintptr_t)key_ptr;
+				brside = kl >= kr;
+
 				/* let's stop if our key is not there */
 
-				if (((uintptr_t)key_ptr ^ (uintptr_t)l) > xoraddr && ((uintptr_t)key_ptr ^ (uintptr_t)r) > xoraddr) {
+				if (kl > xoraddr && kr > xoraddr) {
 					dbg(__LINE__, "mismatch", meth, kofs, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 					break;
 				}
