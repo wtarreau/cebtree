@@ -28,7 +28,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "cebtree.h"
 #include "cebtree-prv.h"
 
 /*****************************************************************************\
