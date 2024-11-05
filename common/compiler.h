@@ -109,5 +109,10 @@
 #endif
 #endif
 
+/* Define the missing __builtin_prefetch() for tcc. */
+#if defined(__TINYC__)
+#define __builtin_prefetch(addr, ...) do { } while (0)
+#endif
+
 
 #endif /* _EBTREE_COMPILER_H */
