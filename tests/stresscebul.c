@@ -34,6 +34,13 @@
 
 
 /* Some utility functions */
+#if defined(__TINYC__)
+#include <stdatomic.h>
+#define __atomic_load_n(addr, order) __atomic_load(addr, order)
+#define __atomic_store_n(addr, value, order) __atomic_store(addr, value, order)
+#define __builtin_trap() abort()
+#define __thread
+#endif
 
 #define RND32SEED 2463534242U
 static __thread uint32_t rnd32seed = RND32SEED;
