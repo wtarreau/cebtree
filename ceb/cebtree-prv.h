@@ -1218,12 +1218,12 @@ struct ceb_node *_ceb_last(struct ceb_node **root,
  * that fork.
  */
 static inline __attribute__((always_inline))
-struct ceb_node *_ceb_next(struct ceb_node **root,
-                           ptrdiff_t kofs,
-                           enum ceb_key_type key_type,
-                           uint32_t key_u32,
-                           uint64_t key_u64,
-                           const void *key_ptr)
+struct ceb_node *_ceb_next_unique(struct ceb_node **root,
+                                  ptrdiff_t kofs,
+                                  enum ceb_key_type key_type,
+                                  uint32_t key_u32,
+                                  uint64_t key_u64,
+                                  const void *key_ptr)
 {
 	struct ceb_node *restart;
 
@@ -1247,12 +1247,12 @@ struct ceb_node *_ceb_next(struct ceb_node **root,
  * that fork.
  */
 static inline __attribute__((always_inline))
-struct ceb_node *_ceb_prev(struct ceb_node **root,
-                           ptrdiff_t kofs,
-                           enum ceb_key_type key_type,
-                           uint32_t key_u32,
-                           uint64_t key_u64,
-                           const void *key_ptr)
+struct ceb_node *_ceb_prev_unique(struct ceb_node **root,
+                                  ptrdiff_t kofs,
+                                  enum ceb_key_type key_type,
+                                  uint32_t key_u32,
+                                  uint64_t key_u64,
+                                  const void *key_ptr)
 {
 	struct ceb_node *restart;
 
