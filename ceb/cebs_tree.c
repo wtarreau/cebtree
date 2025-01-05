@@ -119,7 +119,7 @@ CEB_FDECL3(struct ceb_node *, cebs, _next, struct ceb_node **, root, ptrdiff_t, 
 {
 	const void *key = NODEK(node, kofs)->str;
 
-	return _ceb_next(root, kofs, CEB_KT_ST, 0, 0, key);
+	return _ceb_next_unique(root, kofs, CEB_KT_ST, 0, 0, key);
 }
 
 /* search for the prev node before the specified one, and return it, or NULL if
@@ -131,7 +131,7 @@ CEB_FDECL3(struct ceb_node *, cebs, _prev, struct ceb_node **, root, ptrdiff_t, 
 {
 	const void *key = NODEK(node, kofs)->str;
 
-	return _ceb_prev(root, kofs, CEB_KT_ST, 0, 0, key);
+	return _ceb_prev_unique(root, kofs, CEB_KT_ST, 0, 0, key);
 }
 
 /* look up the specified node with its key and deletes it if found, and in any
