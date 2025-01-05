@@ -111,7 +111,7 @@ CEB_FDECL3(struct ceb_node *, cebis, _lookup_gt, struct ceb_node **, root, ptrdi
  * time a left turn was made, and returning the first node along the right
  * branch at that fork.
  */
-CEB_FDECL3(struct ceb_node *, cebis, _next, struct ceb_node **, root, ptrdiff_t, kofs, struct ceb_node *, node)
+CEB_FDECL3(struct ceb_node *, cebis, _next_unique, struct ceb_node **, root, ptrdiff_t, kofs, struct ceb_node *, node)
 {
 	const void *key = NODEK(node, kofs)->ptr;
 
@@ -123,11 +123,35 @@ CEB_FDECL3(struct ceb_node *, cebis, _next, struct ceb_node **, root, ptrdiff_t,
  * time a right turn was made, and returning the last node along the left
  * branch at that fork.
  */
-CEB_FDECL3(struct ceb_node *, cebis, _prev, struct ceb_node **, root, ptrdiff_t, kofs, struct ceb_node *, node)
+CEB_FDECL3(struct ceb_node *, cebis, _prev_unique, struct ceb_node **, root, ptrdiff_t, kofs, struct ceb_node *, node)
 {
 	const void *key = NODEK(node, kofs)->ptr;
 
 	return _ceb_prev_unique(root, kofs, CEB_KT_IS, 0, 0, key);
+}
+
+/* search for the next node after the specified one, and return it, or NULL if
+ * not found. The approach consists in looking up that node, recalling the last
+ * time a left turn was made, and returning the first node along the right
+ * branch at that fork.
+ */
+CEB_FDECL3(struct ceb_node *, cebis, _next, struct ceb_node **, root, ptrdiff_t, kofs, struct ceb_node *, node)
+{
+	const void *key = NODEK(node, kofs)->ptr;
+
+	return _ceb_next(root, kofs, CEB_KT_IS, 0, 0, key, node);
+}
+
+/* search for the prev node before the specified one, and return it, or NULL if
+ * not found. The approach consists in looking up that node, recalling the last
+ * time a right turn was made, and returning the last node along the left
+ * branch at that fork.
+ */
+CEB_FDECL3(struct ceb_node *, cebis, _prev, struct ceb_node **, root, ptrdiff_t, kofs, struct ceb_node *, node)
+{
+	const void *key = NODEK(node, kofs)->ptr;
+
+	return _ceb_prev(root, kofs, CEB_KT_IS, 0, 0, key, node);
 }
 
 /* look up the specified node with its key and deletes it if found, and in any
