@@ -1164,6 +1164,7 @@ struct ceb_node *_ceb_insert(struct ceb_node **root,
 
 /* Returns the first node or NULL if not found, assuming a tree made of keys of
  * type <key_type>, and optionally <key_len> for fixed-size arrays (otherwise 0).
+ * If the tree starts with duplicates, the first of them is returned.
  */
 static inline __attribute__((always_inline))
 struct ceb_node *_ceb_first(struct ceb_node **root,
@@ -1171,14 +1172,23 @@ struct ceb_node *_ceb_first(struct ceb_node **root,
                             enum ceb_key_type key_type,
                             uint64_t key_len)
 {
+	struct ceb_node *node;
+	int is_dup = 0;
+
 	if (!*root)
 		return NULL;
 
-	return _ceb_descend(root, CEB_WM_FST, kofs, key_type, 0, key_len, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	node = _ceb_descend(root, CEB_WM_FST, kofs, key_type, 0, key_len, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &is_dup);
+	if (node && is_dup) {
+		/* on a duplicate, the first node is right->left */
+		node = node->b[1]->b[0];
+	}
+	return node;
 }
 
 /* Returns the last node or NULL if not found, assuming a tree made of keys of
  * type <key_type>, and optionally <key_len> for fixed-size arrays (otherwise 0).
+ * If the tree ends with duplicates, the last of them is returned.
  */
 static inline __attribute__((always_inline))
 struct ceb_node *_ceb_last(struct ceb_node **root,
@@ -1189,6 +1199,7 @@ struct ceb_node *_ceb_last(struct ceb_node **root,
 	if (!*root)
 		return NULL;
 
+	/* note for duplicates: the current scheme always returns the last one by default */
 	return _ceb_descend(root, CEB_WM_LST, kofs, key_type, 0, key_len, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 }
 
