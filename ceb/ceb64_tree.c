@@ -146,7 +146,7 @@ CEB_FDECL3(struct ceb_node *, cebu64, _pick, struct ceb_node **, root, ptrdiff_t
 /* dumps a ceb_node tree using the default functions above. If a node matches
  * <ctx>, this one will be highlighted in red.
  */
-CEB_FDECL4(void, ceb64, _default_dump, struct ceb_node **, root, ptrdiff_t, kofs, const char *, label, const void *, ctx)
+CEB_FDECL5(void, ceb64, _default_dump, struct ceb_node **, root, ptrdiff_t, kofs, const char *, label, const void *, ctx, int, sub)
 {
 	printf("\ndigraph ceb64_tree {\n"
 	       "  fontname=\"fixed\";\n"
@@ -157,7 +157,7 @@ CEB_FDECL4(void, ceb64, _default_dump, struct ceb_node **, root, ptrdiff_t, kofs
 	printf("  node [fontname=\"fixed\" fontsize=8 shape=\"box\" style=\"filled\" color=\"black\" fillcolor=\"white\"];\n"
 	       "  edge [fontname=\"fixed\" fontsize=8 style=\"solid\" color=\"magenta\" dir=\"forward\"];\n");
 
-	ceb_default_dump_tree(kofs, CEB_KT_U64, root, 0, NULL, 0, ctx, NULL, NULL, NULL);
+	ceb_default_dump_tree(kofs, CEB_KT_U64, root, 0, NULL, 0, ctx, sub, NULL, NULL, NULL);
 
 	printf("}\n");
 }

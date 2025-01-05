@@ -44,7 +44,7 @@ struct ceb_node *cebuis_delete(struct ceb_node **root, struct ceb_node *node);
 struct ceb_node *cebuis_pick(struct ceb_node **root, const void *key);
 
 /* generic dump function */
-void cebis_default_dump(struct ceb_node **root, const char *label, const void *ctx);
+void cebis_default_dump(struct ceb_node **root, const char *label, const void *ctx, int sub);
 
 /* version taking a key offset */
 struct ceb_node *cebuis_ofs_insert(struct ceb_node **root, ptrdiff_t kofs, struct ceb_node *node);
@@ -61,6 +61,6 @@ struct ceb_node *cebuis_ofs_delete(struct ceb_node **root, ptrdiff_t kofs, struc
 struct ceb_node *cebuis_ofs_pick(struct ceb_node **root, ptrdiff_t kofs, const void *key);
 
 /* generic dump function taking a key offset */
-void cebis_ofs_default_dump(struct ceb_node **root, ptrdiff_t kofs, const char *label, const void *ctx);
+void cebis_ofs_default_dump(struct ceb_node **root, ptrdiff_t kofs, const char *label, const void *ctx, int sub);
 
 #endif /* _CEBIS_TREE_H */

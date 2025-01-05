@@ -138,7 +138,7 @@ int main(int argc, char **argv)
 				size_t len;
 
 				len = snprintf(cmd, sizeof(cmd), "%s %d/%d : %p %llu\n", orig_argv, round, round+count, old, (unsigned long long)v);
-				cebu64_default_dump(&ceb_root, len < sizeof(cmd) ? cmd : orig_argv, old);
+				cebu64_default_dump(&ceb_root, len < sizeof(cmd) ? cmd : orig_argv, old, round + 1);
 				round++;
 			}
 		}
@@ -146,21 +146,21 @@ int main(int argc, char **argv)
 		while (count--) {
 			v = rnd64() & mask;
 			if (!count && debug > 2)
-				cebu64_default_dump(&ceb_root, "step1", 0);
+				cebu64_default_dump(&ceb_root, "step1", 0, (count + 1) * 6 + 1);
 			old = cebu64_pick(&ceb_root, v);
 			if (!count && debug > 2)
-				cebu64_default_dump(&ceb_root, "step2", 0);
+				cebu64_default_dump(&ceb_root, "step2", 0, (count + 1) * 6 + 2);
 			back = old;
 			while (old) {
 				if (old && !count && debug > 2)
-					cebu64_default_dump(&ceb_root, "step3", 0);
+					cebu64_default_dump(&ceb_root, "step3", 0, (count + 1) * 6 + 3);
 				old = cebu64_pick(&ceb_root, v);
 				//if (old)
 				//	printf("count=%d v=%u back=%p old=%p\n", count, v, back, old);
 			}
 
 			if (!count && debug > 2)
-				cebu64_default_dump(&ceb_root, "step4", 0);
+				cebu64_default_dump(&ceb_root, "step4", 0, (count + 1) * 6 + 4);
 
 			//abort();
 			//memset(old, 0, sizeof(*key));
@@ -174,20 +174,20 @@ int main(int argc, char **argv)
 				abort();
 
 			if (!count && debug > 2)
-				cebu64_default_dump(&ceb_root, "step5", 0);
+				cebu64_default_dump(&ceb_root, "step5", 0, (count + 1) * 6 + 5);
 			else if (debug > 1) {
 				static int round;
 				char cmd[100];
 				size_t len;
 
 				len = snprintf(cmd, sizeof(cmd), "%s %d/%d : %p %llu\n", orig_argv, round, round+count, old, (unsigned long long)v);
-				cebu64_default_dump(&ceb_root, len < sizeof(cmd) ? cmd : orig_argv, old);
+				cebu64_default_dump(&ceb_root, len < sizeof(cmd) ? cmd : orig_argv, old, (count + 1) * 6 + 6);
 				round++;
 			}
 		}
 	}
 
 	if (debug == 1)
-		cebu64_default_dump(&ceb_root, orig_argv, 0);
+		cebu64_default_dump(&ceb_root, orig_argv, 0, 0);
 	return 0;
 }
