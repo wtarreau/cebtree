@@ -79,7 +79,7 @@ int main(int argc, char **argv)
 			size_t len;
 
 			len = snprintf(cmd, sizeof(cmd), "%s [%d] +%d", orig_argv, round, v);
-			cebu32_default_dump(&ceb_root, len < sizeof(cmd) ? cmd : orig_argv, old);
+			cebu32_default_dump(&ceb_root, len < sizeof(cmd) ? cmd : orig_argv, old, round + 1);
 			round++;
 		}
 
@@ -92,7 +92,7 @@ int main(int argc, char **argv)
 		p += strlen(p);
 
 	if (!debug)
-		cebu32_default_dump(&ceb_root, orig_argv, 0);
+		cebu32_default_dump(&ceb_root, orig_argv, 0, 0);
 
 	printf("# Dump of all nodes using first() + next()\n");
 	for (i = 0, old = cebu32_first(&ceb_root); old; i++, old = cebu32_next(&ceb_root, (struct ceb_node*)old))
