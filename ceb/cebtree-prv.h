@@ -478,8 +478,12 @@ struct ceb_node *_ceb_descend(struct ceb_node **root,
 
 		dbg(__LINE__, "newp", meth, kofs, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 
-		/* two equal pointers identifies the nodeless leaf. */
-		if (l == r) {
+		/* two equal pointers identifies either the nodeless leaf or
+		 * the 2nd dup of a sub-tree. Both are leaves anyway, but we
+		 * must not yet stop here for a dup as we may want to report
+		 * it.
+		 */
+		if (l == k && r == k) {
 			dbg(__LINE__, "l==r", meth, kofs, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 			break;
 		}
@@ -536,6 +540,12 @@ struct ceb_node *_ceb_descend(struct ceb_node **root,
 			kl = l->u32; kr = r->u32;
 			xor32 = kl ^ kr;
 
+			if (!xor32) {
+				/* exact match, that's a duplicate */
+				dbg(__LINE__, "dup>", meth, kofs, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+				break;
+			}
+
 			if (xor32 > pxor32) { // test using 2 4 6 4
 				dbg(__LINE__, "xor>", meth, kofs, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 				break;
@@ -569,6 +579,12 @@ struct ceb_node *_ceb_descend(struct ceb_node **root,
 
 			kl = l->u64; kr = r->u64;
 			xor64 = kl ^ kr;
+
+			if (!xor64) {
+				/* exact match, that's a duplicate */
+				dbg(__LINE__, "dup>", meth, kofs, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+				break;
+			}
 
 			if (xor64 > pxor64) { // test using 2 4 6 4
 				dbg(__LINE__, "xor>", meth, kofs, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
@@ -610,6 +626,12 @@ struct ceb_node *_ceb_descend(struct ceb_node **root,
 			}
 
 			xlen = equal_bits(l->mb, r->mb, 0, key_u64 << 3);
+			if (xlen == key_u64 << 3) {
+				/* exact match, that's a duplicate */
+				dbg(__LINE__, "dup>", meth, kofs, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+				break;
+			}
+
 			if (xlen < plen) {
 				/* this is a leaf. E.g. triggered using 2 4 6 4 */
 				dbg(__LINE__, "xor>", meth, kofs, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
@@ -653,6 +675,12 @@ struct ceb_node *_ceb_descend(struct ceb_node **root,
 			}
 
 			xlen = equal_bits(l->ptr, r->ptr, 0, key_u64 << 3);
+			if (xlen == key_u64 << 3) {
+				/* exact match, that's a duplicate */
+				dbg(__LINE__, "dup>", meth, kofs, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+				break;
+			}
+
 			if (xlen < plen) {
 				/* this is a leaf. E.g. triggered using 2 4 6 4 */
 				dbg(__LINE__, "xor>", meth, kofs, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
@@ -701,6 +729,12 @@ struct ceb_node *_ceb_descend(struct ceb_node **root,
 			}
 
 			xlen = string_equal_bits(l->str, r->str, 0);
+			if ((ssize_t)xlen < 0) {
+				/* exact match, that's a duplicate */
+				dbg(__LINE__, "dup>", meth, kofs, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+				break;
+			}
+
 			if (xlen < plen) {
 				/* this is a leaf. E.g. triggered using 2 4 6 4 */
 				dbg(__LINE__, "xor>", meth, kofs, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
@@ -750,6 +784,12 @@ struct ceb_node *_ceb_descend(struct ceb_node **root,
 			}
 
 			xlen = string_equal_bits(l->ptr, r->ptr, 0);
+			if ((ssize_t)xlen < 0) {
+				/* exact match, that's a duplicate */
+				dbg(__LINE__, "dup>", meth, kofs, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+				break;
+			}
+
 			if (xlen < plen) {
 				/* this is a leaf. E.g. triggered using 2 4 6 4 */
 				dbg(__LINE__, "xor>", meth, kofs, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
@@ -787,6 +827,12 @@ struct ceb_node *_ceb_descend(struct ceb_node **root,
 
 			kl = (uintptr_t)l; kr = (uintptr_t)r;
 			xoraddr = kl ^ kr;
+
+			if (!xoraddr) {
+				/* exact match, that's a duplicate */
+				dbg(__LINE__, "dup>", meth, kofs, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+				break;
+			}
 
 			if (xoraddr > (uintptr_t)pxor64) { // test using 2 4 6 4
 				dbg(__LINE__, "xor>", meth, kofs, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
