@@ -65,7 +65,11 @@ int main(int argc, char **argv)
 		argc--; argv++;
 	}
 
-	orig_argv = larg = *argv;
+	orig_argv = larg = (argc > 0) ? *argv : argv0;
+
+	if (debug)
+		cebu32_default_dump(0, orig_argv, 0, 0); // prologue
+
 	while (argc > 0) {
 		v = atoi(argv[0]);
 		old = cebu32_lookup(&ceb_root, v);
@@ -91,7 +95,9 @@ int main(int argc, char **argv)
 	for (p = orig_argv; p < larg; *p++ = ' ')
 		p += strlen(p);
 
-	if (!debug)
+	if (debug)
+		cebu32_default_dump(0, 0, 0, 0); // epilogue
+	else
 		cebu32_default_dump(&ceb_root, orig_argv, 0, 0);
 
 	printf("# Dump of all nodes using first() + next()\n");

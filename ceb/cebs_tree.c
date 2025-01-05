@@ -145,20 +145,34 @@ CEB_FDECL3(struct ceb_node *, cebus, _pick, struct ceb_node **, root, ptrdiff_t,
 }
 
 /* dumps a ceb_node tree using the default functions above. If a node matches
- * <ctx>, this one will be highlighted in red.
+ * <ctx>, this one will be highlighted in red. If the <sub> value is non-null,
+ * only a subgraph will be printed. If it's null, and root is non-null, then
+ * the tree is dumped at once, otherwise if root is NULL, then a prologue is
+ * dumped when label is not NULL, or the epilogue when label is NULL. As a
+ * summary:
+ *    sub  root label
+ *     0   NULL NULL   epilogue only (closing brace and LF)
+ *     0   NULL text   prologue with <text> as label
+ *     0   tree *      prologue+tree+epilogue at once
+ *    N>0  tree *      only the tree, after a prologue and before an epilogue
  */
 CEB_FDECL5(void, cebs, _default_dump, struct ceb_node **, root, ptrdiff_t, kofs, const char *, label, const void *, ctx, int, sub)
 {
-	printf("\ndigraph cebs_tree {\n"
-	       "  fontname=\"fixed\";\n"
-	       "  fontsize=8\n"
-	       "  label=\"%s\"\n"
-	       "", label);
+	if (!sub && label) {
+		printf("\ndigraph cebs_tree {\n"
+		       "  fontname=\"fixed\";\n"
+		       "  fontsize=8\n"
+		       "  label=\"%s\"\n"
+		       "", label);
 
-	printf("  node [fontname=\"fixed\" fontsize=8 shape=\"box\" style=\"filled\" color=\"black\" fillcolor=\"white\"];\n"
-	       "  edge [fontname=\"fixed\" fontsize=8 style=\"solid\" color=\"magenta\" dir=\"forward\"];\n");
+		printf("  node [fontname=\"fixed\" fontsize=8 shape=\"box\" style=\"filled\" color=\"black\" fillcolor=\"white\"];\n"
+		       "  edge [fontname=\"fixed\" fontsize=8 style=\"solid\" color=\"magenta\" dir=\"forward\"];\n");
+	} else
+		printf("\n### sub %d ###\n\n", sub);
 
-	ceb_default_dump_tree(kofs, CEB_KT_ST, root, 0, NULL, 0, ctx, sub, NULL, NULL, NULL);
+	if (root)
+		ceb_default_dump_tree(kofs, CEB_KT_ST, root, 0, NULL, 0, ctx, sub, NULL, NULL, NULL);
 
-	printf("}\n");
+	if (!sub && (root || !label))
+		printf("}\n");
 }
