@@ -36,6 +36,8 @@ struct ceb_node *ceb32_lookup_le(struct ceb_node **root, uint32_t key);
 struct ceb_node *ceb32_lookup_lt(struct ceb_node **root, uint32_t key);
 struct ceb_node *ceb32_lookup_ge(struct ceb_node **root, uint32_t key);
 struct ceb_node *ceb32_lookup_gt(struct ceb_node **root, uint32_t key);
+struct ceb_node *ceb32_next_unique(struct ceb_node **root, struct ceb_node *node);
+struct ceb_node *ceb32_prev_unique(struct ceb_node **root, struct ceb_node *node);
 struct ceb_node *ceb32_next(struct ceb_node **root, struct ceb_node *node);
 struct ceb_node *ceb32_prev(struct ceb_node **root, struct ceb_node *node);
 struct ceb_node *ceb32_delete(struct ceb_node **root, struct ceb_node *node);
@@ -51,6 +53,8 @@ struct ceb_node *ceb32_ofs_lookup_le(struct ceb_node **root, ptrdiff_t kofs, uin
 struct ceb_node *ceb32_ofs_lookup_lt(struct ceb_node **root, ptrdiff_t kofs, uint32_t key);
 struct ceb_node *ceb32_ofs_lookup_ge(struct ceb_node **root, ptrdiff_t kofs, uint32_t key);
 struct ceb_node *ceb32_ofs_lookup_gt(struct ceb_node **root, ptrdiff_t kofs, uint32_t key);
+struct ceb_node *ceb32_ofs_next_unique(struct ceb_node **root, ptrdiff_t kofs, struct ceb_node *node);
+struct ceb_node *ceb32_ofs_prev_unique(struct ceb_node **root, ptrdiff_t kofs, struct ceb_node *node);
 struct ceb_node *ceb32_ofs_next(struct ceb_node **root, ptrdiff_t kofs, struct ceb_node *node);
 struct ceb_node *ceb32_ofs_prev(struct ceb_node **root, ptrdiff_t kofs, struct ceb_node *node);
 struct ceb_node *ceb32_ofs_delete(struct ceb_node **root, ptrdiff_t kofs, struct ceb_node *node);
