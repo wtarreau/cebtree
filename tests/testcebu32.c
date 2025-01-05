@@ -51,6 +51,7 @@ int main(int argc, char **argv)
 	char *p;
 	uint32_t v;
 	int debug = 0;
+	int i;
 
 	argv++; argc--;
 
@@ -98,6 +99,14 @@ int main(int argc, char **argv)
 		cebu32_default_dump(0, 0, 0, 0); // epilogue
 	else
 		cebu32_default_dump(&ceb_root, orig_argv, 0, 0);
+
+	printf("# Dump of all nodes using first() + next()\n");
+	for (i = 0, old = cebu32_first(&ceb_root); old; i++, old = cebu32_next(&ceb_root, (struct ceb_node*)old))
+		printf("# node[%d]=%p key=%u\n", i, old, container_of(old, struct key, node)->key);
+
+	printf("# Dump of all nodes using last() + prev()\n");
+	for (i = 0, old = cebu32_last(&ceb_root); old; i++, old = cebu32_prev(&ceb_root, (struct ceb_node*)old))
+		printf("# node[%d]=%p key=%u\n", i, old, container_of(old, struct key, node)->key);
 
 	return 0;
 }

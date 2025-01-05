@@ -55,6 +55,7 @@ int main(int argc, char **argv)
 	int found;
 	int lookup_mode = 0; // 0 = EQ; -1 = LE; 1 = GE
 	int do_count = 0;
+	int i;
 
 	argv++; argc--;
 
@@ -141,6 +142,14 @@ int main(int argc, char **argv)
 		cebul_default_dump(0, 0, 0, 0); // epilogue
 	else
 		cebul_default_dump(&ceb_root, orig_argv, 0, 0);
+
+	printf("# Dump of all nodes using first() + next()\n");
+	for (i = 0, old = cebul_first(&ceb_root); old; i++, old = cebul_next(&ceb_root, (struct ceb_node*)old))
+		printf("# node[%d]=%p key=%u\n", i, old, container_of(old, struct key, node)->key);
+
+	printf("# Dump of all nodes using last() + prev()\n");
+	for (i = 0, old = cebul_last(&ceb_root); old; i++, old = cebul_prev(&ceb_root, (struct ceb_node*)old))
+		printf("# node[%d]=%p key=%u\n", i, old, container_of(old, struct key, node)->key);
 
 	return 0;
 }

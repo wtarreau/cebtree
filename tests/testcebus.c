@@ -254,5 +254,13 @@ int main(int argc, char **argv)
 	if (!debug && dump)
 		cebus_default_dump(&ceb_root, orig_argv, 0, 0);
 
+	printf("# Dump of all nodes using first() + next()\n");
+	for (i = 0, old = cebus_first(&ceb_root); old; i++, old = cebus_next(&ceb_root, (struct ceb_node*)old))
+		printf("# node[%d]=%p key=%s\n", i, old, container_of(old, struct key, node)->key);
+
+	printf("# Dump of all nodes using last() + prev()\n");
+	for (i = 0, old = cebus_last(&ceb_root); old; i++, old = cebus_prev(&ceb_root, (struct ceb_node*)old))
+		printf("# node[%d]=%p key=%s\n", i, old, container_of(old, struct key, node)->key);
+
 	return 0;
 }
