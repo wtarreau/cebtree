@@ -138,7 +138,7 @@ CEB_FDECL3(struct ceb_node *, cebl, _lookup_gt, struct ceb_node **, root, ptrdif
  * time a left turn was made, and returning the first node along the right
  * branch at that fork.
  */
-CEB_FDECL3(struct ceb_node *, cebl, _next, struct ceb_node **, root, ptrdiff_t, kofs, struct ceb_node *, node)
+CEB_FDECL3(struct ceb_node *, cebl, _next_unique, struct ceb_node **, root, ptrdiff_t, kofs, struct ceb_node *, node)
 {
 	unsigned long key = NODEK(node, kofs)->ul;
 
@@ -153,7 +153,7 @@ CEB_FDECL3(struct ceb_node *, cebl, _next, struct ceb_node **, root, ptrdiff_t, 
  * time a right turn was made, and returning the last node along the left
  * branch at that fork.
  */
-CEB_FDECL3(struct ceb_node *, cebl, _prev, struct ceb_node **, root, ptrdiff_t, kofs, struct ceb_node *, node)
+CEB_FDECL3(struct ceb_node *, cebl, _prev_unique, struct ceb_node **, root, ptrdiff_t, kofs, struct ceb_node *, node)
 {
 	unsigned long key = NODEK(node, kofs)->ul;
 
@@ -161,6 +161,36 @@ CEB_FDECL3(struct ceb_node *, cebl, _prev, struct ceb_node **, root, ptrdiff_t, 
 		return _ceb_prev_unique(root, kofs, CEB_KT_U32, key, 0, NULL);
 	else
 		return _ceb_prev_unique(root, kofs, CEB_KT_U64, 0, key, NULL);
+}
+
+/* search for the next node after the specified one, and return it, or NULL if
+ * not found. The approach consists in looking up that node, recalling the last
+ * time a left turn was made, and returning the first node along the right
+ * branch at that fork.
+ */
+CEB_FDECL3(struct ceb_node *, cebl, _next, struct ceb_node **, root, ptrdiff_t, kofs, struct ceb_node *, node)
+{
+	unsigned long key = NODEK(node, kofs)->ul;
+
+	if (sizeof(long) <= 4)
+		return _ceb_next(root, kofs, CEB_KT_U32, key, 0, NULL, node);
+	else
+		return _ceb_next(root, kofs, CEB_KT_U64, 0, key, NULL, node);
+}
+
+/* search for the prev node before the specified one, and return it, or NULL if
+ * not found. The approach consists in looking up that node, recalling the last
+ * time a right turn was made, and returning the last node along the left
+ * branch at that fork.
+ */
+CEB_FDECL3(struct ceb_node *, cebl, _prev, struct ceb_node **, root, ptrdiff_t, kofs, struct ceb_node *, node)
+{
+	unsigned long key = NODEK(node, kofs)->ul;
+
+	if (sizeof(long) <= 4)
+		return _ceb_prev(root, kofs, CEB_KT_U32, key, 0, NULL, node);
+	else
+		return _ceb_prev(root, kofs, CEB_KT_U64, 0, key, NULL, node);
 }
 
 /* look up the specified node with its key and deletes it if found, and in any
