@@ -478,8 +478,12 @@ struct ceb_node *_ceb_descend(struct ceb_node **root,
 
 		dbg(__LINE__, "newp", meth, kofs, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 
-		/* two equal pointers identifies the nodeless leaf. */
-		if (l == r) {
+		/* two equal pointers identifies either the nodeless leaf or
+		 * the 2nd dup of a sub-tree. Both are leaves anyway, but we
+		 * must not yet stop here for a dup as we may want to report
+		 * it.
+		 */
+		if (l == r && r == k) {
 			dbg(__LINE__, "l==r", meth, kofs, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 			break;
 		}
@@ -562,6 +566,11 @@ struct ceb_node *_ceb_descend(struct ceb_node **root,
 				}
 			}
 			pxor32 = xor32;
+			if (!xor32) {
+				/* both sides are equal, that's a duplicate */
+				dbg(__LINE__, "dup>", meth, kofs, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+				break;
+			}
 		}
 		else if (key_type == CEB_KT_U64) {
 			uint64_t xor64;   // left vs right branch xor
@@ -596,6 +605,11 @@ struct ceb_node *_ceb_descend(struct ceb_node **root,
 				}
 			}
 			pxor64 = xor64;
+			if (!xor64) {
+				/* both sides are equal, that's a duplicate */
+				dbg(__LINE__, "dup>", meth, kofs, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+				break;
+			}
 		}
 		else if (key_type == CEB_KT_MB) {
 			size_t xlen = 0; // left vs right matching length
@@ -639,6 +653,11 @@ struct ceb_node *_ceb_descend(struct ceb_node **root,
 				}
 			}
 			plen = xlen;
+			if ((uint64_t)xlen / 8 == key_u64) {
+				/* both sides are equal, that's a duplicate */
+				dbg(__LINE__, "dup>", meth, kofs, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+				break;
+			}
 		}
 		else if (key_type == CEB_KT_IM) {
 			size_t xlen = 0; // left vs right matching length
@@ -682,6 +701,11 @@ struct ceb_node *_ceb_descend(struct ceb_node **root,
 				}
 			}
 			plen = xlen;
+			if ((uint64_t)xlen / 8 == key_u64) {
+				/* both sides are equal, that's a duplicate */
+				dbg(__LINE__, "dup>", meth, kofs, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+				break;
+			}
 		}
 		else if (key_type == CEB_KT_ST) {
 			size_t xlen = 0; // left vs right matching length
@@ -731,6 +755,11 @@ struct ceb_node *_ceb_descend(struct ceb_node **root,
 				}
 			}
 			plen = xlen;
+			if ((ssize_t)xlen < 0) {
+				/* exact match, that's a duplicate */
+				dbg(__LINE__, "dup>", meth, kofs, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+				break;
+			}
 		}
 		else if (key_type == CEB_KT_IS) {
 			size_t xlen = 0; // left vs right matching length
@@ -780,6 +809,11 @@ struct ceb_node *_ceb_descend(struct ceb_node **root,
 				}
 			}
 			plen = xlen;
+			if ((ssize_t)xlen < 0) {
+				/* both sides are equal, that's a duplicate */
+				dbg(__LINE__, "dup>", meth, kofs, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+				break;
+			}
 		}
 		else if (key_type == CEB_KT_ADDR) {
 			uintptr_t xoraddr;   // left vs right branch xor
@@ -814,6 +848,11 @@ struct ceb_node *_ceb_descend(struct ceb_node **root,
 				}
 			}
 			pxor64 = xoraddr;
+			if (!xoraddr) {
+				/* both sides are equal, that's a duplicate */
+				dbg(__LINE__, "dup>", meth, kofs, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+				break;
+			}
 		}
 
 		/* shift all copies by one */
