@@ -252,7 +252,7 @@ int main(int argc, char **argv)
 		fprintf(stderr, "counted %d elements\n", found);
 
 	if (!debug && dump)
-		cebus_default_dump(&ceb_root, orig_argv, 0);
+		cebus_default_dump(&ceb_root, orig_argv, 0, 0);
 
 	printf("# Dump of all nodes using first() + next()\n");
 	for (i = 0, old = cebus_first(&ceb_root); old; i++, old = cebus_next(&ceb_root, (struct ceb_node*)old))
