@@ -1386,14 +1386,17 @@ static void ceb_default_dump_root(ptrdiff_t kofs, enum ceb_key_type key_type, st
 {
 	const struct ceb_node *node;
 
-	printf("  \"%lx_n\" [label=\"root\\n%lx\"]\n", (long)root, (long)root);
+	if (!sub)
+		printf("  \"%lx_n_%d\" [label=\"root\\n%lx\"]\n", (long)root, sub, (long)root);
+	else
+		printf("  \"%lx_n_%d\" [label=\"root\\n%lx\\ntree #%d\"]\n", (long)root, sub, (long)root, sub);
 
 	node = *root;
 	if (node) {
 		/* under the root we've either a node or the first leaf */
-		printf("  \"%lx_n\" -> \"%lx_%c\" [label=\"B\" arrowsize=0.66];\n",
-		       (long)root, (long)node,
-		       (node->b[0] == node->b[1]) ? 'l' : 'n');
+		printf("  \"%lx_n_%d\" -> \"%lx_%c_%d\" [label=\"B\" arrowsize=0.66];\n",
+		       (long)root, sub, (long)node,
+		       (node->b[0] == node->b[1]) ? 'l' : 'n', sub);
 	}
 }
 
@@ -1436,50 +1439,50 @@ static void ceb_default_dump_node(ptrdiff_t kofs, enum ceb_key_type key_type, co
 	case CEB_KT_ADDR:
 	case CEB_KT_U32:
 	case CEB_KT_U64:
-		printf("  \"%lx_n\" [label=\"%lx\\nlev=%d bit=%d\\nkey=%llu\" fillcolor=\"lightskyblue1\"%s];\n",
-		       (long)node, (long)node, level, flsnz(pxor) - 1, int_key, (ctx == node) ? " color=red" : "");
+		printf("  \"%lx_n_%d\" [label=\"%lx\\nlev=%d bit=%d\\nkey=%llu\" fillcolor=\"lightskyblue1\"%s];\n",
+		       (long)node, sub, (long)node, level, flsnz(pxor) - 1, int_key, (ctx == node) ? " color=red" : "");
 
-		printf("  \"%lx_n\" -> \"%lx_%c\" [label=\"L\" arrowsize=0.66 %s];\n",
-		       (long)node, (long)node->b[0],
+		printf("  \"%lx_n_%d\" -> \"%lx_%c_%d\" [label=\"L\" arrowsize=0.66 %s];\n",
+		       (long)node, sub, (long)node->b[0],
 		       (lxor < pxor && ((struct ceb_node*)node->b[0])->b[0] != ((struct ceb_node*)node->b[0])->b[1]) ? 'n' : 'l',
-		       (node == node->b[0]) ? " dir=both" : "");
+		       sub, (node == node->b[0]) ? " dir=both" : "");
 
-		printf("  \"%lx_n\" -> \"%lx_%c\" [label=\"R\" arrowsize=0.66 %s];\n",
-		       (long)node, (long)node->b[1],
+		printf("  \"%lx_n_%d\" -> \"%lx_%c_%d\" [label=\"R\" arrowsize=0.66 %s];\n",
+		       (long)node, sub, (long)node->b[1],
 		       (rxor < pxor && ((struct ceb_node*)node->b[1])->b[0] != ((struct ceb_node*)node->b[1])->b[1]) ? 'n' : 'l',
-		       (node == node->b[1]) ? " dir=both" : "");
+		       sub, (node == node->b[1]) ? " dir=both" : "");
 		break;
 	case CEB_KT_MB:
 		break;
 	case CEB_KT_IM:
 		break;
 	case CEB_KT_ST:
-		printf("  \"%lx_n\" [label=\"%lx\\nlev=%d bit=%ld\\nkey=\\\"%s\\\"\" fillcolor=\"lightskyblue1\"%s];\n",
-		       (long)node, (long)node, level, (long)pxor, NODEK(node, kofs)->str, (ctx == node) ? " color=red" : "");
+		printf("  \"%lx_n_%d\" [label=\"%lx\\nlev=%d bit=%ld\\nkey=\\\"%s\\\"\" fillcolor=\"lightskyblue1\"%s];\n",
+		       (long)node, sub, (long)node, level, (long)pxor, NODEK(node, kofs)->str, (ctx == node) ? " color=red" : "");
 
-		printf("  \"%lx_n\" -> \"%lx_%c\" [label=\"L\" arrowsize=0.66 %s];\n",
-		       (long)node, (long)node->b[0],
+		printf("  \"%lx_n_%d\" -> \"%lx_%c_%d\" [label=\"L\" arrowsize=0.66 %s];\n",
+		       (long)node, sub, (long)node->b[0],
 		       (lxor > pxor && ((struct ceb_node*)node->b[0])->b[0] != ((struct ceb_node*)node->b[0])->b[1]) ? 'n' : 'l',
-		       (node == node->b[0]) ? " dir=both" : "");
+		       sub, (node == node->b[0]) ? " dir=both" : "");
 
-		printf("  \"%lx_n\" -> \"%lx_%c\" [label=\"R\" arrowsize=0.66 %s];\n",
-		       (long)node, (long)node->b[1],
+		printf("  \"%lx_n_%d\" -> \"%lx_%c_%d\" [label=\"R\" arrowsize=0.66 %s];\n",
+		       (long)node, sub, (long)node->b[1],
 		       (rxor > pxor && ((struct ceb_node*)node->b[1])->b[0] != ((struct ceb_node*)node->b[1])->b[1]) ? 'n' : 'l',
-		       (node == node->b[1]) ? " dir=both" : "");
+		       sub, (node == node->b[1]) ? " dir=both" : "");
 		break;
 	case CEB_KT_IS:
-		printf("  \"%lx_n\" [label=\"%lx\\nlev=%d bit=%ld\\nkey=\\\"%s\\\"\" fillcolor=\"lightskyblue1\"%s];\n",
-		       (long)node, (long)node, level, (long)pxor, NODEK(node, kofs)->ptr, (ctx == node) ? " color=red" : "");
+		printf("  \"%lx_n_%d\" [label=\"%lx\\nlev=%d bit=%ld\\nkey=\\\"%s\\\"\" fillcolor=\"lightskyblue1\"%s];\n",
+		       (long)node, sub, (long)node, level, (long)pxor, NODEK(node, kofs)->ptr, (ctx == node) ? " color=red" : "");
 
-		printf("  \"%lx_n\" -> \"%lx_%c\" [label=\"L\" arrowsize=0.66 %s];\n",
-		       (long)node, (long)node->b[0],
+		printf("  \"%lx_n_%d\" -> \"%lx_%c_%d\" [label=\"L\" arrowsize=0.66 %s];\n",
+		       (long)node, sub, (long)node->b[0],
 		       (lxor > pxor && ((struct ceb_node*)node->b[0])->b[0] != ((struct ceb_node*)node->b[0])->b[1]) ? 'n' : 'l',
-		       (node == node->b[0]) ? " dir=both" : "");
+		       sub, (node == node->b[0]) ? " dir=both" : "");
 
-		printf("  \"%lx_n\" -> \"%lx_%c\" [label=\"R\" arrowsize=0.66 %s];\n",
-		       (long)node, (long)node->b[1],
+		printf("  \"%lx_n_%d\" -> \"%lx_%c_%d\" [label=\"R\" arrowsize=0.66 %s];\n",
+		       (long)node, sub, (long)node->b[1],
 		       (rxor > pxor && ((struct ceb_node*)node->b[1])->b[0] != ((struct ceb_node*)node->b[1])->b[1]) ? 'n' : 'l',
-		       (node == node->b[1]) ? " dir=both" : "");
+		       sub, (node == node->b[1]) ? " dir=both" : "");
 		break;
 	}
 }
@@ -1514,11 +1517,11 @@ static void ceb_default_dump_leaf(ptrdiff_t kofs, enum ceb_key_type key_type, co
 	case CEB_KT_U32:
 	case CEB_KT_U64:
 		if (node->b[0] == node->b[1])
-			printf("  \"%lx_l\" [label=\"%lx\\nlev=%d\\nkey=%llu\\n\" fillcolor=\"green\"%s];\n",
-			       (long)node, (long)node, level, int_key, (ctx == node) ? " color=red" : "");
+			printf("  \"%lx_l_%d\" [label=\"%lx\\nlev=%d\\nkey=%llu\\n\" fillcolor=\"green\"%s];\n",
+			       (long)node, sub, (long)node, level, int_key, (ctx == node) ? " color=red" : "");
 		else
-			printf("  \"%lx_l\" [label=\"%lx\\nlev=%d bit=%d\\nkey=%llu\\n\" fillcolor=\"yellow\"%s];\n",
-			       (long)node, (long)node, level, flsnz(pxor) - 1, int_key, (ctx == node) ? " color=red" : "");
+			printf("  \"%lx_l_%d\" [label=\"%lx\\nlev=%d bit=%d\\nkey=%llu\\n\" fillcolor=\"yellow\"%s];\n",
+			       (long)node, sub, (long)node, level, flsnz(pxor) - 1, int_key, (ctx == node) ? " color=red" : "");
 		break;
 	case CEB_KT_MB:
 		break;
@@ -1526,19 +1529,19 @@ static void ceb_default_dump_leaf(ptrdiff_t kofs, enum ceb_key_type key_type, co
 		break;
 	case CEB_KT_ST:
 		if (node->b[0] == node->b[1])
-			printf("  \"%lx_l\" [label=\"%lx\\nlev=%d\\nkey=\\\"%s\\\"\\n\" fillcolor=\"green\"%s];\n",
-			       (long)node, (long)node, level, NODEK(node, kofs)->str, (ctx == node) ? " color=red" : "");
+			printf("  \"%lx_l_%d\" [label=\"%lx\\nlev=%d\\nkey=\\\"%s\\\"\\n\" fillcolor=\"green\"%s];\n",
+			       (long)node, sub, (long)node, level, NODEK(node, kofs)->str, (ctx == node) ? " color=red" : "");
 		else
-			printf("  \"%lx_l\" [label=\"%lx\\nlev=%d bit=%ld\\nkey=\\\"%s\\\"\\n\" fillcolor=\"yellow\"%s];\n",
-			       (long)node, (long)node, level, (long)pxor, NODEK(node, kofs)->str, (ctx == node) ? " color=red" : "");
+			printf("  \"%lx_l_%d\" [label=\"%lx\\nlev=%d bit=%ld\\nkey=\\\"%s\\\"\\n\" fillcolor=\"yellow\"%s];\n",
+			       (long)node, sub, (long)node, level, (long)pxor, NODEK(node, kofs)->str, (ctx == node) ? " color=red" : "");
 		break;
 	case CEB_KT_IS:
 		if (node->b[0] == node->b[1])
-			printf("  \"%lx_l\" [label=\"%lx\\nlev=%d\\nkey=\\\"%s\\\"\\n\" fillcolor=\"green\"%s];\n",
-			       (long)node, (long)node, level, NODEK(node, kofs)->ptr, (ctx == node) ? " color=red" : "");
+			printf("  \"%lx_l_%d\" [label=\"%lx\\nlev=%d\\nkey=\\\"%s\\\"\\n\" fillcolor=\"green\"%s];\n",
+			       (long)node, sub, (long)node, level, NODEK(node, kofs)->ptr, (ctx == node) ? " color=red" : "");
 		else
-			printf("  \"%lx_l\" [label=\"%lx\\nlev=%d bit=%ld\\nkey=\\\"%s\\\"\\n\" fillcolor=\"yellow\"%s];\n",
-			       (long)node, (long)node, level, (long)pxor, NODEK(node, kofs)->ptr, (ctx == node) ? " color=red" : "");
+			printf("  \"%lx_l_%d\" [label=\"%lx\\nlev=%d bit=%ld\\nkey=\\\"%s\\\"\\n\" fillcolor=\"yellow\"%s];\n",
+			       (long)node, sub, (long)node, level, (long)pxor, NODEK(node, kofs)->ptr, (ctx == node) ? " color=red" : "");
 		break;
 	}
 }

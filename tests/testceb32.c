@@ -65,6 +65,10 @@ int main(int argc, char **argv)
 	}
 
 	orig_argv = larg = *argv;
+
+	if (debug)
+		ceb32_default_dump(0, orig_argv, 0, 0); // prologue
+
 	while (argc > 0) {
 		v = atoi(argv[0]);
 		old = ceb32_lookup(&ceb_root, v);
@@ -90,7 +94,9 @@ int main(int argc, char **argv)
 	for (p = orig_argv; p < larg; *p++ = ' ')
 		p += strlen(p);
 
-	if (!debug)
+	if (debug)
+		ceb32_default_dump(0, 0, 0, 0); // epilogue
+	else
 		ceb32_default_dump(&ceb_root, orig_argv, 0, 0);
 
 	return 0;
