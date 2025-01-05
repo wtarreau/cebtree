@@ -81,7 +81,7 @@ int main(int argc, char **argv)
 		argc--; argv++;
 	}
 
-	orig_argv = larg = *argv;
+	orig_argv = larg = (argc > 0) ? *argv : argv0;
 
 	if (argc > 0)
 		test = atoi(larg = *(argv++));
@@ -98,6 +98,9 @@ int main(int argc, char **argv)
 	/* rebuild non-debug args as a single string */
 	for (p = orig_argv; p < larg; *p++ = ' ')
 		p += strlen(p);
+
+	if (debug > 1)
+		cebu64_default_dump(0, orig_argv, 0, 0); // prologue
 
 	if (test == 0) {
 		while (count--) {
@@ -186,6 +189,9 @@ int main(int argc, char **argv)
 			}
 		}
 	}
+
+	if (debug > 1)
+		cebu64_default_dump(0, 0, 0, 0); // epilogue
 
 	if (debug == 1)
 		cebu64_default_dump(&ceb_root, orig_argv, 0, 0);

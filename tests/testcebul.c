@@ -78,7 +78,11 @@ int main(int argc, char **argv)
 		argc--; argv++;
 	}
 
-	orig_argv = larg = *argv;
+	orig_argv = larg = (argc > 0) ? *argv : argv0;
+
+	if (debug)
+		cebul_default_dump(0, orig_argv, 0, 0); // prologue
+
 	while (argc > 0) {
 		v = atoll(argv[0]);
 		if (lookup_mode == 0)
@@ -133,7 +137,9 @@ int main(int argc, char **argv)
 		fprintf(stderr, "counted %d elements\n", found);
 	}
 
-	if (!debug)
+	if (debug)
+		cebul_default_dump(0, 0, 0, 0); // epilogue
+	else
 		cebul_default_dump(&ceb_root, orig_argv, 0, 0);
 
 	return 0;

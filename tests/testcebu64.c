@@ -64,7 +64,11 @@ int main(int argc, char **argv)
 		argc--; argv++;
 	}
 
-	orig_argv = larg = *argv;
+	orig_argv = larg = (argc > 0) ? *argv : argv0;
+
+	if (debug)
+		cebu64_default_dump(0, orig_argv, 0, 0); // prologue
+
 	while (argc > 0) {
 		v = atoll(argv[0]);
 		old = cebu64_lookup(&ceb_root, v);
@@ -90,7 +94,9 @@ int main(int argc, char **argv)
 	for (p = orig_argv; p < larg; *p++ = ' ')
 		p += strlen(p);
 
-	if (!debug)
+	if (debug)
+		cebu64_default_dump(0, 0, 0, 0); // epilogue
+	else
 		cebu64_default_dump(&ceb_root, orig_argv, 0, 0);
 
 	return 0;
