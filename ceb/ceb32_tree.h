@@ -40,7 +40,7 @@ struct ceb_node *ceb32_next(struct ceb_node **root, struct ceb_node *node);
 struct ceb_node *ceb32_prev(struct ceb_node **root, struct ceb_node *node);
 struct ceb_node *ceb32_delete(struct ceb_node **root, struct ceb_node *node);
 struct ceb_node *ceb32_pick(struct ceb_node **root, uint32_t key);
-void ceb32_default_dump(struct ceb_node **ceb_root, const char *label, const void *ctx);
+void ceb32_default_dump(struct ceb_node **ceb_root, const char *label, const void *ctx, int sub);
 
 /* version taking a key offset */
 struct ceb_node *ceb32_ofs_insert(struct ceb_node **root, ptrdiff_t kofs, struct ceb_node *node);
@@ -55,4 +55,4 @@ struct ceb_node *ceb32_ofs_next(struct ceb_node **root, ptrdiff_t kofs, struct c
 struct ceb_node *ceb32_ofs_prev(struct ceb_node **root, ptrdiff_t kofs, struct ceb_node *node);
 struct ceb_node *ceb32_ofs_delete(struct ceb_node **root, ptrdiff_t kofs, struct ceb_node *node);
 struct ceb_node *ceb32_ofs_pick(struct ceb_node **root, ptrdiff_t kofs, uint32_t key);
-void ceb32_ofs_default_dump(struct ceb_node **root, ptrdiff_t kofs, const char *label, const void *ctx);
+void ceb32_ofs_default_dump(struct ceb_node **root, ptrdiff_t kofs, const char *label, const void *ctx, int sub);
