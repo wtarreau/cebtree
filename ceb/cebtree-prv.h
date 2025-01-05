@@ -147,6 +147,19 @@
 	type _##pfx##sfx(type1 arg1, type2 arg2, type3 arg3, type4 arg4)
 	/* function body follows */
 
+#define CEB_FDECL5(type, pfx, sfx, type1, arg1, type2, arg2, type3, arg3, type4, arg4, type5, arg5) \
+	static inline __attribute__((always_inline))			\
+	type _##pfx##sfx(type1 arg1, type2 arg2, type3 arg3, type4 arg4, type5 arg5); \
+	type pfx##sfx(type1 arg1, type3 arg3, type4 arg4, type5 arg5) {	\
+		return _##pfx##sfx(arg1, sizeof(struct ceb_node), arg3, arg4, arg5); \
+	}								\
+	type pfx##_ofs##sfx(type1 arg1, type2 arg2, type3 arg3, type4 arg4, type5 arg5) { \
+		return _##pfx##sfx(arg1, arg2, arg3, arg4, arg5);	\
+	}								\
+	static inline __attribute__((always_inline))			\
+	type _##pfx##sfx(type1 arg1, type2 arg2, type3 arg3, type4 arg4, type5 arg5)
+	/* function body follows */
+
 /* tree walk method: key, left, right */
 enum ceb_walk_meth {
 	CEB_WM_FST,     /* look up "first" (walk left only) */
