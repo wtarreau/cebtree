@@ -1261,6 +1261,115 @@ struct ceb_node *_ceb_prev_unique(struct ceb_node **root,
 	return _ceb_descend(&restart, CEB_WM_PRV, kofs, key_type, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 }
 
+/* Searches in the tree <root> made of keys of type <key_type>, for the next
+ * node after <from> which contains key <key_*>. Returns NULL if not found.
+ * It's up to the caller to pass the current node's key in <key_*>. The
+ * approach consists in looking up that node first, recalling the last time a
+ * left turn was made, and returning the first node along the right branch at
+ * that fork. In case the current node belongs to a duplicate list, all dups
+ * will be visited in insertion order prior to jumping to different keys.
+ */
+static inline __attribute__((always_inline))
+struct ceb_node *_ceb_next(struct ceb_node **root,
+                           ptrdiff_t kofs,
+                           enum ceb_key_type key_type,
+                           uint32_t key_u32,
+                           uint64_t key_u64,
+                           const void *key_ptr,
+                           const struct ceb_node *from)
+{
+	struct ceb_node *restart;
+	struct ceb_node *node;
+	int is_dup;
+
+	if (!*root)
+		return NULL;
+
+	node = _ceb_descend(root, CEB_WM_KNX, kofs, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &restart, NULL);
+	if (!node)
+		return NULL;
+
+	/* Normally at this point, if node != from, we've found a node that
+	 * differs from the one we're starting from, which indicates that
+	 * the starting point belongs to a dup list and is not the last one.
+	 * We must then visit the other members. We cannot navigate from the
+	 * regular leaf node (the first one) but we can easily verify if we're
+	 * on that one by checking if it's node->b[1]->b[0], in which case we
+	 * jump to node->b[1]. Otherwise we take from->b[1].
+	 */
+	if (node != from) {
+		if (node->b[1]->b[0] == from)
+			return node->b[1];
+		else
+			return from->b[1];
+	}
+
+	/* Here the looked up node was found (node == from) and we can look up
+	 * the next unique one if any.
+	 */
+	if (!restart)
+		return NULL;
+
+	/* this look up will stop on the topmost dup in a sub-tree which is
+	 * also the last one. Thanks to restart we know that this entry exists.
+	 */
+	node = _ceb_descend(&restart, CEB_WM_NXT, kofs, key_type, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &is_dup);
+	if (is_dup) {
+		/* on a duplicate, the first node is right->left */
+		node = node->b[1]->b[0];
+	}
+	return node;
+}
+
+/* Searches in the tree <root> made of keys of type <key_type>, for the prev
+ * node before the one containing the key <key_*>. Returns NULL if not found.
+ * It's up to the caller to pass the current node's key in <key_*>. The
+ * approach consists in looking up that node first, recalling the last time a
+ * right turn was made, and returning the last node along the left branch at
+ * that fork. In case the current node belongs to a duplicate list, all dups
+ * will be visited in reverse insertion order prior to jumping to different
+ * keys.
+ */
+static inline __attribute__((always_inline))
+struct ceb_node *_ceb_prev(struct ceb_node **root,
+                           ptrdiff_t kofs,
+                           enum ceb_key_type key_type,
+                           uint32_t key_u32,
+                           uint64_t key_u64,
+                           const void *key_ptr,
+                           const struct ceb_node *from)
+{
+	struct ceb_node *restart;
+	struct ceb_node *node;
+	int is_dup;
+
+	if (!*root)
+		return NULL;
+
+	node = _ceb_descend(root, CEB_WM_KPR, kofs, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &restart, &is_dup);
+	if (!node)
+		return NULL;
+
+	/* Here we have several possibilities:
+	 *   - from == node => we've found our node. It may be a unique node,
+	 *     or the last one of a dup series. We'll sort that out thanks to
+	 *     is_dup, and if it's a dup, we'll use node->b[0].
+	 *   - from is not the first dup, so we haven't visited them all yet,
+	 *     hence we visit node->b[0] to switch to the previous dup.
+	 *   - from is the first dup so we've visited them all, we now need
+	 *     to jump to the previous unique value.
+	 */
+	if ((node == from && is_dup) || (node->b[1]->b[0] != from))
+		return from->b[0];
+
+	/* look up the previous unique entry */
+	if (!restart)
+		return NULL;
+
+	/* Note that the descent stops on the last dup which is the one we want */
+	return _ceb_descend(&restart, CEB_WM_PRV, kofs, key_type, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+}
+
 /* Searches in the tree <root> made of keys of type <key_type>, for the node
  * containing the key <key_*>. Returns NULL if not found.
  */
