@@ -134,6 +134,26 @@ CEB_FDECL3(struct ceb_node *, cebs, _prev_unique, struct ceb_node **, root, ptrd
 	return _ceb_prev_unique(root, kofs, CEB_KT_ST, 0, 0, key);
 }
 
+/* search for the next node after the specified one containing the same value,
+ * and return it, or NULL if not found.
+ */
+CEB_FDECL3(struct ceb_node *, cebs, _next_dup, struct ceb_node **, root, ptrdiff_t, kofs, struct ceb_node *, node)
+{
+	const void *key = NODEK(node, kofs)->str;
+
+	return _ceb_next_dup(root, kofs, CEB_KT_ST, 0, 0, key, node);
+}
+
+/* search for the prev node before the specified one containing the same value,
+ * and return it, or NULL if not found.
+ */
+CEB_FDECL3(struct ceb_node *, cebs, _prev_dup, struct ceb_node **, root, ptrdiff_t, kofs, struct ceb_node *, node)
+{
+	const void *key = NODEK(node, kofs)->str;
+
+	return _ceb_prev_dup(root, kofs, CEB_KT_ST, 0, 0, key, node);
+}
+
 /* search for the next node after the specified one, and return it, or NULL if
  * not found. The approach consists in looking up that node, recalling the last
  * time a left turn was made, and returning the first node along the right
