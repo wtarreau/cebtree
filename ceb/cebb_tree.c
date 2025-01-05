@@ -112,7 +112,7 @@ CEB_FDECL4(struct ceb_node *, cebb, _lookup_gt, struct ceb_node **, root, ptrdif
  * branch at that fork. The <len> field must correspond to the key length in
  * bytes.
  */
-CEB_FDECL4(struct ceb_node *, cebb, _next, struct ceb_node **, root, ptrdiff_t, kofs, struct ceb_node *, node, size_t, len)
+CEB_FDECL4(struct ceb_node *, cebb, _next_unique, struct ceb_node **, root, ptrdiff_t, kofs, struct ceb_node *, node, size_t, len)
 {
 	const void *key = NODEK(node, kofs)->mb;
 
@@ -125,11 +125,37 @@ CEB_FDECL4(struct ceb_node *, cebb, _next, struct ceb_node **, root, ptrdiff_t, 
  * branch at that fork. The <len> field must correspond to the key length in
  * bytes.
  */
-CEB_FDECL4(struct ceb_node *, cebb, _prev, struct ceb_node **, root, ptrdiff_t, kofs, struct ceb_node *, node, size_t, len)
+CEB_FDECL4(struct ceb_node *, cebb, _prev_unique, struct ceb_node **, root, ptrdiff_t, kofs, struct ceb_node *, node, size_t, len)
 {
 	const void *key = NODEK(node, kofs)->mb;
 
 	return _ceb_prev_unique(root, kofs, CEB_KT_MB, 0, len, key);
+}
+
+/* search for the next node after the specified one, and return it, or NULL if
+ * not found. The approach consists in looking up that node, recalling the last
+ * time a left turn was made, and returning the first node along the right
+ * branch at that fork. The <len> field must correspond to the key length in
+ * bytes.
+ */
+CEB_FDECL4(struct ceb_node *, cebb, _next, struct ceb_node **, root, ptrdiff_t, kofs, struct ceb_node *, node, size_t, len)
+{
+	const void *key = NODEK(node, kofs)->mb;
+
+	return _ceb_next(root, kofs, CEB_KT_MB, 0, len, key, node);
+}
+
+/* search for the prev node before the specified one, and return it, or NULL if
+ * not found. The approach consists in looking up that node, recalling the last
+ * time a right turn was made, and returning the last node along the left
+ * branch at that fork. The <len> field must correspond to the key length in
+ * bytes.
+ */
+CEB_FDECL4(struct ceb_node *, cebb, _prev, struct ceb_node **, root, ptrdiff_t, kofs, struct ceb_node *, node, size_t, len)
+{
+	const void *key = NODEK(node, kofs)->mb;
+
+	return _ceb_prev(root, kofs, CEB_KT_MB, 0, len, key, node);
 }
 
 /* look up the specified node with its key and deletes it if found, and in any
