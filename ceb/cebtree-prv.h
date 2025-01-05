@@ -1495,6 +1495,84 @@ static void ceb_default_dump_node(ptrdiff_t kofs, enum ceb_key_type key_type, co
 	}
 }
 
+/* dump a duplicate entry */
+__attribute__((unused))
+static void ceb_default_dump_dups(ptrdiff_t kofs, enum ceb_key_type key_type, const struct ceb_node *node, int level, const void *ctx, int sub)
+{
+	unsigned long long int_key = 0;
+	const struct ceb_node *leaf;
+	int is_last;
+
+	switch (key_type) {
+	case CEB_KT_ADDR:
+		int_key = (uintptr_t)node;
+		break;
+	case CEB_KT_U32:
+		int_key = NODEK(node, kofs)->u32;
+		break;
+	case CEB_KT_U64:
+		int_key = NODEK(node, kofs)->u64;
+		break;
+	default:
+		break;
+	}
+
+	/* Let's try to determine which one is the last of the series. The
+	 * right node's left node is a tree leaf in this only case. This means
+	 * that node either has both sides equal to itself, or a distinct
+	 * neighbours.
+	 */
+	leaf = node->b[1]->b[0];
+
+	is_last = 1;
+	if (leaf->b[0] != leaf || leaf->b[1] != leaf)
+		is_last = _xor_branches(kofs, key_type, 0, 0, NULL,
+					((struct ceb_node*)leaf->b[0]),
+					((struct ceb_node*)leaf->b[1])) != 0;
+
+	switch (key_type) {
+	case CEB_KT_ADDR:
+	case CEB_KT_U32:
+	case CEB_KT_U64:
+		printf("  \"%lx_l_%d\" [label=\"%lx\\nlev=%d\\nkey=%llu\" fillcolor=\"wheat1\"%s];\n",
+		       (long)node, sub, (long)node, level, int_key, (ctx == node) ? " color=red" : "");
+
+		printf("  \"%lx_l_%d\":sw -> \"%lx_l_%d\":n [taillabel=\"L\" arrowsize=0.66];\n",
+		       (long)node, sub, (long)node->b[0], sub);
+
+		printf("  \"%lx_l_%d\":%s -> \"%lx_l_%d\":%s [taillabel=\"R\" arrowsize=0.66];\n",
+		       (long)node, sub, is_last ? "se" : "ne",
+		       (long)node->b[1], sub, is_last ? "e" : "s");
+		break;
+	case CEB_KT_MB:
+		break;
+	case CEB_KT_IM:
+		break;
+	case CEB_KT_ST:
+		printf("  \"%lx_l_%d\" [label=\"%lx\\nlev=%d\\nkey=\\\"%s\\\"\" fillcolor=\"wheat1\"%s];\n",
+		       (long)node, sub, (long)node, level, NODEK(node, kofs)->str, (ctx == node) ? " color=red" : "");
+
+		printf("  \"%lx_l_%d\":sw -> \"%lx_l_%d\":n [taillabel=\"L\" arrowsize=0.66];\n",
+		       (long)node, sub, (long)node->b[0], sub);
+
+		printf("  \"%lx_l_%d\":%s -> \"%lx_l_%d\":%s [taillabel=\"R\" arrowsize=0.66];\n",
+		       (long)node, sub, is_last ? "se" : "ne",
+		       (long)node->b[1], sub, is_last ? "e" : "s");
+		break;
+	case CEB_KT_IS:
+		printf("  \"%lx_l_%d\" [label=\"%lx\\nlev=%d\\nkey=\\\"%s\\\"\" fillcolor=\"wheat1\"%s];\n",
+		       (long)node, sub, (long)node, level, NODEK(node, kofs)->ptr, (ctx == node) ? " color=red" : "");
+
+		printf("  \"%lx_l_%d\":sw -> \"%lx_l_%d\":n [taillabel=\"L\" arrowsize=0.66];\n",
+		       (long)node, sub, (long)node->b[0], sub);
+
+		printf("  \"%lx_l_%d\":%s -> \"%lx_l_%d\":%s [taillabel=\"R\" arrowsize=0.66];\n",
+		       (long)node, sub, is_last ? "se" : "ne",
+		       (long)node->b[1], sub, is_last ? "e" : "s");
+		break;
+	}
+}
+
 /* dump a leaf */
 __attribute__((unused))
 static void ceb_default_dump_leaf(ptrdiff_t kofs, enum ceb_key_type key_type, const struct ceb_node *node, int level, const void *ctx, int sub)
@@ -1562,6 +1640,7 @@ static const struct ceb_node *ceb_default_dump_tree(ptrdiff_t kofs, enum ceb_key
                                                     uint64_t pxor, const void *last, int level, const void *ctx, int sub,
                                                     void (*root_dump)(ptrdiff_t kofs, enum ceb_key_type key_type, struct ceb_node *const *root, const void *ctx, int sub),
                                                     void (*node_dump)(ptrdiff_t kofs, enum ceb_key_type key_type, const struct ceb_node *node, int level, const void *ctx, int sub),
+                                                    void (*dups_dump)(ptrdiff_t kofs, enum ceb_key_type key_type, const struct ceb_node *node, int level, const void *ctx, int sub),
                                                     void (*leaf_dump)(ptrdiff_t kofs, enum ceb_key_type key_type, const struct ceb_node *node, int level, const void *ctx, int sub))
 {
 	const struct ceb_node *node = *root;
@@ -1576,6 +1655,9 @@ static const struct ceb_node *ceb_default_dump_tree(ptrdiff_t kofs, enum ceb_key
 	if (!node_dump)
 		node_dump = ceb_default_dump_node;
 
+	if (!dups_dump)
+		dups_dump = ceb_default_dump_dups;
+
 	if (!leaf_dump)
 		leaf_dump = ceb_default_dump_leaf;
 
@@ -1586,14 +1668,24 @@ static const struct ceb_node *ceb_default_dump_tree(ptrdiff_t kofs, enum ceb_key
 
 	/* regular nodes, all branches are canonical */
 
-	if (node->b[0] == node->b[1]) {
-		/* first inserted leaf */
-		leaf_dump(kofs, key_type, node, level, ctx, sub);
-		return node;
-	}
+	while (1) {
+		if (node->b[0] == node && node->b[1] == node) {
+			/* first inserted leaf */
+			leaf_dump(kofs, key_type, node, level, ctx, sub);
+			return node;
+		}
 
-	xor = _xor_branches(kofs, key_type, 0, 0, NULL,
-			    node->b[0], node->b[1]);
+		xor = _xor_branches(kofs, key_type, 0, 0, NULL,
+				    node->b[0], node->b[1]);
+		if (xor)
+			break;
+
+		/* a zero XOR with different branches indicates a list element,
+		 * we dump it and walk to the left until we find the node.
+		 */
+		dups_dump(kofs, key_type, node, level, ctx, sub);
+		node = node->b[0];
+	}
 
 	switch (key_type) {
 	case CEB_KT_ADDR:
@@ -1617,8 +1709,8 @@ static const struct ceb_node *ceb_default_dump_tree(ptrdiff_t kofs, enum ceb_key
 	/* that's a regular node */
 	node_dump(kofs, key_type, node, level, ctx, sub);
 
-	last = ceb_default_dump_tree(kofs, key_type, &node->b[0], xor, last, level + 1, ctx, sub, root_dump, node_dump, leaf_dump);
-	return ceb_default_dump_tree(kofs, key_type, &node->b[1], xor, last, level + 1, ctx, sub, root_dump, node_dump, leaf_dump);
+	last = ceb_default_dump_tree(kofs, key_type, &node->b[0], xor, last, level + 1, ctx, sub, root_dump, node_dump, dups_dump, leaf_dump);
+	return ceb_default_dump_tree(kofs, key_type, &node->b[1], xor, last, level + 1, ctx, sub, root_dump, node_dump, dups_dump, leaf_dump);
 }
 
 
