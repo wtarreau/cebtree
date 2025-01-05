@@ -1385,6 +1385,7 @@ __attribute__((unused))
 static void ceb_default_dump_root(ptrdiff_t kofs, enum ceb_key_type key_type, struct ceb_node *const *root, const void *ctx, int sub)
 {
 	const struct ceb_node *node;
+	uint64_t pxor;
 
 	if (!sub)
 		printf("  \"%lx_n_%d\" [label=\"root\\n%lx\"]\n", (long)root, sub, (long)root);
@@ -1394,9 +1395,14 @@ static void ceb_default_dump_root(ptrdiff_t kofs, enum ceb_key_type key_type, st
 	node = *root;
 	if (node) {
 		/* under the root we've either a node or the first leaf */
+
+		/* xor of the keys of the two lower branches */
+		pxor = _xor_branches(kofs, key_type, 0, 0, NULL,
+				     node->b[0], node->b[1]);
+
 		printf("  \"%lx_n_%d\" -> \"%lx_%c_%d\" [label=\"B\" arrowsize=0.66];\n",
 		       (long)root, sub, (long)node,
-		       (node->b[0] == node->b[1]) ? 'l' : 'n', sub);
+		       (node->b[0] == node->b[1] || !pxor) ? 'l' : 'n', sub);
 	}
 }
 
@@ -1444,12 +1450,12 @@ static void ceb_default_dump_node(ptrdiff_t kofs, enum ceb_key_type key_type, co
 
 		printf("  \"%lx_n_%d\" -> \"%lx_%c_%d\" [label=\"L\" arrowsize=0.66 %s];\n",
 		       (long)node, sub, (long)node->b[0],
-		       (lxor < pxor && ((struct ceb_node*)node->b[0])->b[0] != ((struct ceb_node*)node->b[0])->b[1]) ? 'n' : 'l',
+		       (lxor < pxor && ((struct ceb_node*)node->b[0])->b[0] != ((struct ceb_node*)node->b[0])->b[1] && lxor) ? 'n' : 'l',
 		       sub, (node == node->b[0]) ? " dir=both" : "");
 
 		printf("  \"%lx_n_%d\" -> \"%lx_%c_%d\" [label=\"R\" arrowsize=0.66 %s];\n",
 		       (long)node, sub, (long)node->b[1],
-		       (rxor < pxor && ((struct ceb_node*)node->b[1])->b[0] != ((struct ceb_node*)node->b[1])->b[1]) ? 'n' : 'l',
+		       (rxor < pxor && ((struct ceb_node*)node->b[1])->b[0] != ((struct ceb_node*)node->b[1])->b[1] && rxor) ? 'n' : 'l',
 		       sub, (node == node->b[1]) ? " dir=both" : "");
 		break;
 	case CEB_KT_MB:
@@ -1462,12 +1468,12 @@ static void ceb_default_dump_node(ptrdiff_t kofs, enum ceb_key_type key_type, co
 
 		printf("  \"%lx_n_%d\" -> \"%lx_%c_%d\" [label=\"L\" arrowsize=0.66 %s];\n",
 		       (long)node, sub, (long)node->b[0],
-		       (lxor > pxor && ((struct ceb_node*)node->b[0])->b[0] != ((struct ceb_node*)node->b[0])->b[1]) ? 'n' : 'l',
+		       (lxor > pxor && ((struct ceb_node*)node->b[0])->b[0] != ((struct ceb_node*)node->b[0])->b[1] && lxor) ? 'n' : 'l',
 		       sub, (node == node->b[0]) ? " dir=both" : "");
 
 		printf("  \"%lx_n_%d\" -> \"%lx_%c_%d\" [label=\"R\" arrowsize=0.66 %s];\n",
 		       (long)node, sub, (long)node->b[1],
-		       (rxor > pxor && ((struct ceb_node*)node->b[1])->b[0] != ((struct ceb_node*)node->b[1])->b[1]) ? 'n' : 'l',
+		       (rxor > pxor && ((struct ceb_node*)node->b[1])->b[0] != ((struct ceb_node*)node->b[1])->b[1] && rxor) ? 'n' : 'l',
 		       sub, (node == node->b[1]) ? " dir=both" : "");
 		break;
 	case CEB_KT_IS:
@@ -1476,12 +1482,12 @@ static void ceb_default_dump_node(ptrdiff_t kofs, enum ceb_key_type key_type, co
 
 		printf("  \"%lx_n_%d\" -> \"%lx_%c_%d\" [label=\"L\" arrowsize=0.66 %s];\n",
 		       (long)node, sub, (long)node->b[0],
-		       (lxor > pxor && ((struct ceb_node*)node->b[0])->b[0] != ((struct ceb_node*)node->b[0])->b[1]) ? 'n' : 'l',
+		       (lxor > pxor && ((struct ceb_node*)node->b[0])->b[0] != ((struct ceb_node*)node->b[0])->b[1] && lxor) ? 'n' : 'l',
 		       sub, (node == node->b[0]) ? " dir=both" : "");
 
 		printf("  \"%lx_n_%d\" -> \"%lx_%c_%d\" [label=\"R\" arrowsize=0.66 %s];\n",
 		       (long)node, sub, (long)node->b[1],
-		       (rxor > pxor && ((struct ceb_node*)node->b[1])->b[0] != ((struct ceb_node*)node->b[1])->b[1]) ? 'n' : 'l',
+		       (rxor > pxor && ((struct ceb_node*)node->b[1])->b[0] != ((struct ceb_node*)node->b[1])->b[1] && rxor) ? 'n' : 'l',
 		       sub, (node == node->b[1]) ? " dir=both" : "");
 		break;
 	}
