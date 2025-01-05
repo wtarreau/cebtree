@@ -1119,6 +1119,7 @@ struct ceb_node *_ceb_insert(struct ceb_node **root,
 	struct ceb_node **parent;
 	struct ceb_node *ret;
 	int nside;
+	int is_dup = 0;
 
 	if (!*root) {
 		/* empty tree, insert a leaf only */
@@ -1127,7 +1128,7 @@ struct ceb_node *_ceb_insert(struct ceb_node **root,
 		return node;
 	}
 
-	ret = _ceb_descend(root, CEB_WM_KEQ, kofs, key_type, key_u32, key_u64, key_ptr, &nside, &parent, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	ret = _ceb_descend(root, CEB_WM_KEQ, kofs, key_type, key_u32, key_u64, key_ptr, &nside, &parent, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &is_dup);
 
 	if (!ret) {
 		/* The key was not in the tree, we can insert it. Better use an
@@ -1141,6 +1142,23 @@ struct ceb_node *_ceb_insert(struct ceb_node **root,
 		} else {
 			node->b[0] = node;
 			node->b[1] = *parent;
+		}
+		*parent = node;
+		ret = node;
+	} else {
+		/* The key was found. We must insert after it as the last
+		 * element of the dups list, which means that our left branch
+		 * will point to the key, the right one to the first dup
+		 * (i.e. previous dup's right if it exists, otherwise ourself)
+		 * and the parent must point to us.
+		 */
+		node->b[0] = *parent;
+
+		if (is_dup) {
+			node->b[1] = (*parent)->b[1];
+			(*parent)->b[1] = node;
+		} else {
+			node->b[1] = node;
 		}
 		*parent = node;
 		ret = node;
