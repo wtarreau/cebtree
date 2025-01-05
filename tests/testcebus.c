@@ -252,7 +252,7 @@ int main(int argc, char **argv)
 		printf("counted %d elements\n", found);
 
 	if (!debug && dump)
-		cebus_default_dump(&ceb_root, orig_argv, 0);
+		cebus_default_dump(&ceb_root, orig_argv, 0, 0);
 
 	return 0;
 }
