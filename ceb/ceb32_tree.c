@@ -174,7 +174,7 @@ CEB_FDECL5(void, ceb32, _default_dump, struct ceb_node **, root, ptrdiff_t, kofs
 		printf("\n### sub %d ###\n\n", sub);
 
 	if (root)
-		ceb_default_dump_tree(kofs, CEB_KT_U32, root, 0, NULL, 0, ctx, sub, NULL, NULL, NULL);
+		ceb_default_dump_tree(kofs, CEB_KT_U32, root, 0, NULL, 0, ctx, sub, NULL, NULL, NULL, NULL);
 
 	if (!sub && (root || !label))
 		printf("}\n");
