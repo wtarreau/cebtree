@@ -1630,6 +1630,7 @@ struct ceb_node *_ceb_delete(struct ceb_node **root,
 	struct ceb_node *lparent, *nparent, *gparent;
 	int lpside, npside, gpside;
 	struct ceb_node *ret = NULL;
+	int is_dup;
 
 	if (node && !node->b[0]) {
 		/* NULL on a branch means the node is not in the tree */
@@ -1642,12 +1643,78 @@ struct ceb_node *_ceb_delete(struct ceb_node **root,
 	}
 
 	ret = _ceb_descend(root, CEB_WM_KEQ, kofs, key_type, key_u32, key_u64, key_ptr, NULL, NULL,
-			    &lparent, &lpside, &nparent, &npside, &gparent, &gpside, NULL, NULL);
+			   &lparent, &lpside, &nparent, &npside, &gparent, &gpside, NULL, &is_dup);
 
 	if (!ret) {
 		/* key not found */
 		goto done;
 	}
+
+	if (is_dup) {
+		/* the node to be deleted belongs to a dup sub-tree whose ret
+		 * is the last. The possibilities here are:
+		 *   1) node==NULL => unspecified, we delete the first one,
+		 *      which is the tree leaf. The tree node (if it exists)
+		 *      is replaced by the first dup. There's nothing else to
+		 *      change.
+		 *   2) node is the tree leaf. The tree node (if it exists)
+		 *      is replaced by the first dup.
+		 *   3) node is a dup. We just delete the dup.
+		 *      In order to delete a dup, there are 4 cases:
+		 *        a) node==last and there's a single dup, it's this one
+		 *           -> *parent = node->b[0];
+		 *        b) node==last and there's another dup:
+		 *           -> *parent = node->b[0];
+		 *              node->b[0]->b[1] = node->b[1];
+		 *              (or (*parent)->b[1] = node->b[1] covers a and b)
+		 *        c) node==first != last:
+		 *           -> node->b[1]->b[0] = node->b[0];
+		 *              last->b[1] = node->b[1];
+		 *              (or (*parent)->b[1] = node->b[1] covers a,b,c)
+		 *        d) node!=first && !=last:
+		 *           -> node->b[1]->b[0] = node->b[0];
+		 *              node->b[0]->b[1] = node->b[1];
+		 *      a,b,c,d can be simplified as:
+		 *         ((node == first) ? last : node->b[0])->b[1] = node->b[1];
+		 *         *((node == last) ? parent : &node->b[1]->b[0]) = node->b[0];
+		 */
+		struct ceb_node *first, *last;
+
+		last = ret;
+		first = last->b[1];
+
+		/* cases 1 and 2 below */
+		if (!node || node == first->b[0]) {
+			/* node unspecified or the first, remove the first entry (the leaf) */
+			ret = first->b[0]; // update return node
+			last->b[1] = first->b[1]; // new first (remains OK if last==first)
+
+			if (ret->b[0] != ret || ret->b[1] != ret) {
+				/* not the nodeless leaf, a node exists, put it
+				 * on the first and update its parent.
+				 */
+				first->b[0] = ret->b[0];
+				first->b[1] = ret->b[1];
+				nparent->b[npside] = first;
+			}
+			else {
+				/* first becomes the nodeless leaf since we only keep its leaf */
+				first->b[0] = first->b[1] = first;
+			}
+			/* done */
+		} else {
+			/* case 3: the node to delete is a dup, we only have to
+			 * manipulate the list.
+			 */
+			ret = node;
+			((node == first) ? last : node->b[0])->b[1] = node->b[1];
+			*((node == last) ? &lparent->b[lpside] : &node->b[1]->b[0]) = node->b[0];
+			/* done */
+		}
+		goto mark_and_leave;
+	}
+
+	/* ok below the returned value is a real leaf, we have to adjust the tree */
 
 	if (ret == node || !node) {
 		if (&lparent->b[0] == root) {
