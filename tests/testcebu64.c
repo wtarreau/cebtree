@@ -78,13 +78,12 @@ int main(int argc, char **argv)
 		old = add_value(&ceb_root, v);
 
 		if (debug) {
-			static int round;
 			char cmd[100];
 			size_t len;
 
-			len = snprintf(cmd, sizeof(cmd), "%s [%d] +%llu", orig_argv, round, (unsigned long long)v);
-			cebu64_default_dump(&ceb_root, len < sizeof(cmd) ? cmd : orig_argv, old, round + 1);
-			round++;
+			len = snprintf(cmd, sizeof(cmd), "%s [%d] +%llu", orig_argv, debug, (unsigned long long)v);
+			cebu64_default_dump(&ceb_root, len < sizeof(cmd) ? cmd : orig_argv, old, debug);
+			debug++;
 		}
 
 		argv++;
@@ -95,11 +94,6 @@ int main(int argc, char **argv)
 	for (p = orig_argv; p < larg; *p++ = ' ')
 		p += strlen(p);
 
-	if (debug)
-		cebu64_default_dump(0, 0, 0, 0); // epilogue
-	else
-		cebu64_default_dump(&ceb_root, orig_argv, 0, 0);
-
 	printf("# Dump of all nodes using first() + next()\n");
 	for (i = 0, old = cebu64_first(&ceb_root); old; i++, old = cebu64_next(&ceb_root, (struct ceb_node*)old))
 		printf("# node[%d]=%p key=%u\n", i, old, container_of(old, struct key, node)->key);
@@ -107,6 +101,25 @@ int main(int argc, char **argv)
 	printf("# Dump of all nodes using last() + prev()\n");
 	for (i = 0, old = cebu64_last(&ceb_root); old; i++, old = cebu64_prev(&ceb_root, (struct ceb_node*)old))
 		printf("# node[%d]=%p key=%u\n", i, old, container_of(old, struct key, node)->key);
+
+
+	printf("# Removing all keys one at a time\n");
+	while ((old = cebu64_first(&ceb_root))) {
+		cebu64_delete(&ceb_root, (struct ceb_node*)old);
+		if (debug) {
+			char cmd[100];
+			size_t len;
+
+			len = snprintf(cmd, sizeof(cmd), "delete(%p:%d)", old, container_of(old, struct key, node)->key);
+			cebu64_default_dump(&ceb_root, len < sizeof(cmd) ? cmd : orig_argv, old, debug);
+			debug++;
+		}
+	}
+
+	if (debug)
+		cebu64_default_dump(0, 0, 0, 0); // epilogue
+	else
+		cebu64_default_dump(&ceb_root, orig_argv, 0, 0);
 
 	return 0;
 }
