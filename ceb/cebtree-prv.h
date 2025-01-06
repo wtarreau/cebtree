@@ -1449,8 +1449,8 @@ struct ceb_node *_ceb_prev(struct ceb_node **root,
 	return _ceb_descend(&restart, CEB_WM_PRV, kofs, key_type, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 }
 
-/* Searches in the tree <root> made of keys of type <key_type>, for the node
- * containing the key <key_*>. Returns NULL if not found.
+/* Searches in the tree <root> made of keys of type <key_type>, for the first
+ * node containing the key <key_*>. Returns NULL if not found.
  */
 static inline __attribute__((always_inline))
 struct ceb_node *_ceb_lookup(struct ceb_node **root,
@@ -1460,15 +1460,23 @@ struct ceb_node *_ceb_lookup(struct ceb_node **root,
                              uint64_t key_u64,
                              const void *key_ptr)
 {
+	struct ceb_node *ret;
+	int is_dup;
+
 	if (!*root)
 		return NULL;
 
-	return _ceb_descend(root, CEB_WM_KEQ, kofs, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	ret = _ceb_descend(root, CEB_WM_KEQ, kofs, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &is_dup);
+	if (ret && is_dup) {
+		/* on a duplicate, the first node is right->left */
+		ret = ret->b[1]->b[0];
+	}
+	return ret;
 }
 
-/* Searches in the tree <root> made of keys of type <key_type>, for the node
- * containing the key <key_*> or the highest one that's lower than it. Returns
- * NULL if not found.
+/* Searches in the tree <root> made of keys of type <key_type>, for the last
+ * node containing the key <key_*> or the highest one that's lower than it.
+ * Returns NULL if not found.
  */
 static inline __attribute__((always_inline))
 struct ceb_node *_ceb_lookup_le(struct ceb_node **root,
@@ -1484,6 +1492,7 @@ struct ceb_node *_ceb_lookup_le(struct ceb_node **root,
 	if (!*root)
 		return NULL;
 
+	/* note that for duplicates, we already find the last one */
 	ret = _ceb_descend(root, CEB_WM_KLE, kofs, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &restart, NULL);
 	if (ret)
 		return ret;
@@ -1494,10 +1503,10 @@ struct ceb_node *_ceb_lookup_le(struct ceb_node **root,
 	return _ceb_descend(&restart, CEB_WM_PRV, kofs, key_type, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 }
 
-/* Searches in the tree <root> made of keys of type <key_type>, for the node
- * containing the greatest key that is strictly lower than <key_*>. Returns
- * NULL if not found. It's very similar to next() except that the looked up
- * value doesn't need to exist.
+/* Searches in the tree <root> made of keys of type <key_type>, for the last
+ * node containing the greatest key that is strictly lower than <key_*>.
+ * Returns NULL if not found. It's very similar to next() except that the
+ * looked up value doesn't need to exist.
  */
 static inline __attribute__((always_inline))
 struct ceb_node *_ceb_lookup_lt(struct ceb_node **root,
@@ -1513,6 +1522,7 @@ struct ceb_node *_ceb_lookup_lt(struct ceb_node **root,
 	if (!*root)
 		return NULL;
 
+	/* note that for duplicates, we already find the last one */
 	ret = _ceb_descend(root, CEB_WM_KLT, kofs, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &restart, NULL);
 	if (ret)
 		return ret;
@@ -1523,8 +1533,8 @@ struct ceb_node *_ceb_lookup_lt(struct ceb_node **root,
 	return _ceb_descend(&restart, CEB_WM_PRV, kofs, key_type, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 }
 
-/* Searches in the tree <root> made of keys of type <key_type>, for the node
- * containing the key <key_*> or the smallest one that's greater than it.
+/* Searches in the tree <root> made of keys of type <key_type>, for the first
+ * node containing the key <key_*> or the smallest one that's greater than it.
  * Returns NULL if not found.
  */
 static inline __attribute__((always_inline))
@@ -1537,22 +1547,28 @@ struct ceb_node *_ceb_lookup_ge(struct ceb_node **root,
 {
 	struct ceb_node *ret = NULL;
 	struct ceb_node *restart;
+	int is_dup;
 
 	if (!*root)
 		return NULL;
 
-	ret = _ceb_descend(root, CEB_WM_KGE, kofs, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &restart, NULL);
-	if (ret)
-		return ret;
+	ret = _ceb_descend(root, CEB_WM_KGE, kofs, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &restart, &is_dup);
+	if (!ret) {
+		if (!restart)
+			return NULL;
 
-	if (!restart)
-		return NULL;
+		ret = _ceb_descend(&restart, CEB_WM_NXT, kofs, key_type, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &is_dup);
+	}
 
-	return _ceb_descend(&restart, CEB_WM_NXT, kofs, key_type, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	if (ret && is_dup) {
+		/* on a duplicate, the first node is right->left */
+		ret = ret->b[1]->b[0];
+	}
+	return ret;
 }
 
-/* Searches in the tree <root> made of keys of type <key_type>, for the node
- * containing the lowest key that is strictly greater than <key_*>. Returns
+/* Searches in the tree <root> made of keys of type <key_type>, for the first
+ * node containing the lowest key that is strictly greater than <key_*>. Returns
  * NULL if not found. It's very similar to prev() except that the looked up
  * value doesn't need to exist.
  */
@@ -1566,18 +1582,24 @@ struct ceb_node *_ceb_lookup_gt(struct ceb_node **root,
 {
 	struct ceb_node *ret = NULL;
 	struct ceb_node *restart;
+	int is_dup;
 
 	if (!*root)
 		return NULL;
 
-	ret = _ceb_descend(root, CEB_WM_KGT, kofs, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &restart, NULL);
-	if (ret)
-		return ret;
+	ret = _ceb_descend(root, CEB_WM_KGT, kofs, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &restart, &is_dup);
+	if (!ret) {
+		if (!restart)
+			return NULL;
 
-	if (!restart)
-		return NULL;
+		ret = _ceb_descend(&restart, CEB_WM_NXT, kofs, key_type, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &is_dup);
+	}
 
-	return _ceb_descend(&restart, CEB_WM_NXT, kofs, key_type, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	if (ret && is_dup) {
+		/* on a duplicate, the first node is right->left */
+		ret = ret->b[1]->b[0];
+	}
+	return ret;
 }
 
 /* Searches in the tree <root> made of keys of type <key_type>, for the node
