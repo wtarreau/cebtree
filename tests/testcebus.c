@@ -248,12 +248,6 @@ int main(int argc, char **argv)
 		ret = prev;
 	}
 
-	if (debug)
-		fprintf(stderr, "counted %d elements\n", found);
-
-	if (!debug && dump)
-		cebus_default_dump(&ceb_root, orig_argv, 0, 0);
-
 	printf("# Dump of all nodes using first() + next()\n");
 	for (i = 0, old = cebus_first(&ceb_root); old; i++, old = cebus_next(&ceb_root, (struct ceb_node*)old))
 		printf("# node[%d]=%p key=%s\n", i, old, container_of(old, struct key, node)->key);
@@ -261,6 +255,17 @@ int main(int argc, char **argv)
 	printf("# Dump of all nodes using last() + prev()\n");
 	for (i = 0, old = cebus_last(&ceb_root); old; i++, old = cebus_prev(&ceb_root, (struct ceb_node*)old))
 		printf("# node[%d]=%p key=%s\n", i, old, container_of(old, struct key, node)->key);
+
+	if (!debug && dump)
+		cebus_default_dump(&ceb_root, orig_argv, 0, 0);
+
+	printf("# Removing all keys one at a time\n");
+	while ((old = cebus_first(&ceb_root))) {
+		cebus_delete(&ceb_root, (struct ceb_node*)old);
+	}
+
+	if (debug)
+		fprintf(stderr, "counted %d elements\n", found);
 
 	return 0;
 }
