@@ -102,5 +102,10 @@ int main(int argc, char **argv)
 	for (i = 0, old = cebub_last(&ceb_root, sizeof(uint32_t)); old; i++, old = cebub_prev(&ceb_root, (struct ceb_node*)old, sizeof(uint32_t)))
 		printf("# node[%d]=%p key=%u\n", i, old, container_of(old, struct key, node)->key);
 
+	printf("# Removing all keys one at a time\n");
+	while ((old = cebub_first(&ceb_root, sizeof(uint32_t)))) {
+		cebub_delete(&ceb_root, (struct ceb_node*)old, sizeof(uint32_t));
+	}
+
 	return 0;
 }
