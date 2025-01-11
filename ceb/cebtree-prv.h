@@ -1398,7 +1398,7 @@ done:
 
 /* dump the root and its link to the first node or leaf */
 __attribute__((unused))
-static void cebu_default_dump_root(ptrdiff_t kofs, enum ceb_key_type key_type, struct ceb_node *const *root, const void *ctx)
+static void ceb_default_dump_root(ptrdiff_t kofs, enum ceb_key_type key_type, struct ceb_node *const *root, const void *ctx)
 {
 	const struct ceb_node *node;
 
@@ -1419,7 +1419,7 @@ static void cebu_default_dump_root(ptrdiff_t kofs, enum ceb_key_type key_type, s
 
 /* dump a node */
 __attribute__((unused))
-static void cebu_default_dump_node(ptrdiff_t kofs, enum ceb_key_type key_type, const struct ceb_node *node, int level, const void *ctx)
+static void ceb_default_dump_node(ptrdiff_t kofs, enum ceb_key_type key_type, const struct ceb_node *node, int level, const void *ctx)
 {
 	unsigned long long int_key = 0;
 	uint64_t pxor, lxor, rxor;
@@ -1500,7 +1500,7 @@ static void cebu_default_dump_node(ptrdiff_t kofs, enum ceb_key_type key_type, c
 
 /* dump a leaf */
 __attribute__((unused))
-static void cebu_default_dump_leaf(ptrdiff_t kofs, enum ceb_key_type key_type, const struct ceb_node *node, int level, const void *ctx)
+static void ceb_default_dump_leaf(ptrdiff_t kofs, enum ceb_key_type key_type, const struct ceb_node *node, int level, const void *ctx)
 {
 	unsigned long long int_key = 0;
 	const char *str_key = NULL;
@@ -1561,11 +1561,11 @@ static void cebu_default_dump_leaf(ptrdiff_t kofs, enum ceb_key_type key_type, c
  * callbacks above if left NULL.
  */
 __attribute__((unused))
-static const struct ceb_node *cebu_default_dump_tree(ptrdiff_t kofs, enum ceb_key_type key_type, struct ceb_node *const *root,
-                                                     uint64_t pxor, const void *last, int level, const void *ctx,
-                                                     void (*root_dump)(ptrdiff_t kofs, enum ceb_key_type key_type, struct ceb_node *const *root, const void *ctx),
-                                                     void (*node_dump)(ptrdiff_t kofs, enum ceb_key_type key_type, const struct ceb_node *node, int level, const void *ctx),
-                                                     void (*leaf_dump)(ptrdiff_t kofs, enum ceb_key_type key_type, const struct ceb_node *node, int level, const void *ctx))
+static const struct ceb_node *ceb_default_dump_tree(ptrdiff_t kofs, enum ceb_key_type key_type, struct ceb_node *const *root,
+                                                    uint64_t pxor, const void *last, int level, const void *ctx,
+                                                    void (*root_dump)(ptrdiff_t kofs, enum ceb_key_type key_type, struct ceb_node *const *root, const void *ctx),
+                                                    void (*node_dump)(ptrdiff_t kofs, enum ceb_key_type key_type, const struct ceb_node *node, int level, const void *ctx),
+                                                    void (*leaf_dump)(ptrdiff_t kofs, enum ceb_key_type key_type, const struct ceb_node *node, int level, const void *ctx))
 {
 	const struct ceb_node *node = *root;
 	uint64_t xor;
@@ -1574,13 +1574,13 @@ static const struct ceb_node *cebu_default_dump_tree(ptrdiff_t kofs, enum ceb_ke
 		return node;
 
 	if (!root_dump)
-		root_dump = cebu_default_dump_root;
+		root_dump = ceb_default_dump_root;
 
 	if (!node_dump)
-		node_dump = cebu_default_dump_node;
+		node_dump = ceb_default_dump_node;
 
 	if (!leaf_dump)
-		leaf_dump = cebu_default_dump_leaf;
+		leaf_dump = ceb_default_dump_leaf;
 
 	if (!level) {
 		/* dump the first arrow */
@@ -1607,8 +1607,8 @@ static const struct ceb_node *cebu_default_dump_tree(ptrdiff_t kofs, enum ceb_ke
 	/* that's a regular node */
 	node_dump(kofs, key_type, node, level, ctx);
 
-	last = cebu_default_dump_tree(kofs, key_type, &node->b[0], xor, last, level + 1, ctx, root_dump, node_dump, leaf_dump);
-	return cebu_default_dump_tree(kofs, key_type, &node->b[1], xor, last, level + 1, ctx, root_dump, node_dump, leaf_dump);
+	last = ceb_default_dump_tree(kofs, key_type, &node->b[0], xor, last, level + 1, ctx, root_dump, node_dump, leaf_dump);
+	return ceb_default_dump_tree(kofs, key_type, &node->b[1], xor, last, level + 1, ctx, root_dump, node_dump, leaf_dump);
 }
 
 
