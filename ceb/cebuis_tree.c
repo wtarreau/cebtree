@@ -143,3 +143,22 @@ CEB_FDECL3(struct ceb_node *, cebuis, _pick, struct ceb_node **, root, ptrdiff_t
 {
 	return _cebu_delete(root, NULL, kofs, CEB_KT_IS, 0, 0, key);
 }
+
+/* dumps a ceb_node tree using the default functions above. If a node matches
+ * <ctx>, this one will be highlighted in red.
+ */
+CEB_FDECL4(void, cebuis, _default_dump, struct ceb_node **, root, ptrdiff_t, kofs, const char *, label, const void *, ctx)
+{
+	printf("\ndigraph cebuis_tree {\n"
+	       "  fontname=\"fixed\";\n"
+	       "  fontsize=8\n"
+	       "  label=\"%s\"\n"
+	       "", label);
+
+	printf("  node [fontname=\"fixed\" fontsize=8 shape=\"box\" style=\"filled\" color=\"black\" fillcolor=\"white\"];\n"
+	       "  edge [fontname=\"fixed\" fontsize=8 style=\"solid\" color=\"magenta\" dir=\"forward\"];\n");
+
+	cebu_default_dump_tree(kofs, CEB_KT_IS, root, 0, NULL, 0, ctx, NULL, NULL, NULL);
+
+	printf("}\n");
+}
