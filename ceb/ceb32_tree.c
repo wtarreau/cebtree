@@ -1,7 +1,7 @@
 /*
  * Compact Elastic Binary Trees - exported functions operating on u32 keys
  *
- * Copyright (C) 2014-2024 Willy Tarreau - w@1wt.eu
+ * Copyright (C) 2014-2025 Willy Tarreau - w@1wt.eu
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
@@ -31,7 +31,7 @@
 
 #ifdef CEBTREE_DEV
 /* just to verify API compatibility */
-#include "cebu32_tree.h"
+#include "ceb32_tree.h"
 #endif
 
 /*****************************************************************************\
