@@ -28,6 +28,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "cebtree-prv.h"
+#include "cebul_tree.h"
 
 /*****************************************************************************\
  * The declarations below always cause two functions to be declared, one     *
