@@ -50,15 +50,15 @@ CEB_FDECL4(struct ceb_node *, cebuib, _insert, struct ceb_node **, root, ptrdiff
 }
 
 /* return the first node or NULL if not found. */
-CEB_FDECL2(struct ceb_node *, cebuib, _first, struct ceb_node **, root, ptrdiff_t, kofs)
+CEB_FDECL3(struct ceb_node *, cebuib, _first, struct ceb_node **, root, ptrdiff_t, kofs, size_t, len)
 {
-	return _cebu_first(root, kofs, CEB_KT_IM);
+	return _cebu_first(root, kofs, CEB_KT_IM, len);
 }
 
 /* return the last node or NULL if not found. */
-CEB_FDECL2(struct ceb_node *, cebuib, _last, struct ceb_node **, root, ptrdiff_t, kofs)
+CEB_FDECL3(struct ceb_node *, cebuib, _last, struct ceb_node **, root, ptrdiff_t, kofs, size_t, len)
 {
-	return _cebu_last(root, kofs, CEB_KT_IM);
+	return _cebu_last(root, kofs, CEB_KT_IM, len);
 }
 
 /* look up the specified key <key> of length <len>, and returns either the node

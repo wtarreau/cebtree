@@ -55,18 +55,18 @@ CEB_FDECL3(struct ceb_node *, cebul, _insert, struct ceb_node **, root, ptrdiff_
 CEB_FDECL2(struct ceb_node *, cebul, _first, struct ceb_node **, root, ptrdiff_t, kofs)
 {
 	if (sizeof(long) <= 4)
-		return _cebu_first(root, kofs, CEB_KT_U32);
+		return _cebu_first(root, kofs, CEB_KT_U32, 0);
 	else
-		return _cebu_first(root, kofs, CEB_KT_U64);
+		return _cebu_first(root, kofs, CEB_KT_U64, 0);
 }
 
 /* return the last node or NULL if not found. */
 CEB_FDECL2(struct ceb_node *, cebul, _last, struct ceb_node **, root, ptrdiff_t, kofs)
 {
 	if (sizeof(long) <= 4)
-		return _cebu_last(root, kofs, CEB_KT_U32);
+		return _cebu_last(root, kofs, CEB_KT_U32, 0);
 	else
-		return _cebu_last(root, kofs, CEB_KT_U64);
+		return _cebu_last(root, kofs, CEB_KT_U64, 0);
 }
 
 /* look up the specified key, and returns either the node containing it, or
