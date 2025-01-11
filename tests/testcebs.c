@@ -256,12 +256,11 @@ int main(int argc, char **argv)
 	for (i = 0, old = cebs_last(&ceb_root); old; i++, old = cebs_prev(&ceb_root, (struct ceb_node*)old))
 		printf("# node[%d]=%p key=%s\n", i, old, container_of(old, struct key, node)->key);
 
-#if 0
 	printf("# Removing all keys one at a time\n");
 	while ((old = cebs_first(&ceb_root))) {
 		cebs_delete(&ceb_root, (struct ceb_node*)old);
 	}
-#endif
+
 	if (debug)
 		fprintf(stderr, "counted %d elements\n", found);
 
