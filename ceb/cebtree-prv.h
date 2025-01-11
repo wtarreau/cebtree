@@ -1030,6 +1030,360 @@ struct ceb_node *_ceb_descend(struct ceb_node **root,
 	return NULL;
 }
 
+/*
+ *  Below are the functions that support duplicate keys (_ceb_*)
+ */
+
+/* Generic tree insertion function for trees with duplicate keys. Inserts node
+ * <node> into tree <tree>, with key type <key_type> and key <key_*>.
+ * Returns the inserted node or the one that already contains the same key.
+ */
+static inline __attribute__((always_inline))
+struct ceb_node *_ceb_insert(struct ceb_node **root,
+                             struct ceb_node *node,
+                             ptrdiff_t kofs,
+                             enum ceb_key_type key_type,
+                             uint32_t key_u32,
+                             uint64_t key_u64,
+                             const void *key_ptr)
+{
+	struct ceb_node **parent;
+	struct ceb_node *ret;
+	int nside;
+
+	if (!*root) {
+		/* empty tree, insert a leaf only */
+		node->b[0] = node->b[1] = node;
+		*root = node;
+		return node;
+	}
+
+	ret = _ceb_descend(root, CEB_WM_KEQ, kofs, key_type, key_u32, key_u64, key_ptr, &nside, &parent, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+
+	if (!ret) {
+		/* The key was not in the tree, we can insert it. Better use an
+		 * "if" like this because the inline function above already has
+		 * quite identifiable code paths. This reduces the code and
+		 * optimizes it a bit.
+		 */
+		if (nside) {
+			node->b[1] = node;
+			node->b[0] = *parent;
+		} else {
+			node->b[0] = node;
+			node->b[1] = *parent;
+		}
+		*parent = node;
+		ret = node;
+	}
+	return ret;
+}
+
+/* Returns the first node or NULL if not found, assuming a tree made of keys of
+ * type <key_type>, and optionally <key_len> for fixed-size arrays (otherwise 0).
+ */
+static inline __attribute__((always_inline))
+struct ceb_node *_ceb_first(struct ceb_node **root,
+                            ptrdiff_t kofs,
+                            enum ceb_key_type key_type,
+                            uint64_t key_len)
+{
+	if (!*root)
+		return NULL;
+
+	return _ceb_descend(root, CEB_WM_FST, kofs, key_type, 0, key_len, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+}
+
+/* Returns the last node or NULL if not found, assuming a tree made of keys of
+ * type <key_type>, and optionally <key_len> for fixed-size arrays (otherwise 0).
+ */
+static inline __attribute__((always_inline))
+struct ceb_node *_ceb_last(struct ceb_node **root,
+                           ptrdiff_t kofs,
+                           enum ceb_key_type key_type,
+                           uint64_t key_len)
+{
+	if (!*root)
+		return NULL;
+
+	return _ceb_descend(root, CEB_WM_LST, kofs, key_type, 0, key_len, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+}
+
+/* Searches in the tree <root> made of keys of type <key_type>, for the next
+ * node after the one containing the key <key_*>. Returns NULL if not found.
+ * It's up to the caller to pass the current node's key in <key_*>. The
+ * approach consists in looking up that node first, recalling the last time a
+ * left turn was made, and returning the first node along the right branch at
+ * that fork.
+ */
+static inline __attribute__((always_inline))
+struct ceb_node *_ceb_next(struct ceb_node **root,
+                           ptrdiff_t kofs,
+                           enum ceb_key_type key_type,
+                           uint32_t key_u32,
+                           uint64_t key_u64,
+                           const void *key_ptr)
+{
+	struct ceb_node *restart;
+
+	if (!*root)
+		return NULL;
+
+	if (!_ceb_descend(root, CEB_WM_KNX, kofs, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &restart))
+		return NULL;
+
+	if (!restart)
+		return NULL;
+
+	return _ceb_descend(&restart, CEB_WM_NXT, kofs, key_type, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+}
+
+/* Searches in the tree <root> made of keys of type <key_type>, for the prev
+ * node before the one containing the key <key_*>. Returns NULL if not found.
+ * It's up to the caller to pass the current node's key in <key_*>. The
+ * approach consists in looking up that node first, recalling the last time a
+ * right turn was made, and returning the last node along the left branch at
+ * that fork.
+ */
+static inline __attribute__((always_inline))
+struct ceb_node *_ceb_prev(struct ceb_node **root,
+                           ptrdiff_t kofs,
+                           enum ceb_key_type key_type,
+                           uint32_t key_u32,
+                           uint64_t key_u64,
+                           const void *key_ptr)
+{
+	struct ceb_node *restart;
+
+	if (!*root)
+		return NULL;
+
+	if (!_ceb_descend(root, CEB_WM_KPR, kofs, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &restart))
+		return NULL;
+
+	if (!restart)
+		return NULL;
+
+	return _ceb_descend(&restart, CEB_WM_PRV, kofs, key_type, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+}
+
+/* Searches in the tree <root> made of keys of type <key_type>, for the node
+ * containing the key <key_*>. Returns NULL if not found.
+ */
+static inline __attribute__((always_inline))
+struct ceb_node *_ceb_lookup(struct ceb_node **root,
+                             ptrdiff_t kofs,
+                             enum ceb_key_type key_type,
+                             uint32_t key_u32,
+                             uint64_t key_u64,
+                             const void *key_ptr)
+{
+	if (!*root)
+		return NULL;
+
+	return _ceb_descend(root, CEB_WM_KEQ, kofs, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+}
+
+/* Searches in the tree <root> made of keys of type <key_type>, for the node
+ * containing the key <key_*> or the highest one that's lower than it. Returns
+ * NULL if not found.
+ */
+static inline __attribute__((always_inline))
+struct ceb_node *_ceb_lookup_le(struct ceb_node **root,
+                                ptrdiff_t kofs,
+                                enum ceb_key_type key_type,
+                                uint32_t key_u32,
+                                uint64_t key_u64,
+                                const void *key_ptr)
+{
+	struct ceb_node *ret = NULL;
+	struct ceb_node *restart;
+
+	if (!*root)
+		return NULL;
+
+	ret = _ceb_descend(root, CEB_WM_KLE, kofs, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &restart);
+	if (ret)
+		return ret;
+
+	if (!restart)
+		return NULL;
+
+	return _ceb_descend(&restart, CEB_WM_PRV, kofs, key_type, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+}
+
+/* Searches in the tree <root> made of keys of type <key_type>, for the node
+ * containing the greatest key that is strictly lower than <key_*>. Returns
+ * NULL if not found. It's very similar to next() except that the looked up
+ * value doesn't need to exist.
+ */
+static inline __attribute__((always_inline))
+struct ceb_node *_ceb_lookup_lt(struct ceb_node **root,
+                                ptrdiff_t kofs,
+                                enum ceb_key_type key_type,
+                                uint32_t key_u32,
+                                uint64_t key_u64,
+                                const void *key_ptr)
+{
+	struct ceb_node *ret = NULL;
+	struct ceb_node *restart;
+
+	if (!*root)
+		return NULL;
+
+	ret = _ceb_descend(root, CEB_WM_KLT, kofs, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &restart);
+	if (ret)
+		return ret;
+
+	if (!restart)
+		return NULL;
+
+	return _ceb_descend(&restart, CEB_WM_PRV, kofs, key_type, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+}
+
+/* Searches in the tree <root> made of keys of type <key_type>, for the node
+ * containing the key <key_*> or the smallest one that's greater than it.
+ * Returns NULL if not found.
+ */
+static inline __attribute__((always_inline))
+struct ceb_node *_ceb_lookup_ge(struct ceb_node **root,
+                                ptrdiff_t kofs,
+                                enum ceb_key_type key_type,
+                                uint32_t key_u32,
+                                uint64_t key_u64,
+                                const void *key_ptr)
+{
+	struct ceb_node *ret = NULL;
+	struct ceb_node *restart;
+
+	if (!*root)
+		return NULL;
+
+	ret = _ceb_descend(root, CEB_WM_KGE, kofs, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &restart);
+	if (ret)
+		return ret;
+
+	if (!restart)
+		return NULL;
+
+	return _ceb_descend(&restart, CEB_WM_NXT, kofs, key_type, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+}
+
+/* Searches in the tree <root> made of keys of type <key_type>, for the node
+ * containing the lowest key that is strictly greater than <key_*>. Returns
+ * NULL if not found. It's very similar to prev() except that the looked up
+ * value doesn't need to exist.
+ */
+static inline __attribute__((always_inline))
+struct ceb_node *_ceb_lookup_gt(struct ceb_node **root,
+                                ptrdiff_t kofs,
+                                enum ceb_key_type key_type,
+                                uint32_t key_u32,
+                                uint64_t key_u64,
+                                const void *key_ptr)
+{
+	struct ceb_node *ret = NULL;
+	struct ceb_node *restart;
+
+	if (!*root)
+		return NULL;
+
+	ret = _ceb_descend(root, CEB_WM_KGT, kofs, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &restart);
+	if (ret)
+		return ret;
+
+	if (!restart)
+		return NULL;
+
+	return _ceb_descend(&restart, CEB_WM_NXT, kofs, key_type, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+}
+
+/* Searches in the tree <root> made of keys of type <key_type>, for the node
+ * that contains the key <key_*>, and deletes it. If <node> is non-NULL, a
+ * check is performed and the node found is deleted only if it matches. The
+ * found node is returned in any case, otherwise NULL if not found. A deleted
+ * node is detected since it has b[0]==NULL, which this functions also clears
+ * after operation. The function is idempotent, so it's safe to attempt to
+ * delete an already deleted node (NULL is returned in this case since the node
+ * was not in the tree).
+ */
+static inline __attribute__((always_inline))
+struct ceb_node *_ceb_delete(struct ceb_node **root,
+                             struct ceb_node *node,
+                             ptrdiff_t kofs,
+                             enum ceb_key_type key_type,
+                             uint32_t key_u32,
+                             uint64_t key_u64,
+                             const void *key_ptr)
+{
+	struct ceb_node *lparent, *nparent, *gparent;
+	int lpside, npside, gpside;
+	struct ceb_node *ret = NULL;
+
+	if (node && !node->b[0]) {
+		/* NULL on a branch means the node is not in the tree */
+		return NULL;
+	}
+
+	if (!*root) {
+		/* empty tree, the node cannot be there */
+		goto done;
+	}
+
+	ret = _ceb_descend(root, CEB_WM_KEQ, kofs, key_type, key_u32, key_u64, key_ptr, NULL, NULL,
+			    &lparent, &lpside, &nparent, &npside, &gparent, &gpside, NULL);
+
+	if (!ret) {
+		/* key not found */
+		goto done;
+	}
+
+	if (ret == node || !node) {
+		if (&lparent->b[0] == root) {
+			/* there was a single entry, this one, so we're just
+			 * deleting the nodeless leaf.
+			 */
+			*root = NULL;
+			goto mark_and_leave;
+		}
+
+		/* then we necessarily have a gparent */
+		gparent->b[gpside] = lparent->b[!lpside];
+
+		if (lparent == ret) {
+			/* we're removing the leaf and node together, nothing
+			 * more to do.
+			 */
+			goto mark_and_leave;
+		}
+
+		if (ret->b[0] == ret->b[1]) {
+			/* we're removing the node-less item, the parent will
+			 * take this role.
+			 */
+			lparent->b[0] = lparent->b[1] = lparent;
+			goto mark_and_leave;
+		}
+
+		/* more complicated, the node was split from the leaf, we have
+		 * to find a spare one to switch it. The parent node is not
+		 * needed anymore so we can reuse it.
+		 */
+		lparent->b[0] = ret->b[0];
+		lparent->b[1] = ret->b[1];
+		nparent->b[npside] = lparent;
+
+	mark_and_leave:
+		/* now mark the node as deleted */
+		ret->b[0] = NULL;
+	}
+done:
+	return ret;
+}
+
+/*
+ *  Below are the functions that only support unique keys (_cebu_*)
+ */
 
 /* Generic tree insertion function for trees with unique keys. Inserts node
  * <node> into tree <tree>, with key type <key_type> and key <key_*>.
