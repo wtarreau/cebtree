@@ -145,7 +145,6 @@ int main(int argc, char **argv)
 	for (i = 0, old = cebl_last(&ceb_root); old; i++, old = cebl_prev(&ceb_root, (struct ceb_node*)old))
 		printf("# node[%d]=%p key=%u\n", i, old, container_of(old, struct key, node)->key);
 
-#if 0
 	printf("# Removing all keys one at a time\n");
 	while ((old = cebl_first(&ceb_root))) {
 		cebl_delete(&ceb_root, (struct ceb_node*)old);
@@ -158,7 +157,7 @@ int main(int argc, char **argv)
 			debug++;
 		}
 	}
-#endif
+
 	if (debug)
 		cebl_default_dump(0, 0, 0, 0); // epilogue
 	else
