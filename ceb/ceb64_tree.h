@@ -24,6 +24,9 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+#ifndef _CEB64_TREE_H
+#define _CEB64_TREE_H
+
 #include "cebtree.h"
 #include <inttypes.h>
 
@@ -56,3 +59,5 @@ struct ceb_node *cebu64_ofs_prev(struct ceb_node **root, ptrdiff_t kofs, struct 
 struct ceb_node *cebu64_ofs_delete(struct ceb_node **root, ptrdiff_t kofs, struct ceb_node *node);
 struct ceb_node *cebu64_ofs_pick(struct ceb_node **root, ptrdiff_t kofs, uint64_t key);
 void cebu64_ofs_default_dump(struct ceb_node **root, ptrdiff_t kofs, const char *label, const void *ctx);
+
+#endif /* _CEB64_TREE_H */
