@@ -142,7 +142,7 @@ static void rnd64_to_str(char *dst)
 
 void usage(const char *name)
 {
-	printf("Usage: %s [-dD] entries lookups loops [first entries...]\n", name);
+	fprintf(stderr, "Usage: %s [-dD] entries lookups loops [first entries...]\n", name);
 	exit(1);
 }
 
@@ -180,7 +180,7 @@ int main(int argc, char **argv)
 	key = calloc(1, sizeof(*key));
 
 	if (debug)
-		printf("inserting %d entries\n", entries);
+		fprintf(stderr, "inserting %d entries\n", entries);
 	for (i = 0; i < entries; i++) {
 		if (i < argc - 4) {
 			strncpy(key->key, argv[i + 4], sizeof(key->key) - 1);
@@ -211,7 +211,7 @@ int main(int argc, char **argv)
 	}
 
 	if (debug)
-		printf("Now looking up\n");
+		fprintf(stderr, "Now looking up\n");
 
 	while (loops-- > 0) {
 		rnd32seed = RND32SEED;
@@ -232,24 +232,24 @@ int main(int argc, char **argv)
 	}
 
 	if (debug)
-		printf("found=%d\n", found);
+		fprintf(stderr, "found=%d\n", found);
 
 	/* now count elements */
 	found = 0;
 	ret = cebus_first(&ceb_root);
 	if (debug > 1)
-		printf("%d: ret=%p\n", __LINE__, ret);
+		fprintf(stderr, "%d: ret=%p\n", __LINE__, ret);
 
 	while (ret) {
 		prev = cebus_next(&ceb_root, ret);
 		if (debug)
-			printf("   %4d: <%s>\n", found, ((const struct key *)ret)->key);
+			fprintf(stderr, "   %4d: <%s>\n", found, ((const struct key *)ret)->key);
 		found++;
 		ret = prev;
 	}
 
 	if (debug)
-		printf("counted %d elements\n", found);
+		fprintf(stderr, "counted %d elements\n", found);
 
 	if (!debug && dump)
 		cebus_default_dump(&ceb_root, orig_argv, 0, 0);
