@@ -31,6 +31,19 @@
 #include <inttypes.h>
 
 /* simpler version */
+struct ceb_node *ceb64_insert(struct ceb_node **root, struct ceb_node *node);
+struct ceb_node *ceb64_first(struct ceb_node **root);
+struct ceb_node *ceb64_last(struct ceb_node **root);
+struct ceb_node *ceb64_lookup(struct ceb_node **root, uint64_t key);
+struct ceb_node *ceb64_lookup_le(struct ceb_node **root, uint64_t key);
+struct ceb_node *ceb64_lookup_lt(struct ceb_node **root, uint64_t key);
+struct ceb_node *ceb64_lookup_ge(struct ceb_node **root, uint64_t key);
+struct ceb_node *ceb64_lookup_gt(struct ceb_node **root, uint64_t key);
+struct ceb_node *ceb64_next(struct ceb_node **root, struct ceb_node *node);
+struct ceb_node *ceb64_prev(struct ceb_node **root, struct ceb_node *node);
+struct ceb_node *ceb64_delete(struct ceb_node **root, struct ceb_node *node);
+struct ceb_node *ceb64_pick(struct ceb_node **root, uint64_t key);
+
 struct ceb_node *cebu64_insert(struct ceb_node **root, struct ceb_node *node);
 struct ceb_node *cebu64_first(struct ceb_node **root);
 struct ceb_node *cebu64_last(struct ceb_node **root);
@@ -48,6 +61,19 @@ struct ceb_node *cebu64_pick(struct ceb_node **root, uint64_t key);
 void ceb64_default_dump(struct ceb_node **ceb_root, const char *label, const void *ctx, int sub);
 
 /* version taking a key offset */
+struct ceb_node *ceb64_ofs_insert(struct ceb_node **root, ptrdiff_t kofs, struct ceb_node *node);
+struct ceb_node *ceb64_ofs_first(struct ceb_node **root, ptrdiff_t kofs);
+struct ceb_node *ceb64_ofs_last(struct ceb_node **root, ptrdiff_t kofs);
+struct ceb_node *ceb64_ofs_lookup(struct ceb_node **root, ptrdiff_t kofs, uint64_t key);
+struct ceb_node *ceb64_ofs_lookup_le(struct ceb_node **root, ptrdiff_t kofs, uint64_t key);
+struct ceb_node *ceb64_ofs_lookup_lt(struct ceb_node **root, ptrdiff_t kofs, uint64_t key);
+struct ceb_node *ceb64_ofs_lookup_ge(struct ceb_node **root, ptrdiff_t kofs, uint64_t key);
+struct ceb_node *ceb64_ofs_lookup_gt(struct ceb_node **root, ptrdiff_t kofs, uint64_t key);
+struct ceb_node *ceb64_ofs_next(struct ceb_node **root, ptrdiff_t kofs, struct ceb_node *node);
+struct ceb_node *ceb64_ofs_prev(struct ceb_node **root, ptrdiff_t kofs, struct ceb_node *node);
+struct ceb_node *ceb64_ofs_delete(struct ceb_node **root, ptrdiff_t kofs, struct ceb_node *node);
+struct ceb_node *ceb64_ofs_pick(struct ceb_node **root, ptrdiff_t kofs, uint64_t key);
+
 struct ceb_node *cebu64_ofs_insert(struct ceb_node **root, ptrdiff_t kofs, struct ceb_node *node);
 struct ceb_node *cebu64_ofs_first(struct ceb_node **root, ptrdiff_t kofs);
 struct ceb_node *cebu64_ofs_last(struct ceb_node **root, ptrdiff_t kofs);
