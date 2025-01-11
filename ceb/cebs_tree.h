@@ -1,7 +1,7 @@
 /*
  * Compact Elastic Binary Trees - exported functions operating on string keys
  *
- * Copyright (C) 2014-2024 Willy Tarreau - w@1wt.eu
+ * Copyright (C) 2014-2025 Willy Tarreau - w@1wt.eu
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
@@ -23,6 +23,9 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
  * OTHER DEALINGS IN THE SOFTWARE.
  */
+
+#ifndef _CEBS_TREE_H
+#define _CEBS_TREE_H
 
 #include "cebtree.h"
 
@@ -55,3 +58,5 @@ struct ceb_node *cebus_ofs_prev(struct ceb_node **root, ptrdiff_t kofs, struct c
 struct ceb_node *cebus_ofs_delete(struct ceb_node **root, ptrdiff_t kofs, struct ceb_node *node);
 struct ceb_node *cebus_ofs_pick(struct ceb_node **root, ptrdiff_t kofs, const void *key);
 void cebus_ofs_default_dump(struct ceb_node **root, ptrdiff_t kofs, const char *label, const void *ctx);
+
+#endif /* _CEBS_TREE_H */
