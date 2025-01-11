@@ -30,6 +30,19 @@
 #include "cebtree.h"
 
 /* simpler version */
+struct ceb_node *cebl_insert(struct ceb_node **root, struct ceb_node *node);
+struct ceb_node *cebl_first(struct ceb_node **root);
+struct ceb_node *cebl_last(struct ceb_node **root);
+struct ceb_node *cebl_lookup(struct ceb_node **root, unsigned long key);
+struct ceb_node *cebl_lookup_le(struct ceb_node **root, unsigned long key);
+struct ceb_node *cebl_lookup_lt(struct ceb_node **root, unsigned long key);
+struct ceb_node *cebl_lookup_ge(struct ceb_node **root, unsigned long key);
+struct ceb_node *cebl_lookup_gt(struct ceb_node **root, unsigned long key);
+struct ceb_node *cebl_next(struct ceb_node **root, struct ceb_node *node);
+struct ceb_node *cebl_prev(struct ceb_node **root, struct ceb_node *node);
+struct ceb_node *cebl_delete(struct ceb_node **root, struct ceb_node *node);
+struct ceb_node *cebl_pick(struct ceb_node **root, unsigned long key);
+
 struct ceb_node *cebul_insert(struct ceb_node **root, struct ceb_node *node);
 struct ceb_node *cebul_first(struct ceb_node **root);
 struct ceb_node *cebul_last(struct ceb_node **root);
@@ -47,6 +60,19 @@ struct ceb_node *cebul_pick(struct ceb_node **root, unsigned long key);
 void cebl_default_dump(struct ceb_node **ceb_root, const char *label, const void *ctx, int sub);
 
 /* version taking a key offset */
+struct ceb_node *cebl_ofs_insert(struct ceb_node **root, ptrdiff_t kofs, struct ceb_node *node);
+struct ceb_node *cebl_ofs_first(struct ceb_node **root, ptrdiff_t kofs);
+struct ceb_node *cebl_ofs_last(struct ceb_node **root, ptrdiff_t kofs);
+struct ceb_node *cebl_ofs_lookup(struct ceb_node **root, ptrdiff_t kofs, unsigned long key);
+struct ceb_node *cebl_ofs_lookup_le(struct ceb_node **root, ptrdiff_t kofs, unsigned long key);
+struct ceb_node *cebl_ofs_lookup_lt(struct ceb_node **root, ptrdiff_t kofs, unsigned long key);
+struct ceb_node *cebl_ofs_lookup_ge(struct ceb_node **root, ptrdiff_t kofs, unsigned long key);
+struct ceb_node *cebl_ofs_lookup_gt(struct ceb_node **root, ptrdiff_t kofs, unsigned long key);
+struct ceb_node *cebl_ofs_next(struct ceb_node **root, ptrdiff_t kofs, struct ceb_node *node);
+struct ceb_node *cebl_ofs_prev(struct ceb_node **root, ptrdiff_t kofs, struct ceb_node *node);
+struct ceb_node *cebl_ofs_delete(struct ceb_node **root, ptrdiff_t kofs, struct ceb_node *node);
+struct ceb_node *cebl_ofs_pick(struct ceb_node **root, ptrdiff_t kofs, unsigned long key);
+
 struct ceb_node *cebul_ofs_insert(struct ceb_node **root, ptrdiff_t kofs, struct ceb_node *node);
 struct ceb_node *cebul_ofs_first(struct ceb_node **root, ptrdiff_t kofs);
 struct ceb_node *cebul_ofs_last(struct ceb_node **root, ptrdiff_t kofs);
