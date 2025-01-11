@@ -28,8 +28,8 @@
 
 /* simpler version */
 struct ceb_node *cebub_insert(struct ceb_node **root, struct ceb_node *node, size_t len);
-struct ceb_node *cebub_first(struct ceb_node **root);
-struct ceb_node *cebub_last(struct ceb_node **root);
+struct ceb_node *cebub_first(struct ceb_node **root, size_t len);
+struct ceb_node *cebub_last(struct ceb_node **root, size_t len);
 struct ceb_node *cebub_lookup(struct ceb_node **root, const void *key, size_t len);
 struct ceb_node *cebub_lookup_le(struct ceb_node **root, const void *key, size_t len);
 struct ceb_node *cebub_lookup_lt(struct ceb_node **root, const void *key, size_t len);

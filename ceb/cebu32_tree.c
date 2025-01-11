@@ -51,13 +51,13 @@ CEB_FDECL3(struct ceb_node *, cebu32, _insert, struct ceb_node **, root, ptrdiff
 /* return the first node or NULL if not found. */
 CEB_FDECL2(struct ceb_node *, cebu32, _first, struct ceb_node **, root, ptrdiff_t, kofs)
 {
-	return _cebu_first(root, kofs, CEB_KT_U32);
+	return _cebu_first(root, kofs, CEB_KT_U32, 0);
 }
 
 /* return the last node or NULL if not found. */
 CEB_FDECL2(struct ceb_node *, cebu32, _last, struct ceb_node **, root, ptrdiff_t, kofs)
 {
-	return _cebu_last(root, kofs, CEB_KT_U32);
+	return _cebu_last(root, kofs, CEB_KT_U32, 0);
 }
 
 /* look up the specified key, and returns either the node containing it, or

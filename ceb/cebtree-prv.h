@@ -1064,31 +1064,33 @@ struct ceb_node *_cebu_insert(struct ceb_node **root,
 }
 
 /* Returns the first node or NULL if not found, assuming a tree made of keys of
- * type <key_type>.
+ * type <key_type>, and optionally <key_len> for fixed-size arrays (otherwise 0).
  */
 static inline __attribute__((always_inline))
 struct ceb_node *_cebu_first(struct ceb_node **root,
                              ptrdiff_t kofs,
-                             enum ceb_key_type key_type)
+                             enum ceb_key_type key_type,
+                             uint64_t key_len)
 {
 	if (!*root)
 		return NULL;
 
-	return _cebu_descend(root, CEB_WM_FST, kofs, key_type, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	return _cebu_descend(root, CEB_WM_FST, kofs, key_type, 0, key_len, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 }
 
 /* Returns the last node or NULL if not found, assuming a tree made of keys of
- * type <key_type>.
+ * type <key_type>, and optionally <key_len> for fixed-size arrays (otherwise 0).
  */
 static inline __attribute__((always_inline))
 struct ceb_node *_cebu_last(struct ceb_node **root,
                             ptrdiff_t kofs,
-                            enum ceb_key_type key_type)
+                            enum ceb_key_type key_type,
+                            uint64_t key_len)
 {
 	if (!*root)
 		return NULL;
 
-	return _cebu_descend(root, CEB_WM_LST, kofs, key_type, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	return _cebu_descend(root, CEB_WM_LST, kofs, key_type, 0, key_len, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 }
 
 /* Searches in the tree <root> made of keys of type <key_type>, for the next
