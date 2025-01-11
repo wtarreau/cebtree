@@ -42,7 +42,9 @@ struct ceb_node *cebua_next(struct ceb_node **root, struct ceb_node *node);
 struct ceb_node *cebua_prev(struct ceb_node **root, struct ceb_node *node);
 struct ceb_node *cebua_delete(struct ceb_node **root, struct ceb_node *node);
 struct ceb_node *cebua_pick(struct ceb_node **root, const void *key);
-void cebua_default_dump(struct ceb_node **root, const char *label, const void *ctx);
+
+/* generic dump function */
+void ceba_default_dump(struct ceb_node **root, const char *label, const void *ctx);
 
 /* version taking a key offset */
 struct ceb_node *cebua_ofs_insert(struct ceb_node **root, ptrdiff_t kofs, struct ceb_node *node);
@@ -57,6 +59,8 @@ struct ceb_node *cebua_ofs_next(struct ceb_node **root, ptrdiff_t kofs, struct c
 struct ceb_node *cebua_ofs_prev(struct ceb_node **root, ptrdiff_t kofs, struct ceb_node *node);
 struct ceb_node *cebua_ofs_delete(struct ceb_node **root, ptrdiff_t kofs, struct ceb_node *node);
 struct ceb_node *cebua_ofs_pick(struct ceb_node **root, ptrdiff_t kofs, const void *key);
-void cebua_ofs_default_dump(struct ceb_node **root, ptrdiff_t kofs, const char *label, const void *ctx);
+
+/* generic dump function taking a key offset */
+void ceba_ofs_default_dump(struct ceb_node **root, ptrdiff_t kofs, const char *label, const void *ctx);
 
 #endif /* _CEBA_TREE_H */
