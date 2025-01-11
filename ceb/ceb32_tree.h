@@ -43,7 +43,9 @@ struct ceb_node *cebu32_next(struct ceb_node **root, struct ceb_node *node);
 struct ceb_node *cebu32_prev(struct ceb_node **root, struct ceb_node *node);
 struct ceb_node *cebu32_delete(struct ceb_node **root, struct ceb_node *node);
 struct ceb_node *cebu32_pick(struct ceb_node **root, uint32_t key);
-void cebu32_default_dump(struct ceb_node **ceb_root, const char *label, const void *ctx);
+
+/* generic dump function */
+void ceb32_default_dump(struct ceb_node **ceb_root, const char *label, const void *ctx);
 
 /* version taking a key offset */
 struct ceb_node *cebu32_ofs_insert(struct ceb_node **root, ptrdiff_t kofs, struct ceb_node *node);
@@ -58,6 +60,8 @@ struct ceb_node *cebu32_ofs_next(struct ceb_node **root, ptrdiff_t kofs, struct 
 struct ceb_node *cebu32_ofs_prev(struct ceb_node **root, ptrdiff_t kofs, struct ceb_node *node);
 struct ceb_node *cebu32_ofs_delete(struct ceb_node **root, ptrdiff_t kofs, struct ceb_node *node);
 struct ceb_node *cebu32_ofs_pick(struct ceb_node **root, ptrdiff_t kofs, uint32_t key);
-void cebu32_ofs_default_dump(struct ceb_node **root, ptrdiff_t kofs, const char *label, const void *ctx);
+
+/* generic dump function taking a key offset */
+void ceb32_ofs_default_dump(struct ceb_node **root, ptrdiff_t kofs, const char *label, const void *ctx);
 
 #endif /* _CEB32_TREE_H */
