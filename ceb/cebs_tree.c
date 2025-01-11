@@ -35,6 +35,127 @@
 #include "cebs_tree.h"
 #endif
 
+/*
+ *  Below are the functions that support duplicate keys (_ceb_*)
+ */
+
+/*****************************************************************************\
+ * The declarations below always cause two functions to be declared, one     *
+ * starting with "cebs_*" and one with "cebs_ofs_*" which takes a key offset *
+ * just after the root. The one without kofs just has this argument omitted  *
+ * from its declaration and replaced with sizeof(struct ceb_node) in the     *
+ * call to the underlying functions.                                         *
+\*****************************************************************************/
+
+/* Inserts node <node> into tree <tree> based on its key that immediately
+ * follows the node. Returns the inserted node or the one that already contains
+ * the same key.
+ */
+CEB_FDECL3(struct ceb_node *, cebs, _insert, struct ceb_node **, root, ptrdiff_t, kofs, struct ceb_node *, node)
+{
+	const void *key = NODEK(node, kofs)->str;
+
+	return _ceb_insert(root, node, kofs, CEB_KT_ST, 0, 0, key);
+}
+
+/* return the first node or NULL if not found. */
+CEB_FDECL2(struct ceb_node *, cebs, _first, struct ceb_node **, root, ptrdiff_t, kofs)
+{
+	return _ceb_first(root, kofs, CEB_KT_ST, 0);
+}
+
+/* return the last node or NULL if not found. */
+CEB_FDECL2(struct ceb_node *, cebs, _last, struct ceb_node **, root, ptrdiff_t, kofs)
+{
+	return _ceb_last(root, kofs, CEB_KT_ST, 0);
+}
+
+/* look up the specified key, and returns either the node containing it, or
+ * NULL if not found.
+ */
+CEB_FDECL3(struct ceb_node *, cebs, _lookup, struct ceb_node **, root, ptrdiff_t, kofs, const void *, key)
+{
+	return _ceb_lookup(root, kofs, CEB_KT_ST, 0, 0, key);
+}
+
+/* look up the specified key or the highest below it, and returns either the
+ * node containing it, or NULL if not found.
+ */
+CEB_FDECL3(struct ceb_node *, cebs, _lookup_le, struct ceb_node **, root, ptrdiff_t, kofs, const void *, key)
+{
+	return _ceb_lookup_le(root, kofs, CEB_KT_ST, 0, 0, key);
+}
+
+/* look up highest key below the specified one, and returns either the
+ * node containing it, or NULL if not found.
+ */
+CEB_FDECL3(struct ceb_node *, cebs, _lookup_lt, struct ceb_node **, root, ptrdiff_t, kofs, const void *, key)
+{
+	return _ceb_lookup_lt(root, kofs, CEB_KT_ST, 0, 0, key);
+}
+
+/* look up the specified key or the smallest above it, and returns either the
+ * node containing it, or NULL if not found.
+ */
+CEB_FDECL3(struct ceb_node *, cebs, _lookup_ge, struct ceb_node **, root, ptrdiff_t, kofs, const void *, key)
+{
+	return _ceb_lookup_ge(root, kofs, CEB_KT_ST, 0, 0, key);
+}
+
+/* look up the smallest key above the specified one, and returns either the
+ * node containing it, or NULL if not found.
+ */
+CEB_FDECL3(struct ceb_node *, cebs, _lookup_gt, struct ceb_node **, root, ptrdiff_t, kofs, const void *, key)
+{
+	return _ceb_lookup_gt(root, kofs, CEB_KT_ST, 0, 0, key);
+}
+
+/* search for the next node after the specified one, and return it, or NULL if
+ * not found. The approach consists in looking up that node, recalling the last
+ * time a left turn was made, and returning the first node along the right
+ * branch at that fork.
+ */
+CEB_FDECL3(struct ceb_node *, cebs, _next, struct ceb_node **, root, ptrdiff_t, kofs, struct ceb_node *, node)
+{
+	const void *key = NODEK(node, kofs)->str;
+
+	return _ceb_next(root, kofs, CEB_KT_ST, 0, 0, key);
+}
+
+/* search for the prev node before the specified one, and return it, or NULL if
+ * not found. The approach consists in looking up that node, recalling the last
+ * time a right turn was made, and returning the last node along the left
+ * branch at that fork.
+ */
+CEB_FDECL3(struct ceb_node *, cebs, _prev, struct ceb_node **, root, ptrdiff_t, kofs, struct ceb_node *, node)
+{
+	const void *key = NODEK(node, kofs)->str;
+
+	return _ceb_prev(root, kofs, CEB_KT_ST, 0, 0, key);
+}
+
+/* look up the specified node with its key and deletes it if found, and in any
+ * case, returns the node.
+ */
+CEB_FDECL3(struct ceb_node *, cebs, _delete, struct ceb_node **, root, ptrdiff_t, kofs, struct ceb_node *, node)
+{
+	const void *key = NODEK(node, kofs)->str;
+
+	return _ceb_delete(root, node, kofs, CEB_KT_ST, 0, 0, key);
+}
+
+/* look up the specified key, and detaches it and returns it if found, or NULL
+ * if not found.
+ */
+CEB_FDECL3(struct ceb_node *, cebs, _pick, struct ceb_node **, root, ptrdiff_t, kofs, const void *, key)
+{
+	return _ceb_delete(root, NULL, kofs, CEB_KT_ST, 0, 0, key);
+}
+
+/*
+ *  Below are the functions that only support unique keys (_cebu_*)
+ */
+
 /*****************************************************************************\
  * The declarations below always cause two functions to be declared, one     *
  * starting with "cebus_*" and one with "cebus_ofs_*" which takes a key      *
