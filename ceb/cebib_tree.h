@@ -24,6 +24,9 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+#ifndef _CEBIB_TREE_H
+#define _CEBIB_TREE_H
+
 #include "cebtree.h"
 
 /* simpler version */
@@ -53,3 +56,5 @@ struct ceb_node *cebuib_ofs_next(struct ceb_node **root, ptrdiff_t kofs, struct 
 struct ceb_node *cebuib_ofs_prev(struct ceb_node **root, ptrdiff_t kofs, struct ceb_node *node, size_t len);
 struct ceb_node *cebuib_ofs_delete(struct ceb_node **root, ptrdiff_t kofs, struct ceb_node *node, size_t len);
 struct ceb_node *cebuib_ofs_pick(struct ceb_node **root, ptrdiff_t kofs, const void *key, size_t len);
+
+#endif /* _CEBIB_TREE_H */
