@@ -1,7 +1,7 @@
 /*
  * Compact Elastic Binary Trees - internal functions and types
  *
- * Copyright (C) 2014-2024 Willy Tarreau - w@1wt.eu
+ * Copyright (C) 2014-2025 Willy Tarreau - w@1wt.eu
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
@@ -388,22 +388,22 @@ static void dbg(int line,
  * key_ptr, and pxor64 will be used internally.
  */
 static inline __attribute__((always_inline))
-struct ceb_node *_cebu_descend(struct ceb_node **root,
-                               enum ceb_walk_meth meth,
-                               ptrdiff_t kofs,
-                               enum ceb_key_type key_type,
-                               uint32_t key_u32,
-                               uint64_t key_u64,
-                               const void *key_ptr,
-                               int *ret_nside,
-                               struct ceb_node ***ret_root,
-                               struct ceb_node **ret_lparent,
-                               int *ret_lpside,
-                               struct ceb_node **ret_nparent,
-                               int *ret_npside,
-                               struct ceb_node **ret_gparent,
-                               int *ret_gpside,
-                               struct ceb_node **ret_back)
+struct ceb_node *_ceb_descend(struct ceb_node **root,
+                              enum ceb_walk_meth meth,
+                              ptrdiff_t kofs,
+                              enum ceb_key_type key_type,
+                              uint32_t key_u32,
+                              uint64_t key_u64,
+                              const void *key_ptr,
+                              int *ret_nside,
+                              struct ceb_node ***ret_root,
+                              struct ceb_node **ret_lparent,
+                              int *ret_lpside,
+                              struct ceb_node **ret_nparent,
+                              int *ret_npside,
+                              struct ceb_node **ret_gparent,
+                              int *ret_gpside,
+                              struct ceb_node **ret_back)
 {
 #if defined(__GNUC__) && (__GNUC__ >= 12) && !defined(__OPTIMIZE__)
 /* Avoid a bogus warning with gcc 12 and above: it warns about negative
@@ -1069,7 +1069,7 @@ struct ceb_node *_cebu_insert(struct ceb_node **root,
 		return node;
 	}
 
-	ret = _cebu_descend(root, CEB_WM_KEQ, kofs, key_type, key_u32, key_u64, key_ptr, &nside, &parent, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	ret = _ceb_descend(root, CEB_WM_KEQ, kofs, key_type, key_u32, key_u64, key_ptr, &nside, &parent, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 
 	if (!ret) {
 		/* The key was not in the tree, we can insert it. Better use an
@@ -1102,7 +1102,7 @@ struct ceb_node *_cebu_first(struct ceb_node **root,
 	if (!*root)
 		return NULL;
 
-	return _cebu_descend(root, CEB_WM_FST, kofs, key_type, 0, key_len, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	return _ceb_descend(root, CEB_WM_FST, kofs, key_type, 0, key_len, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 }
 
 /* Returns the last node or NULL if not found, assuming a tree made of keys of
@@ -1117,7 +1117,7 @@ struct ceb_node *_cebu_last(struct ceb_node **root,
 	if (!*root)
 		return NULL;
 
-	return _cebu_descend(root, CEB_WM_LST, kofs, key_type, 0, key_len, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	return _ceb_descend(root, CEB_WM_LST, kofs, key_type, 0, key_len, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 }
 
 /* Searches in the tree <root> made of keys of type <key_type>, for the next
@@ -1140,13 +1140,13 @@ struct ceb_node *_cebu_next(struct ceb_node **root,
 	if (!*root)
 		return NULL;
 
-	if (!_cebu_descend(root, CEB_WM_KNX, kofs, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &restart))
+	if (!_ceb_descend(root, CEB_WM_KNX, kofs, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &restart))
 		return NULL;
 
 	if (!restart)
 		return NULL;
 
-	return _cebu_descend(&restart, CEB_WM_NXT, kofs, key_type, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	return _ceb_descend(&restart, CEB_WM_NXT, kofs, key_type, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 }
 
 /* Searches in the tree <root> made of keys of type <key_type>, for the prev
@@ -1169,13 +1169,13 @@ struct ceb_node *_cebu_prev(struct ceb_node **root,
 	if (!*root)
 		return NULL;
 
-	if (!_cebu_descend(root, CEB_WM_KPR, kofs, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &restart))
+	if (!_ceb_descend(root, CEB_WM_KPR, kofs, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &restart))
 		return NULL;
 
 	if (!restart)
 		return NULL;
 
-	return _cebu_descend(&restart, CEB_WM_PRV, kofs, key_type, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	return _ceb_descend(&restart, CEB_WM_PRV, kofs, key_type, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 }
 
 /* Searches in the tree <root> made of keys of type <key_type>, for the node
@@ -1192,7 +1192,7 @@ struct ceb_node *_cebu_lookup(struct ceb_node **root,
 	if (!*root)
 		return NULL;
 
-	return _cebu_descend(root, CEB_WM_KEQ, kofs, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	return _ceb_descend(root, CEB_WM_KEQ, kofs, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 }
 
 /* Searches in the tree <root> made of keys of type <key_type>, for the node
@@ -1213,14 +1213,14 @@ struct ceb_node *_cebu_lookup_le(struct ceb_node **root,
 	if (!*root)
 		return NULL;
 
-	ret = _cebu_descend(root, CEB_WM_KLE, kofs, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &restart);
+	ret = _ceb_descend(root, CEB_WM_KLE, kofs, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &restart);
 	if (ret)
 		return ret;
 
 	if (!restart)
 		return NULL;
 
-	return _cebu_descend(&restart, CEB_WM_PRV, kofs, key_type, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	return _ceb_descend(&restart, CEB_WM_PRV, kofs, key_type, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 }
 
 /* Searches in the tree <root> made of keys of type <key_type>, for the node
@@ -1242,14 +1242,14 @@ struct ceb_node *_cebu_lookup_lt(struct ceb_node **root,
 	if (!*root)
 		return NULL;
 
-	ret = _cebu_descend(root, CEB_WM_KLT, kofs, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &restart);
+	ret = _ceb_descend(root, CEB_WM_KLT, kofs, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &restart);
 	if (ret)
 		return ret;
 
 	if (!restart)
 		return NULL;
 
-	return _cebu_descend(&restart, CEB_WM_PRV, kofs, key_type, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	return _ceb_descend(&restart, CEB_WM_PRV, kofs, key_type, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 }
 
 /* Searches in the tree <root> made of keys of type <key_type>, for the node
@@ -1270,14 +1270,14 @@ struct ceb_node *_cebu_lookup_ge(struct ceb_node **root,
 	if (!*root)
 		return NULL;
 
-	ret = _cebu_descend(root, CEB_WM_KGE, kofs, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &restart);
+	ret = _ceb_descend(root, CEB_WM_KGE, kofs, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &restart);
 	if (ret)
 		return ret;
 
 	if (!restart)
 		return NULL;
 
-	return _cebu_descend(&restart, CEB_WM_NXT, kofs, key_type, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	return _ceb_descend(&restart, CEB_WM_NXT, kofs, key_type, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 }
 
 /* Searches in the tree <root> made of keys of type <key_type>, for the node
@@ -1299,14 +1299,14 @@ struct ceb_node *_cebu_lookup_gt(struct ceb_node **root,
 	if (!*root)
 		return NULL;
 
-	ret = _cebu_descend(root, CEB_WM_KGT, kofs, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &restart);
+	ret = _ceb_descend(root, CEB_WM_KGT, kofs, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &restart);
 	if (ret)
 		return ret;
 
 	if (!restart)
 		return NULL;
 
-	return _cebu_descend(&restart, CEB_WM_NXT, kofs, key_type, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	return _ceb_descend(&restart, CEB_WM_NXT, kofs, key_type, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 }
 
 /* Searches in the tree <root> made of keys of type <key_type>, for the node
@@ -1341,8 +1341,8 @@ struct ceb_node *_cebu_delete(struct ceb_node **root,
 		goto done;
 	}
 
-	ret = _cebu_descend(root, CEB_WM_KEQ, kofs, key_type, key_u32, key_u64, key_ptr, NULL, NULL,
-			    &lparent, &lpside, &nparent, &npside, &gparent, &gpside, NULL);
+	ret = _ceb_descend(root, CEB_WM_KEQ, kofs, key_type, key_u32, key_u64, key_ptr, NULL, NULL,
+			   &lparent, &lpside, &nparent, &npside, &gparent, &gpside, NULL);
 
 	if (!ret) {
 		/* key not found */
