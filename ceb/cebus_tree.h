@@ -30,4 +30,7 @@
 
 #include "cebs_tree.h"
 
+#define cebus_default_dump cebs_default_dump
+#define cebus_ofs_default_dump cebs_ofs_default_dump
+
 #endif

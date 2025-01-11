@@ -30,4 +30,7 @@
 
 #include "ceb64_tree.h"
 
+#define cebu64_default_dump ceb64_default_dump
+#define cebu64_ofs_default_dump ceb64_ofs_default_dump
+
 #endif
