@@ -1,7 +1,7 @@
 /*
  * Compact Elastic Binary Trees - exported functions operating on indirect blocks
  *
- * Copyright (C) 2014-2024 Willy Tarreau - w@1wt.eu
+ * Copyright (C) 2014-2025 Willy Tarreau - w@1wt.eu
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
@@ -24,32 +24,10 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include "cebtree.h"
+/* just for compatibility purposes */
+#ifndef _CEBUIB_TREE_H
+#define _CEBUIB_TREE_H
 
-/* simpler version */
-struct ceb_node *cebuib_insert(struct ceb_node **root, struct ceb_node *node, size_t len);
-struct ceb_node *cebuib_first(struct ceb_node **root, size_t len);
-struct ceb_node *cebuib_last(struct ceb_node **root, size_t len);
-struct ceb_node *cebuib_lookup(struct ceb_node **root, const void *key, size_t len);
-struct ceb_node *cebuib_lookup_le(struct ceb_node **root, const void *key, size_t len);
-struct ceb_node *cebuib_lookup_lt(struct ceb_node **root, const void *key, size_t len);
-struct ceb_node *cebuib_lookup_ge(struct ceb_node **root, const void *key, size_t len);
-struct ceb_node *cebuib_lookup_gt(struct ceb_node **root, const void *key, size_t len);
-struct ceb_node *cebuib_next(struct ceb_node **root, struct ceb_node *node, size_t len);
-struct ceb_node *cebuib_prev(struct ceb_node **root, struct ceb_node *node, size_t len);
-struct ceb_node *cebuib_delete(struct ceb_node **root, struct ceb_node *node, size_t len);
-struct ceb_node *cebuib_pick(struct ceb_node **root, const void *key, size_t len);
+#include "cebib_tree.h"
 
-/* version taking a key offset */
-struct ceb_node *cebuib_ofs_insert(struct ceb_node **root, ptrdiff_t kofs, struct ceb_node *node, size_t len);
-struct ceb_node *cebuib_ofs_first(struct ceb_node **root, ptrdiff_t kofs, size_t len);
-struct ceb_node *cebuib_ofs_last(struct ceb_node **root, ptrdiff_t kofs, size_t len);
-struct ceb_node *cebuib_ofs_lookup(struct ceb_node **root, ptrdiff_t kofs, const void *key, size_t len);
-struct ceb_node *cebuib_ofs_lookup_le(struct ceb_node **root, ptrdiff_t kofs, const void *key, size_t len);
-struct ceb_node *cebuib_ofs_lookup_lt(struct ceb_node **root, ptrdiff_t kofs, const void *key, size_t len);
-struct ceb_node *cebuib_ofs_lookup_ge(struct ceb_node **root, ptrdiff_t kofs, const void *key, size_t len);
-struct ceb_node *cebuib_ofs_lookup_gt(struct ceb_node **root, ptrdiff_t kofs, const void *key, size_t len);
-struct ceb_node *cebuib_ofs_next(struct ceb_node **root, ptrdiff_t kofs, struct ceb_node *node, size_t len);
-struct ceb_node *cebuib_ofs_prev(struct ceb_node **root, ptrdiff_t kofs, struct ceb_node *node, size_t len);
-struct ceb_node *cebuib_ofs_delete(struct ceb_node **root, ptrdiff_t kofs, struct ceb_node *node, size_t len);
-struct ceb_node *cebuib_ofs_pick(struct ceb_node **root, ptrdiff_t kofs, const void *key, size_t len);
+#endif

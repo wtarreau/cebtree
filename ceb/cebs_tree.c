@@ -29,7 +29,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "cebtree-prv.h"
-#include "cebus_tree.h"
+#include "cebs_tree.h"
 
 /*****************************************************************************\
  * The declarations below always cause two functions to be declared, one     *

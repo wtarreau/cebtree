@@ -1,7 +1,7 @@
 /*
  * Compact Elastic Binary Trees - exported functions operating on string keys
  *
- * Copyright (C) 2014-2024 Willy Tarreau - w@1wt.eu
+ * Copyright (C) 2014-2025 Willy Tarreau - w@1wt.eu
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
@@ -24,34 +24,10 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include "cebtree.h"
+/* just for compatibility purposes */
+#ifndef _CEBUS_TREE_H
+#define _CEBUS_TREE_H
 
-/* simpler version */
-struct ceb_node *cebus_insert(struct ceb_node **root, struct ceb_node *node);
-struct ceb_node *cebus_first(struct ceb_node **root);
-struct ceb_node *cebus_last(struct ceb_node **root);
-struct ceb_node *cebus_lookup(struct ceb_node **root, const void *key);
-struct ceb_node *cebus_lookup_le(struct ceb_node **root, const void *key);
-struct ceb_node *cebus_lookup_lt(struct ceb_node **root, const void *key);
-struct ceb_node *cebus_lookup_ge(struct ceb_node **root, const void *key);
-struct ceb_node *cebus_lookup_gt(struct ceb_node **root, const void *key);
-struct ceb_node *cebus_next(struct ceb_node **root, struct ceb_node *node);
-struct ceb_node *cebus_prev(struct ceb_node **root, struct ceb_node *node);
-struct ceb_node *cebus_delete(struct ceb_node **root, struct ceb_node *node);
-struct ceb_node *cebus_pick(struct ceb_node **root, const void *key);
-void cebus_default_dump(struct ceb_node **root, const char *label, const void *ctx);
+#include "cebs_tree.h"
 
-/* version taking a key offset */
-struct ceb_node *cebus_ofs_insert(struct ceb_node **root, ptrdiff_t kofs, struct ceb_node *node);
-struct ceb_node *cebus_ofs_first(struct ceb_node **root, ptrdiff_t kofs);
-struct ceb_node *cebus_ofs_last(struct ceb_node **root, ptrdiff_t kofs);
-struct ceb_node *cebus_ofs_lookup(struct ceb_node **root, ptrdiff_t kofs, const void *key);
-struct ceb_node *cebus_ofs_lookup_le(struct ceb_node **root, ptrdiff_t kofs, const void *key);
-struct ceb_node *cebus_ofs_lookup_lt(struct ceb_node **root, ptrdiff_t kofs, const void *key);
-struct ceb_node *cebus_ofs_lookup_ge(struct ceb_node **root, ptrdiff_t kofs, const void *key);
-struct ceb_node *cebus_ofs_lookup_gt(struct ceb_node **root, ptrdiff_t kofs, const void *key);
-struct ceb_node *cebus_ofs_next(struct ceb_node **root, ptrdiff_t kofs, struct ceb_node *node);
-struct ceb_node *cebus_ofs_prev(struct ceb_node **root, ptrdiff_t kofs, struct ceb_node *node);
-struct ceb_node *cebus_ofs_delete(struct ceb_node **root, ptrdiff_t kofs, struct ceb_node *node);
-struct ceb_node *cebus_ofs_pick(struct ceb_node **root, ptrdiff_t kofs, const void *key);
-void cebus_ofs_default_dump(struct ceb_node **root, ptrdiff_t kofs, const char *label, const void *ctx);
+#endif
