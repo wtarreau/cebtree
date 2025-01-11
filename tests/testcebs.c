@@ -259,12 +259,11 @@ int main(int argc, char **argv)
 	if (!debug && dump)
 		cebs_default_dump(&ceb_root, orig_argv, 0, 0);
 
-#if 0
 	printf("# Removing all keys one at a time\n");
 	while ((old = cebs_first(&ceb_root))) {
 		cebs_delete(&ceb_root, (struct ceb_node*)old);
 	}
-#endif
+
 	if (debug)
 		fprintf(stderr, "counted %d elements\n", found);
 
