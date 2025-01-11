@@ -30,11 +30,11 @@ struct ceb_node *add_value(struct ceb_node **root, uint64_t value)
 		if (prev == &key->node)
 			return prev; // was properly inserted
 		/* otherwise was already there, let's try to remove it */
-		printf("Insert failed, removing node %p before inserting again.\n", prev);
+		fprintf(stderr, "Insert failed, removing node %p before inserting again.\n", prev);
 		ret = cebu64_delete(root, prev);
 		if (ret != prev) {
 			/* was not properly removed either: THIS IS A BUG! */
-			printf("failed to insert %p(%llu) because %p has the same key and could not be removed because returns %p\n",
+			fprintf(stderr, "failed to insert %p(%llu) because %p has the same key and could not be removed because returns %p\n",
 			       &key->node, (unsigned long long)key->key, prev, ret);
 			free(key);
 			return NULL;
@@ -58,7 +58,7 @@ int main(int argc, char **argv)
 		if (strcmp(*argv, "-d") == 0)
 			debug++;
 		else {
-			printf("Usage: %s [-d]* [value]*\n", argv0);
+			fprintf(stderr, "Usage: %s [-d]* [value]*\n", argv0);
 			exit(1);
 		}
 		argc--; argv++;
