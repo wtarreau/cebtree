@@ -148,7 +148,7 @@ CEB_FDECL4(void, cebua, _default_dump, struct ceb_node **, root, ptrdiff_t, kofs
 	printf("  node [fontname=\"fixed\" fontsize=8 shape=\"box\" style=\"filled\" color=\"black\" fillcolor=\"white\"];\n"
 	       "  edge [fontname=\"fixed\" fontsize=8 style=\"solid\" color=\"magenta\" dir=\"forward\"];\n");
 
-	cebu_default_dump_tree(kofs, CEB_KT_ADDR, root, 0, NULL, 0, ctx, NULL, NULL, NULL);
+	ceb_default_dump_tree(kofs, CEB_KT_ADDR, root, 0, NULL, 0, ctx, NULL, NULL, NULL);
 
 	printf("}\n");
 }
