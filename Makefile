@@ -9,7 +9,9 @@ CEB_OBJ = $(CEB_SRC:%.c=%.o)
 OBJS = $(CEB_OBJ)
 
 TEST_DIR = tests
-TEST_BIN = $(addprefix $(TEST_DIR)/,stresscebu32 testcebu32 stresscebu64 testcebu64 testcebul stresscebul speedcebul testcebub speedcebub testcebus speedcebus)
+TEST_BIN = $(addprefix $(TEST_DIR)/,stresscebu32 stresscebu64 stresscebul speedcebul speedcebub speedcebus)
+TEST_BIN += $(addprefix $(TEST_DIR)/,testceb32 testceb64 testcebl testcebb testcebs)
+TEST_BIN += $(addprefix $(TEST_DIR)/,testcebu32 testcebu64 testcebul testcebub testcebus)
 
 all: test
 
