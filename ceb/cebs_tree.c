@@ -1,7 +1,7 @@
 /*
- * Compact Elastic Binary Trees - exported functions operating on u64 keys
+ * Compact Elastic Binary Trees - exported functions operating on string keys
  *
- * Copyright (C) 2014-2024 Willy Tarreau - w@1wt.eu
+ * Copyright (C) 2014-2025 Willy Tarreau - w@1wt.eu
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
@@ -27,12 +27,13 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "cebtree-prv.h"
-#include "cebu64_tree.h"
+#include "cebs_tree.h"
 
 /*****************************************************************************\
  * The declarations below always cause two functions to be declared, one     *
- * starting with "cebu64_*" and one with "cebu64_ofs_*" which takes a key    *
+ * starting with "cebus_*" and one with "cebus_ofs_*" which takes a key      *
  * offset just after the root. The one without kofs just has this argument   *
  * omitted from its declaration and replaced with sizeof(struct ceb_node) in *
  * the call to the underlying functions.                                     *
@@ -42,63 +43,63 @@
  * immediately follows the node. Returns the inserted node or the one
  * that already contains the same key.
  */
-CEB_FDECL3(struct ceb_node *, cebu64, _insert, struct ceb_node **, root, ptrdiff_t, kofs, struct ceb_node *, node)
+CEB_FDECL3(struct ceb_node *, cebus, _insert, struct ceb_node **, root, ptrdiff_t, kofs, struct ceb_node *, node)
 {
-	uint64_t key = NODEK(node, kofs)->u64;
+	const void *key = NODEK(node, kofs)->str;
 
-	return _cebu_insert(root, node, kofs, CEB_KT_U64, 0, key, NULL);
+	return _cebu_insert(root, node, kofs, CEB_KT_ST, 0, 0, key);
 }
 
 /* return the first node or NULL if not found. */
-CEB_FDECL2(struct ceb_node *, cebu64, _first, struct ceb_node **, root, ptrdiff_t, kofs)
+CEB_FDECL2(struct ceb_node *, cebus, _first, struct ceb_node **, root, ptrdiff_t, kofs)
 {
-	return _cebu_first(root, kofs, CEB_KT_U64, 0);
+	return _cebu_first(root, kofs, CEB_KT_ST, 0);
 }
 
 /* return the last node or NULL if not found. */
-CEB_FDECL2(struct ceb_node *, cebu64, _last, struct ceb_node **, root, ptrdiff_t, kofs)
+CEB_FDECL2(struct ceb_node *, cebus, _last, struct ceb_node **, root, ptrdiff_t, kofs)
 {
-	return _cebu_last(root, kofs, CEB_KT_U64, 0);
+	return _cebu_last(root, kofs, CEB_KT_ST, 0);
 }
 
 /* look up the specified key, and returns either the node containing it, or
  * NULL if not found.
  */
-CEB_FDECL3(struct ceb_node *, cebu64, _lookup, struct ceb_node **, root, ptrdiff_t, kofs, uint64_t, key)
+CEB_FDECL3(struct ceb_node *, cebus, _lookup, struct ceb_node **, root, ptrdiff_t, kofs, const void *, key)
 {
-	return _cebu_lookup(root, kofs, CEB_KT_U64, 0, key, NULL);
+	return _cebu_lookup(root, kofs, CEB_KT_ST, 0, 0, key);
 }
 
 /* look up the specified key or the highest below it, and returns either the
  * node containing it, or NULL if not found.
  */
-CEB_FDECL3(struct ceb_node *, cebu64, _lookup_le, struct ceb_node **, root, ptrdiff_t, kofs, uint64_t, key)
+CEB_FDECL3(struct ceb_node *, cebus, _lookup_le, struct ceb_node **, root, ptrdiff_t, kofs, const void *, key)
 {
-	return _cebu_lookup_le(root, kofs, CEB_KT_U64, 0, key, NULL);
+	return _cebu_lookup_le(root, kofs, CEB_KT_ST, 0, 0, key);
 }
 
 /* look up highest key below the specified one, and returns either the
  * node containing it, or NULL if not found.
  */
-CEB_FDECL3(struct ceb_node *, cebu64, _lookup_lt, struct ceb_node **, root, ptrdiff_t, kofs, uint64_t, key)
+CEB_FDECL3(struct ceb_node *, cebus, _lookup_lt, struct ceb_node **, root, ptrdiff_t, kofs, const void *, key)
 {
-	return _cebu_lookup_lt(root, kofs, CEB_KT_U64, 0, key, NULL);
+	return _cebu_lookup_lt(root, kofs, CEB_KT_ST, 0, 0, key);
 }
 
 /* look up the specified key or the smallest above it, and returns either the
  * node containing it, or NULL if not found.
  */
-CEB_FDECL3(struct ceb_node *, cebu64, _lookup_ge, struct ceb_node **, root, ptrdiff_t, kofs, uint64_t, key)
+CEB_FDECL3(struct ceb_node *, cebus, _lookup_ge, struct ceb_node **, root, ptrdiff_t, kofs, const void *, key)
 {
-	return _cebu_lookup_ge(root, kofs, CEB_KT_U64, 0, key, NULL);
+	return _cebu_lookup_ge(root, kofs, CEB_KT_ST, 0, 0, key);
 }
 
 /* look up the smallest key above the specified one, and returns either the
  * node containing it, or NULL if not found.
  */
-CEB_FDECL3(struct ceb_node *, cebu64, _lookup_gt, struct ceb_node **, root, ptrdiff_t, kofs, uint64_t, key)
+CEB_FDECL3(struct ceb_node *, cebus, _lookup_gt, struct ceb_node **, root, ptrdiff_t, kofs, const void *, key)
 {
-	return _cebu_lookup_gt(root, kofs, CEB_KT_U64, 0, key, NULL);
+	return _cebu_lookup_gt(root, kofs, CEB_KT_ST, 0, 0, key);
 }
 
 /* search for the next node after the specified one, and return it, or NULL if
@@ -106,11 +107,11 @@ CEB_FDECL3(struct ceb_node *, cebu64, _lookup_gt, struct ceb_node **, root, ptrd
  * time a left turn was made, and returning the first node along the right
  * branch at that fork.
  */
-CEB_FDECL3(struct ceb_node *, cebu64, _next, struct ceb_node **, root, ptrdiff_t, kofs, struct ceb_node *, node)
+CEB_FDECL3(struct ceb_node *, cebus, _next, struct ceb_node **, root, ptrdiff_t, kofs, struct ceb_node *, node)
 {
-	uint64_t key = NODEK(node, kofs)->u64;
+	const void *key = NODEK(node, kofs)->str;
 
-	return _cebu_next(root, kofs, CEB_KT_U64, 0, key, NULL);
+	return _cebu_next(root, kofs, CEB_KT_ST, 0, 0, key);
 }
 
 /* search for the prev node before the specified one, and return it, or NULL if
@@ -118,37 +119,37 @@ CEB_FDECL3(struct ceb_node *, cebu64, _next, struct ceb_node **, root, ptrdiff_t
  * time a right turn was made, and returning the last node along the left
  * branch at that fork.
  */
-CEB_FDECL3(struct ceb_node *, cebu64, _prev, struct ceb_node **, root, ptrdiff_t, kofs, struct ceb_node *, node)
+CEB_FDECL3(struct ceb_node *, cebus, _prev, struct ceb_node **, root, ptrdiff_t, kofs, struct ceb_node *, node)
 {
-	uint64_t key = NODEK(node, kofs)->u64;
+	const void *key = NODEK(node, kofs)->str;
 
-	return _cebu_prev(root, kofs, CEB_KT_U64, 0, key, NULL);
+	return _cebu_prev(root, kofs, CEB_KT_ST, 0, 0, key);
 }
 
 /* look up the specified node with its key and deletes it if found, and in any
  * case, returns the node.
  */
-CEB_FDECL3(struct ceb_node *, cebu64, _delete, struct ceb_node **, root, ptrdiff_t, kofs, struct ceb_node *, node)
+CEB_FDECL3(struct ceb_node *, cebus, _delete, struct ceb_node **, root, ptrdiff_t, kofs, struct ceb_node *, node)
 {
-	uint64_t key = NODEK(node, kofs)->u64;
+	const void *key = NODEK(node, kofs)->str;
 
-	return _cebu_delete(root, node, kofs, CEB_KT_U64, 0, key, NULL);
+	return _cebu_delete(root, node, kofs, CEB_KT_ST, 0, 0, key);
 }
 
 /* look up the specified key, and detaches it and returns it if found, or NULL
  * if not found.
  */
-CEB_FDECL3(struct ceb_node *, cebu64, _pick, struct ceb_node **, root, ptrdiff_t, kofs, uint64_t, key)
+CEB_FDECL3(struct ceb_node *, cebus, _pick, struct ceb_node **, root, ptrdiff_t, kofs, const void *, key)
 {
-	return _cebu_delete(root, NULL, kofs, CEB_KT_U64, 0, key, NULL);
+	return _cebu_delete(root, NULL, kofs, CEB_KT_ST, 0, 0, key);
 }
 
 /* dumps a ceb_node tree using the default functions above. If a node matches
  * <ctx>, this one will be highlighted in red.
  */
-CEB_FDECL4(void, cebu64, _default_dump, struct ceb_node **, root, ptrdiff_t, kofs, const char *, label, const void *, ctx)
+CEB_FDECL4(void, cebus, _default_dump, struct ceb_node **, root, ptrdiff_t, kofs, const char *, label, const void *, ctx)
 {
-	printf("\ndigraph cebu64_tree {\n"
+	printf("\ndigraph cebus_tree {\n"
 	       "  fontname=\"fixed\";\n"
 	       "  fontsize=8\n"
 	       "  label=\"%s\"\n"
@@ -157,7 +158,7 @@ CEB_FDECL4(void, cebu64, _default_dump, struct ceb_node **, root, ptrdiff_t, kof
 	printf("  node [fontname=\"fixed\" fontsize=8 shape=\"box\" style=\"filled\" color=\"black\" fillcolor=\"white\"];\n"
 	       "  edge [fontname=\"fixed\" fontsize=8 style=\"solid\" color=\"magenta\" dir=\"forward\"];\n");
 
-	ceb_default_dump_tree(kofs, CEB_KT_U64, root, 0, NULL, 0, ctx, NULL, NULL, NULL);
+	ceb_default_dump_tree(kofs, CEB_KT_ST, root, 0, NULL, 0, ctx, NULL, NULL, NULL);
 
 	printf("}\n");
 }

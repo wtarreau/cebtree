@@ -1,7 +1,7 @@
 /*
  * Compact Elastic Binary Trees - exported functions operating on indirect strings
  *
- * Copyright (C) 2014-2024 Willy Tarreau - w@1wt.eu
+ * Copyright (C) 2014-2025 Willy Tarreau - w@1wt.eu
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
@@ -29,7 +29,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "cebtree-prv.h"
-#include "cebuis_tree.h"
+#include "cebis_tree.h"
 
 /*****************************************************************************\
  * The declarations below always cause two functions to be declared, one     *
