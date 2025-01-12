@@ -284,17 +284,18 @@ static void dbg(int line,
 	long long rlen __attribute__((unused)) = 0;
 	long long xlen __attribute__((unused)) = 0;
 
-	if (p)
+	if (meth >= CEB_WM_KEQ && p) {
 		nlen = _xor_branches(kofs, key_type, key_u32, key_u64, key_ptr, p, NULL);
 
-	if (p && p->b[0])
-		llen = _xor_branches(kofs, key_type, key_u32, key_u64, key_ptr, p->b[0], NULL);
+		if (p->b[0])
+			llen = _xor_branches(kofs, key_type, key_u32, key_u64, key_ptr, p->b[0], NULL);
 
-	if (p && p->b[1])
-		rlen = _xor_branches(kofs, key_type, key_u32, key_u64, key_ptr, NULL, p->b[1]);
+		if (p->b[1])
+			rlen = _xor_branches(kofs, key_type, key_u32, key_u64, key_ptr, NULL, p->b[1]);
 
-	if (p && p->b[0] && p->b[1])
-		xlen = _xor_branches(kofs, key_type, key_u32, key_u64, key_ptr, p->b[0], p->b[1]);
+		if (p->b[0] && p->b[1])
+			xlen = _xor_branches(kofs, key_type, key_u32, key_u64, key_ptr, p->b[0], p->b[1]);
+	}
 
 	switch (key_type) {
 	case CEB_KT_U32:
