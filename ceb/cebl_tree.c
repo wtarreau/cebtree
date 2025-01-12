@@ -121,10 +121,12 @@ CEB_FDECL3(struct ceb_node *, cebl, _lookup_lt, struct ceb_node **, root, ptrdif
  */
 CEB_FDECL3(struct ceb_node *, cebl, _lookup_ge, struct ceb_node **, root, ptrdiff_t, kofs, unsigned long, key)
 {
+	int is_dup = 0;
+
 	if (sizeof(long) <= 4)
-		return _ceb_lookup_ge(root, kofs, CEB_KT_U32, key, 0, NULL);
+		return _ceb_lookup_ge(root, kofs, CEB_KT_U32, key, 0, NULL, &is_dup);
 	else
-		return _ceb_lookup_ge(root, kofs, CEB_KT_U64, 0, key, NULL);
+		return _ceb_lookup_ge(root, kofs, CEB_KT_U64, 0, key, NULL, &is_dup);
 }
 
 /* look up the smallest key above the specified one, and returns either the
@@ -132,10 +134,12 @@ CEB_FDECL3(struct ceb_node *, cebl, _lookup_ge, struct ceb_node **, root, ptrdif
  */
 CEB_FDECL3(struct ceb_node *, cebl, _lookup_gt, struct ceb_node **, root, ptrdiff_t, kofs, unsigned long, key)
 {
+	int is_dup = 0;
+
 	if (sizeof(long) <= 4)
-		return _ceb_lookup_gt(root, kofs, CEB_KT_U32, key, 0, NULL);
+		return _ceb_lookup_gt(root, kofs, CEB_KT_U32, key, 0, NULL, &is_dup);
 	else
-		return _ceb_lookup_gt(root, kofs, CEB_KT_U64, 0, key, NULL);
+		return _ceb_lookup_gt(root, kofs, CEB_KT_U64, 0, key, NULL, &is_dup);
 }
 
 /* search for the next node after the specified one, and return it, or NULL if
@@ -331,9 +335,9 @@ CEB_FDECL3(struct ceb_node *, cebul, _lookup_lt, struct ceb_node **, root, ptrdi
 CEB_FDECL3(struct ceb_node *, cebul, _lookup_ge, struct ceb_node **, root, ptrdiff_t, kofs, unsigned long, key)
 {
 	if (sizeof(long) <= 4)
-		return _cebu_lookup_ge(root, kofs, CEB_KT_U32, key, 0, NULL);
+		return _ceb_lookup_ge(root, kofs, CEB_KT_U32, key, 0, NULL, NULL);
 	else
-		return _cebu_lookup_ge(root, kofs, CEB_KT_U64, 0, key, NULL);
+		return _ceb_lookup_ge(root, kofs, CEB_KT_U64, 0, key, NULL, NULL);
 }
 
 /* look up the smallest key above the specified one, and returns either the
@@ -342,9 +346,9 @@ CEB_FDECL3(struct ceb_node *, cebul, _lookup_ge, struct ceb_node **, root, ptrdi
 CEB_FDECL3(struct ceb_node *, cebul, _lookup_gt, struct ceb_node **, root, ptrdiff_t, kofs, unsigned long, key)
 {
 	if (sizeof(long) <= 4)
-		return _cebu_lookup_gt(root, kofs, CEB_KT_U32, key, 0, NULL);
+		return _ceb_lookup_gt(root, kofs, CEB_KT_U32, key, 0, NULL, NULL);
 	else
-		return _cebu_lookup_gt(root, kofs, CEB_KT_U64, 0, key, NULL);
+		return _ceb_lookup_gt(root, kofs, CEB_KT_U64, 0, key, NULL, NULL);
 }
 
 /* search for the next node after the specified one, and return it, or NULL if
