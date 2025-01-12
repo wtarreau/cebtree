@@ -1615,7 +1615,8 @@ struct ceb_node *_ceb_lookup_gt(struct ceb_node **root,
  * node is detected since it has b[0]==NULL, which this functions also clears
  * after operation. The function is idempotent, so it's safe to attempt to
  * delete an already deleted node (NULL is returned in this case since the node
- * was not in the tree).
+ * was not in the tree). If <is_dup_ptr> is non-null, then duplicates are
+ * permitted and this variable is used to temporarily carry an internal state.
  */
 static inline __attribute__((always_inline))
 struct ceb_node *_ceb_delete(struct ceb_node **root,
@@ -1624,12 +1625,12 @@ struct ceb_node *_ceb_delete(struct ceb_node **root,
                              enum ceb_key_type key_type,
                              uint32_t key_u32,
                              uint64_t key_u64,
-                             const void *key_ptr)
+                             const void *key_ptr,
+                             int *is_dup_ptr)
 {
 	struct ceb_node *lparent, *nparent, *gparent;
 	int lpside, npside, gpside;
 	struct ceb_node *ret = NULL;
-	int is_dup;
 
 	if (node && !node->b[0]) {
 		/* NULL on a branch means the node is not in the tree */
@@ -1642,14 +1643,14 @@ struct ceb_node *_ceb_delete(struct ceb_node **root,
 	}
 
 	ret = _ceb_descend(root, CEB_WM_KEQ, kofs, key_type, key_u32, key_u64, key_ptr, NULL, NULL,
-			   &lparent, &lpside, &nparent, &npside, &gparent, &gpside, NULL, &is_dup);
+			   &lparent, &lpside, &nparent, &npside, &gparent, &gpside, NULL, is_dup_ptr);
 
 	if (!ret) {
 		/* key not found */
 		goto done;
 	}
 
-	if (is_dup) {
+	if (is_dup_ptr && *is_dup_ptr) {
 		/* the node to be deleted belongs to a dup sub-tree whose ret
 		 * is the last. The possibilities here are:
 		 *   1) node==NULL => unspecified, we delete the first one,
@@ -1714,93 +1715,6 @@ struct ceb_node *_ceb_delete(struct ceb_node **root,
 	}
 
 	/* ok below the returned value is a real leaf, we have to adjust the tree */
-
-	if (ret == node || !node) {
-		if (&lparent->b[0] == root) {
-			/* there was a single entry, this one, so we're just
-			 * deleting the nodeless leaf.
-			 */
-			*root = NULL;
-			goto mark_and_leave;
-		}
-
-		/* then we necessarily have a gparent */
-		gparent->b[gpside] = lparent->b[!lpside];
-
-		if (lparent == ret) {
-			/* we're removing the leaf and node together, nothing
-			 * more to do.
-			 */
-			goto mark_and_leave;
-		}
-
-		if (ret->b[0] == ret->b[1]) {
-			/* we're removing the node-less item, the parent will
-			 * take this role.
-			 */
-			lparent->b[0] = lparent->b[1] = lparent;
-			goto mark_and_leave;
-		}
-
-		/* more complicated, the node was split from the leaf, we have
-		 * to find a spare one to switch it. The parent node is not
-		 * needed anymore so we can reuse it.
-		 */
-		lparent->b[0] = ret->b[0];
-		lparent->b[1] = ret->b[1];
-		nparent->b[npside] = lparent;
-
-	mark_and_leave:
-		/* now mark the node as deleted */
-		ret->b[0] = NULL;
-	}
-done:
-	return ret;
-}
-
-/*
- *  Below are the functions that only support unique keys (_cebu_*)
- */
-
-/* Searches in the tree <root> made of keys of type <key_type>, for the node
- * that contains the key <key_*>, and deletes it. If <node> is non-NULL, a
- * check is performed and the node found is deleted only if it matches. The
- * found node is returned in any case, otherwise NULL if not found. A deleted
- * node is detected since it has b[0]==NULL, which this functions also clears
- * after operation. The function is idempotent, so it's safe to attempt to
- * delete an already deleted node (NULL is returned in this case since the node
- * was not in the tree).
- */
-static inline __attribute__((always_inline))
-struct ceb_node *_cebu_delete(struct ceb_node **root,
-                              struct ceb_node *node,
-                              ptrdiff_t kofs,
-                              enum ceb_key_type key_type,
-                              uint32_t key_u32,
-                              uint64_t key_u64,
-                              const void *key_ptr)
-{
-	struct ceb_node *lparent, *nparent, *gparent;
-	int lpside, npside, gpside;
-	struct ceb_node *ret = NULL;
-
-	if (node && !node->b[0]) {
-		/* NULL on a branch means the node is not in the tree */
-		return NULL;
-	}
-
-	if (!*root) {
-		/* empty tree, the node cannot be there */
-		goto done;
-	}
-
-	ret = _ceb_descend(root, CEB_WM_KEQ, kofs, key_type, key_u32, key_u64, key_ptr, NULL, NULL,
-	                   &lparent, &lpside, &nparent, &npside, &gparent, &gpside, NULL, NULL);
-
-	if (!ret) {
-		/* key not found */
-		goto done;
-	}
 
 	if (ret == node || !node) {
 		if (&lparent->b[0] == root) {

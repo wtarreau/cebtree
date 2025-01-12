@@ -103,9 +103,7 @@ CEB_FDECL3(struct ceb_node *, ceba, _lookup_ge, struct ceb_node **, root, ptrdif
  */
 CEB_FDECL3(struct ceb_node *, ceba, _lookup_gt, struct ceb_node **, root, ptrdiff_t, kofs, const void *, key)
 {
-	int is_dup = 0;
-
-	return _ceb_lookup_gt(root, kofs, CEB_KT_ADDR, 0, 0, key, &is_dup);
+	return _ceb_lookup_gt(root, kofs, CEB_KT_ADDR, 0, 0, key, NULL);
 }
 
 /* search for the next node after the specified one, and return it, or NULL if
@@ -133,7 +131,7 @@ CEB_FDECL3(struct ceb_node *, ceba, _prev, struct ceb_node **, root, ptrdiff_t, 
  */
 CEB_FDECL3(struct ceb_node *, ceba, _delete, struct ceb_node **, root, ptrdiff_t, kofs, struct ceb_node *, node)
 {
-	return _ceb_delete(root, node, kofs, CEB_KT_ADDR, 0, 0, node);
+	return _ceb_delete(root, node, kofs, CEB_KT_ADDR, 0, 0, node, NULL);
 }
 
 /* look up the specified key, and detaches it and returns it if found, or NULL
@@ -141,7 +139,7 @@ CEB_FDECL3(struct ceb_node *, ceba, _delete, struct ceb_node **, root, ptrdiff_t
  */
 CEB_FDECL3(struct ceb_node *, ceba, _pick, struct ceb_node **, root, ptrdiff_t, kofs, const void *, key)
 {
-	return _ceb_delete(root, NULL, kofs, CEB_KT_ADDR, 0, 0, key);
+	return _ceb_delete(root, NULL, kofs, CEB_KT_ADDR, 0, 0, key, NULL);
 }
 
 /*
@@ -241,7 +239,7 @@ CEB_FDECL3(struct ceb_node *, cebua, _prev, struct ceb_node **, root, ptrdiff_t,
  */
 CEB_FDECL3(struct ceb_node *, cebua, _delete, struct ceb_node **, root, ptrdiff_t, kofs, struct ceb_node *, node)
 {
-	return _cebu_delete(root, node, kofs, CEB_KT_ADDR, 0, 0, node);
+	return _ceb_delete(root, node, kofs, CEB_KT_ADDR, 0, 0, node, NULL);
 }
 
 /* look up the specified key, and detaches it and returns it if found, or NULL
@@ -249,7 +247,7 @@ CEB_FDECL3(struct ceb_node *, cebua, _delete, struct ceb_node **, root, ptrdiff_
  */
 CEB_FDECL3(struct ceb_node *, cebua, _pick, struct ceb_node **, root, ptrdiff_t, kofs, const void *, key)
 {
-	return _cebu_delete(root, NULL, kofs, CEB_KT_ADDR, 0, 0, key);
+	return _ceb_delete(root, NULL, kofs, CEB_KT_ADDR, 0, 0, key, NULL);
 }
 
 /* dumps a ceb_node tree using the default functions above. If a node matches

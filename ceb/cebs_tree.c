@@ -193,8 +193,9 @@ CEB_FDECL3(struct ceb_node *, cebs, _prev, struct ceb_node **, root, ptrdiff_t, 
 CEB_FDECL3(struct ceb_node *, cebs, _delete, struct ceb_node **, root, ptrdiff_t, kofs, struct ceb_node *, node)
 {
 	const void *key = NODEK(node, kofs)->str;
+	int is_dup = 0;
 
-	return _ceb_delete(root, node, kofs, CEB_KT_ST, 0, 0, key);
+	return _ceb_delete(root, node, kofs, CEB_KT_ST, 0, 0, key, &is_dup);
 }
 
 /* look up the specified key, and detaches it and returns it if found, or NULL
@@ -202,7 +203,9 @@ CEB_FDECL3(struct ceb_node *, cebs, _delete, struct ceb_node **, root, ptrdiff_t
  */
 CEB_FDECL3(struct ceb_node *, cebs, _pick, struct ceb_node **, root, ptrdiff_t, kofs, const void *, key)
 {
-	return _ceb_delete(root, NULL, kofs, CEB_KT_ST, 0, 0, key);
+	int is_dup = 0;
+
+	return _ceb_delete(root, NULL, kofs, CEB_KT_ST, 0, 0, key, &is_dup);
 }
 
 /*
@@ -311,7 +314,7 @@ CEB_FDECL3(struct ceb_node *, cebus, _delete, struct ceb_node **, root, ptrdiff_
 {
 	const void *key = NODEK(node, kofs)->str;
 
-	return _cebu_delete(root, node, kofs, CEB_KT_ST, 0, 0, key);
+	return _ceb_delete(root, node, kofs, CEB_KT_ST, 0, 0, key, NULL);
 }
 
 /* look up the specified key, and detaches it and returns it if found, or NULL
@@ -319,7 +322,7 @@ CEB_FDECL3(struct ceb_node *, cebus, _delete, struct ceb_node **, root, ptrdiff_
  */
 CEB_FDECL3(struct ceb_node *, cebus, _pick, struct ceb_node **, root, ptrdiff_t, kofs, const void *, key)
 {
-	return _cebu_delete(root, NULL, kofs, CEB_KT_ST, 0, 0, key);
+	return _ceb_delete(root, NULL, kofs, CEB_KT_ST, 0, 0, key, NULL);
 }
 
 /* dumps a ceb_node tree using the default functions above. If a node matches
