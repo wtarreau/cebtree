@@ -1760,63 +1760,6 @@ done:
  */
 
 /* Searches in the tree <root> made of keys of type <key_type>, for the node
- * containing the key <key_*> or the highest one that's lower than it. Returns
- * NULL if not found.
- */
-static inline __attribute__((always_inline))
-struct ceb_node *_cebu_lookup_le(struct ceb_node **root,
-                                 ptrdiff_t kofs,
-                                 enum ceb_key_type key_type,
-                                 uint32_t key_u32,
-                                 uint64_t key_u64,
-                                 const void *key_ptr)
-{
-	struct ceb_node *ret = NULL;
-	struct ceb_node *restart;
-
-	if (!*root)
-		return NULL;
-
-	ret = _ceb_descend(root, CEB_WM_KLE, kofs, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &restart, NULL);
-	if (ret)
-		return ret;
-
-	if (!restart)
-		return NULL;
-
-	return _ceb_descend(&restart, CEB_WM_PRV, kofs, key_type, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
-}
-
-/* Searches in the tree <root> made of keys of type <key_type>, for the node
- * containing the greatest key that is strictly lower than <key_*>. Returns
- * NULL if not found. It's very similar to next() except that the looked up
- * value doesn't need to exist.
- */
-static inline __attribute__((always_inline))
-struct ceb_node *_cebu_lookup_lt(struct ceb_node **root,
-                                 ptrdiff_t kofs,
-                                 enum ceb_key_type key_type,
-                                 uint32_t key_u32,
-                                 uint64_t key_u64,
-                                 const void *key_ptr)
-{
-	struct ceb_node *ret = NULL;
-	struct ceb_node *restart;
-
-	if (!*root)
-		return NULL;
-
-	ret = _ceb_descend(root, CEB_WM_KLT, kofs, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &restart, NULL);
-	if (ret)
-		return ret;
-
-	if (!restart)
-		return NULL;
-
-	return _ceb_descend(&restart, CEB_WM_PRV, kofs, key_type, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
-}
-
-/* Searches in the tree <root> made of keys of type <key_type>, for the node
  * containing the key <key_*> or the smallest one that's greater than it.
  * Returns NULL if not found.
  */
