@@ -231,7 +231,7 @@ CEB_FDECL2(struct ceb_node *, cebus, _first, struct ceb_node **, root, ptrdiff_t
 /* return the last node or NULL if not found. */
 CEB_FDECL2(struct ceb_node *, cebus, _last, struct ceb_node **, root, ptrdiff_t, kofs)
 {
-	return _cebu_last(root, kofs, CEB_KT_ST, 0);
+	return _ceb_last(root, kofs, CEB_KT_ST, 0);
 }
 
 /* look up the specified key, and returns either the node containing it, or

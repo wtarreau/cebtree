@@ -1759,21 +1759,6 @@ done:
  *  Below are the functions that only support unique keys (_cebu_*)
  */
 
-/* Returns the last node or NULL if not found, assuming a tree made of keys of
- * type <key_type>, and optionally <key_len> for fixed-size arrays (otherwise 0).
- */
-static inline __attribute__((always_inline))
-struct ceb_node *_cebu_last(struct ceb_node **root,
-                            ptrdiff_t kofs,
-                            enum ceb_key_type key_type,
-                            uint64_t key_len)
-{
-	if (!*root)
-		return NULL;
-
-	return _ceb_descend(root, CEB_WM_LST, kofs, key_type, 0, key_len, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
-}
-
 /* Searches in the tree <root> made of keys of type <key_type>, for the next
  * node after the one containing the key <key_*>. Returns NULL if not found.
  * It's up to the caller to pass the current node's key in <key_*>. The
