@@ -234,11 +234,12 @@ CEB_FDECL3(struct ceb_node *, cebl, _prev, struct ceb_node **, root, ptrdiff_t, 
 CEB_FDECL3(struct ceb_node *, cebl, _delete, struct ceb_node **, root, ptrdiff_t, kofs, struct ceb_node *, node)
 {
 	unsigned long key = NODEK(node, kofs)->ul;
+	int is_dup = 0;
 
 	if (sizeof(long) <= 4)
-		return _ceb_delete(root, node, kofs, CEB_KT_U32, key, 0, NULL);
+		return _ceb_delete(root, node, kofs, CEB_KT_U32, key, 0, NULL, &is_dup);
 	else
-		return _ceb_delete(root, node, kofs, CEB_KT_U64, 0, key, NULL);
+		return _ceb_delete(root, node, kofs, CEB_KT_U64, 0, key, NULL, &is_dup);
 }
 
 /* look up the specified key, and detaches it and returns it if found, or NULL
@@ -246,10 +247,12 @@ CEB_FDECL3(struct ceb_node *, cebl, _delete, struct ceb_node **, root, ptrdiff_t
  */
 CEB_FDECL3(struct ceb_node *, cebl, _pick, struct ceb_node **, root, ptrdiff_t, kofs, unsigned long, key)
 {
+	int is_dup = 0;
+
 	if (sizeof(long) <= 4)
-		return _ceb_delete(root, NULL, kofs, CEB_KT_U32, key, 0, NULL);
+		return _ceb_delete(root, NULL, kofs, CEB_KT_U32, key, 0, NULL, &is_dup);
 	else
-		return _ceb_delete(root, NULL, kofs, CEB_KT_U64, 0, key, NULL);
+		return _ceb_delete(root, NULL, kofs, CEB_KT_U64, 0, key, NULL, &is_dup);
 }
 
 /*
@@ -389,9 +392,9 @@ CEB_FDECL3(struct ceb_node *, cebul, _delete, struct ceb_node **, root, ptrdiff_
 	unsigned long key = NODEK(node, kofs)->ul;
 
 	if (sizeof(long) <= 4)
-		return _cebu_delete(root, node, kofs, CEB_KT_U32, key, 0, NULL);
+		return _ceb_delete(root, node, kofs, CEB_KT_U32, key, 0, NULL, NULL);
 	else
-		return _cebu_delete(root, node, kofs, CEB_KT_U64, 0, key, NULL);
+		return _ceb_delete(root, node, kofs, CEB_KT_U64, 0, key, NULL, NULL);
 }
 
 /* look up the specified key, and detaches it and returns it if found, or NULL
@@ -400,9 +403,9 @@ CEB_FDECL3(struct ceb_node *, cebul, _delete, struct ceb_node **, root, ptrdiff_
 CEB_FDECL3(struct ceb_node *, cebul, _pick, struct ceb_node **, root, ptrdiff_t, kofs, unsigned long, key)
 {
 	if (sizeof(long) <= 4)
-		return _cebu_delete(root, NULL, kofs, CEB_KT_U32, key, 0, NULL);
+		return _ceb_delete(root, NULL, kofs, CEB_KT_U32, key, 0, NULL, NULL);
 	else
-		return _cebu_delete(root, NULL, kofs, CEB_KT_U64, 0, key, NULL);
+		return _ceb_delete(root, NULL, kofs, CEB_KT_U64, 0, key, NULL, NULL);
 }
 
 /* dumps a ceb_node tree using the default functions above. If a node matches
