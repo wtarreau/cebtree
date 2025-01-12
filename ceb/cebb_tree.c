@@ -100,7 +100,9 @@ CEB_FDECL4(struct ceb_node *, cebb, _lookup_lt, struct ceb_node **, root, ptrdif
  */
 CEB_FDECL4(struct ceb_node *, cebb, _lookup_ge, struct ceb_node **, root, ptrdiff_t, kofs, const void *, key, size_t, len)
 {
-	return _ceb_lookup_ge(root, kofs, CEB_KT_MB, 0, len, key);
+	int is_dup = 0;
+
+	return _ceb_lookup_ge(root, kofs, CEB_KT_MB, 0, len, key, &is_dup);
 }
 
 /* look up the smallest key above the specified one, and returns either the
@@ -108,7 +110,9 @@ CEB_FDECL4(struct ceb_node *, cebb, _lookup_ge, struct ceb_node **, root, ptrdif
  */
 CEB_FDECL4(struct ceb_node *, cebb, _lookup_gt, struct ceb_node **, root, ptrdiff_t, kofs, const void *, key, size_t, len)
 {
-	return _ceb_lookup_gt(root, kofs, CEB_KT_MB, 0, len, key);
+	int is_dup = 0;
+
+	return _ceb_lookup_gt(root, kofs, CEB_KT_MB, 0, len, key, &is_dup);
 }
 
 /* search for the next node after the specified one, and return it, or NULL if
@@ -266,7 +270,7 @@ CEB_FDECL4(struct ceb_node *, cebub, _lookup_lt, struct ceb_node **, root, ptrdi
  */
 CEB_FDECL4(struct ceb_node *, cebub, _lookup_ge, struct ceb_node **, root, ptrdiff_t, kofs, const void *, key, size_t, len)
 {
-	return _cebu_lookup_ge(root, kofs, CEB_KT_MB, 0, len, key);
+	return _ceb_lookup_ge(root, kofs, CEB_KT_MB, 0, len, key, NULL);
 }
 
 /* look up the smallest key above the specified one, and returns either the
@@ -274,7 +278,7 @@ CEB_FDECL4(struct ceb_node *, cebub, _lookup_ge, struct ceb_node **, root, ptrdi
  */
 CEB_FDECL4(struct ceb_node *, cebub, _lookup_gt, struct ceb_node **, root, ptrdiff_t, kofs, const void *, key, size_t, len)
 {
-	return _cebu_lookup_gt(root, kofs, CEB_KT_MB, 0, len, key);
+	return _ceb_lookup_gt(root, kofs, CEB_KT_MB, 0, len, key, NULL);
 }
 
 /* search for the next node after the specified one, and return it, or NULL if
