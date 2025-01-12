@@ -198,10 +198,12 @@ union ceb_key_storage {
 /* returns the ceb_key_storage pointer for node <n> and offset <o> */
 #define NODEK(n, o) ((union ceb_key_storage*)(((char *)(n)) + (o)))
 
-/* Returns the xor (or common length) between the two sides <l> and <r> if both
- * are non-null, otherwise between the first non-null one and the value in the
- * associate key. As a reminder, memory blocks place their length in key_u64.
- * This is only intended for internal use, essentially for debugging.
+/* Returns the xor (or the complement of the common length for strings) between
+ * the two sides <l> and <r> if both are non-null, otherwise between the first
+ * non-null one and the value in the associate key. As a reminder, memory
+ * blocks place their length in key_u64. This is only intended for internal
+ * use, essentially for debugging. It only returns zero when the keys are
+ * identical, and returns a greater value for keys that are more distant.
  *
  * <kofs> contains the offset between the key and the node's base. When simply
  * adjacent, this would just be sizeof(ceb_node).
@@ -214,13 +216,13 @@ static inline uint64_t _xor_branches(ptrdiff_t kofs, enum ceb_key_type key_type,
 {
 	if (l && r) {
 		if (key_type == CEB_KT_MB)
-			return equal_bits(NODEK(l, kofs)->mb, NODEK(r, kofs)->mb, 0, key_u64 << 3);
+			return (key_u64 << 3) - equal_bits(NODEK(l, kofs)->mb, NODEK(r, kofs)->mb, 0, key_u64 << 3);
 		else if (key_type == CEB_KT_IM)
-			return equal_bits(NODEK(l, kofs)->mb, NODEK(r, kofs)->ptr, 0, key_u64 << 3);
+			return (key_u64 << 3) - equal_bits(NODEK(l, kofs)->mb, NODEK(r, kofs)->ptr, 0, key_u64 << 3);
 		else if (key_type == CEB_KT_ST)
-			return string_equal_bits(NODEK(l, kofs)->str, NODEK(r, kofs)->str, 0);
+			return ~string_equal_bits(NODEK(l, kofs)->str, NODEK(r, kofs)->str, 0);
 		else if (key_type == CEB_KT_IS)
-			return string_equal_bits(NODEK(l, kofs)->ptr, NODEK(r, kofs)->ptr, 0);
+			return ~string_equal_bits(NODEK(l, kofs)->ptr, NODEK(r, kofs)->ptr, 0);
 		else if (key_type == CEB_KT_U64)
 			return NODEK(l, kofs)->u64 ^ NODEK(r, kofs)->u64;
 		else if (key_type == CEB_KT_U32)
@@ -235,13 +237,13 @@ static inline uint64_t _xor_branches(ptrdiff_t kofs, enum ceb_key_type key_type,
 		l = r;
 
 	if (key_type == CEB_KT_MB)
-		return equal_bits(key_ptr, NODEK(l, kofs)->mb, 0, key_u64 << 3);
+		return (key_u64 << 3) - equal_bits(key_ptr, NODEK(l, kofs)->mb, 0, key_u64 << 3);
 	else if (key_type == CEB_KT_IM)
-		return equal_bits(key_ptr, NODEK(l, kofs)->ptr, 0, key_u64 << 3);
+		return (key_u64 << 3) - equal_bits(key_ptr, NODEK(l, kofs)->ptr, 0, key_u64 << 3);
 	else if (key_type == CEB_KT_ST)
-		return string_equal_bits(key_ptr, NODEK(l, kofs)->str, 0);
+		return ~string_equal_bits(key_ptr, NODEK(l, kofs)->str, 0);
 	else if (key_type == CEB_KT_IS)
-		return string_equal_bits(key_ptr, NODEK(l, kofs)->ptr, 0);
+		return ~string_equal_bits(key_ptr, NODEK(l, kofs)->ptr, 0);
 	else if (key_type == CEB_KT_U64)
 		return key_u64 ^ NODEK(l, kofs)->u64;
 	else if (key_type == CEB_KT_U32)
@@ -2197,30 +2199,30 @@ static void ceb_default_dump_node(ptrdiff_t kofs, enum ceb_key_type key_type, co
 		break;
 	case CEB_KT_ST:
 		printf("  \"%lx_n_%d\" [label=\"%lx\\nlev=%d bit=%ld\\nkey=\\\"%s\\\"\" fillcolor=\"lightskyblue1\"%s];\n",
-		       (long)node, sub, (long)node, level, (long)pxor, NODEK(node, kofs)->str, (ctx == node) ? " color=red" : "");
+		       (long)node, sub, (long)node, level, (long)~pxor, NODEK(node, kofs)->str, (ctx == node) ? " color=red" : "");
 
 		printf("  \"%lx_n_%d\" -> \"%lx_%c_%d\" [label=\"L\" arrowsize=0.66 %s];\n",
 		       (long)node, sub, (long)node->b[0],
-		       (lxor > pxor && ((struct ceb_node*)node->b[0])->b[0] != ((struct ceb_node*)node->b[0])->b[1] && lxor) ? 'n' : 'l',
+		       (lxor < pxor && ((struct ceb_node*)node->b[0])->b[0] != ((struct ceb_node*)node->b[0])->b[1] && lxor) ? 'n' : 'l',
 		       sub, (node == node->b[0]) ? " dir=both" : "");
 
 		printf("  \"%lx_n_%d\" -> \"%lx_%c_%d\" [label=\"R\" arrowsize=0.66 %s];\n",
 		       (long)node, sub, (long)node->b[1],
-		       (rxor > pxor && ((struct ceb_node*)node->b[1])->b[0] != ((struct ceb_node*)node->b[1])->b[1] && rxor) ? 'n' : 'l',
+		       (rxor < pxor && ((struct ceb_node*)node->b[1])->b[0] != ((struct ceb_node*)node->b[1])->b[1] && rxor) ? 'n' : 'l',
 		       sub, (node == node->b[1]) ? " dir=both" : "");
 		break;
 	case CEB_KT_IS:
 		printf("  \"%lx_n_%d\" [label=\"%lx\\nlev=%d bit=%ld\\nkey=\\\"%s\\\"\" fillcolor=\"lightskyblue1\"%s];\n",
-		       (long)node, sub, (long)node, level, (long)pxor, NODEK(node, kofs)->ptr, (ctx == node) ? " color=red" : "");
+		       (long)node, sub, (long)node, level, (long)~pxor, NODEK(node, kofs)->ptr, (ctx == node) ? " color=red" : "");
 
 		printf("  \"%lx_n_%d\" -> \"%lx_%c_%d\" [label=\"L\" arrowsize=0.66 %s];\n",
 		       (long)node, sub, (long)node->b[0],
-		       (lxor > pxor && ((struct ceb_node*)node->b[0])->b[0] != ((struct ceb_node*)node->b[0])->b[1] && lxor) ? 'n' : 'l',
+		       (lxor < pxor && ((struct ceb_node*)node->b[0])->b[0] != ((struct ceb_node*)node->b[0])->b[1] && lxor) ? 'n' : 'l',
 		       sub, (node == node->b[0]) ? " dir=both" : "");
 
 		printf("  \"%lx_n_%d\" -> \"%lx_%c_%d\" [label=\"R\" arrowsize=0.66 %s];\n",
 		       (long)node, sub, (long)node->b[1],
-		       (rxor > pxor && ((struct ceb_node*)node->b[1])->b[0] != ((struct ceb_node*)node->b[1])->b[1] && rxor) ? 'n' : 'l',
+		       (rxor < pxor && ((struct ceb_node*)node->b[1])->b[0] != ((struct ceb_node*)node->b[1])->b[1] && rxor) ? 'n' : 'l',
 		       sub, (node == node->b[1]) ? " dir=both" : "");
 		break;
 	}
@@ -2258,8 +2260,8 @@ static void ceb_default_dump_dups(ptrdiff_t kofs, enum ceb_key_type key_type, co
 	is_last = 1;
 	if (leaf->b[0] != leaf || leaf->b[1] != leaf)
 		is_last = _xor_branches(kofs, key_type, 0, 0, NULL,
-					((struct ceb_node*)leaf->b[0]),
-					((struct ceb_node*)leaf->b[1])) != 0;
+		                        ((struct ceb_node*)leaf->b[0]),
+		                        ((struct ceb_node*)leaf->b[1])) != 0;
 
 	switch (key_type) {
 	case CEB_KT_ADDR:
@@ -2350,7 +2352,7 @@ static void ceb_default_dump_leaf(ptrdiff_t kofs, enum ceb_key_type key_type, co
 			       (long)node, sub, (long)node, level, NODEK(node, kofs)->str, (ctx == node) ? " color=red" : "");
 		else
 			printf("  \"%lx_l_%d\" [label=\"%lx\\nlev=%d bit=%ld\\nkey=\\\"%s\\\"\\n\" fillcolor=\"yellow\"%s];\n",
-			       (long)node, sub, (long)node, level, (long)pxor, NODEK(node, kofs)->str, (ctx == node) ? " color=red" : "");
+			       (long)node, sub, (long)node, level, (long)~pxor, NODEK(node, kofs)->str, (ctx == node) ? " color=red" : "");
 		break;
 	case CEB_KT_IS:
 		if (node->b[0] == node->b[1])
@@ -2358,7 +2360,7 @@ static void ceb_default_dump_leaf(ptrdiff_t kofs, enum ceb_key_type key_type, co
 			       (long)node, sub, (long)node, level, NODEK(node, kofs)->ptr, (ctx == node) ? " color=red" : "");
 		else
 			printf("  \"%lx_l_%d\" [label=\"%lx\\nlev=%d bit=%ld\\nkey=\\\"%s\\\"\\n\" fillcolor=\"yellow\"%s];\n",
-			       (long)node, sub, (long)node, level, (long)pxor, NODEK(node, kofs)->ptr, (ctx == node) ? " color=red" : "");
+			       (long)node, sub, (long)node, level, (long)~pxor, NODEK(node, kofs)->ptr, (ctx == node) ? " color=red" : "");
 		break;
 	}
 }
@@ -2418,23 +2420,10 @@ static const struct ceb_node *ceb_default_dump_tree(ptrdiff_t kofs, enum ceb_key
 		node = node->b[0];
 	}
 
-	switch (key_type) {
-	case CEB_KT_ADDR:
-	case CEB_KT_U32:
-	case CEB_KT_U64:
-		if (pxor && xor >= pxor) {
-			/* that's a leaf for a scalar type */
-			leaf_dump(kofs, key_type, node, level, ctx, sub);
-			return node;
-		}
-		break;
-	default:
-		if (pxor && xor <= pxor) {
-			/* that's a leaf for a non-scalar type */
-			leaf_dump(kofs, key_type, node, level, ctx, sub);
-			return node;
-		}
-		break;
+	if (pxor && xor >= pxor) {
+		/* that's a leaf */
+		leaf_dump(kofs, key_type, node, level, ctx, sub);
+		return node;
 	}
 
 	/* that's a regular node */
