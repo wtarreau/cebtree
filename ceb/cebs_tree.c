@@ -54,8 +54,9 @@
 CEB_FDECL3(struct ceb_node *, cebs, _insert, struct ceb_node **, root, ptrdiff_t, kofs, struct ceb_node *, node)
 {
 	const void *key = NODEK(node, kofs)->str;
+	int is_dup = 0;
 
-	return _ceb_insert(root, node, kofs, CEB_KT_ST, 0, 0, key);
+	return _ceb_insert(root, node, kofs, CEB_KT_ST, 0, 0, key, &is_dup);
 }
 
 /* return the first node or NULL if not found. */
@@ -216,7 +217,7 @@ CEB_FDECL3(struct ceb_node *, cebus, _insert, struct ceb_node **, root, ptrdiff_
 {
 	const void *key = NODEK(node, kofs)->str;
 
-	return _cebu_insert(root, node, kofs, CEB_KT_ST, 0, 0, key);
+	return _ceb_insert(root, node, kofs, CEB_KT_ST, 0, 0, key, NULL);
 }
 
 /* return the first node or NULL if not found. */

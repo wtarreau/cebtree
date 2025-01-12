@@ -1102,6 +1102,8 @@ struct ceb_node *_ceb_descend(struct ceb_node **root,
 /* Generic tree insertion function for trees with duplicate keys. Inserts node
  * <node> into tree <tree>, with key type <key_type> and key <key_*>.
  * Returns the inserted node or the one that already contains the same key.
+ * If <is_dup_ptr> is non-null, then duplicates are permitted and this variable
+ * is used to temporarily carry an internal state.
  */
 static inline __attribute__((always_inline))
 struct ceb_node *_ceb_insert(struct ceb_node **root,
@@ -1110,12 +1112,12 @@ struct ceb_node *_ceb_insert(struct ceb_node **root,
                              enum ceb_key_type key_type,
                              uint32_t key_u32,
                              uint64_t key_u64,
-                             const void *key_ptr)
+                             const void *key_ptr,
+                             int *is_dup_ptr)
 {
 	struct ceb_node **parent;
 	struct ceb_node *ret;
 	int nside;
-	int is_dup = 0;
 
 	if (!*root) {
 		/* empty tree, insert a leaf only */
@@ -1124,7 +1126,7 @@ struct ceb_node *_ceb_insert(struct ceb_node **root,
 		return node;
 	}
 
-	ret = _ceb_descend(root, CEB_WM_KEQ, kofs, key_type, key_u32, key_u64, key_ptr, &nside, &parent, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &is_dup);
+	ret = _ceb_descend(root, CEB_WM_KEQ, kofs, key_type, key_u32, key_u64, key_ptr, &nside, &parent, NULL, NULL, NULL, NULL, NULL, NULL, NULL, is_dup_ptr);
 
 	if (!ret) {
 		/* The key was not in the tree, we can insert it. Better use an
@@ -1141,7 +1143,7 @@ struct ceb_node *_ceb_insert(struct ceb_node **root,
 		}
 		*parent = node;
 		ret = node;
-	} else {
+	} else if (is_dup_ptr) {
 		/* The key was found. We must insert after it as the last
 		 * element of the dups list, which means that our left branch
 		 * will point to the key, the right one to the first dup
@@ -1150,7 +1152,7 @@ struct ceb_node *_ceb_insert(struct ceb_node **root,
 		 */
 		node->b[0] = *parent;
 
-		if (is_dup) {
+		if (*is_dup_ptr) {
 			node->b[1] = (*parent)->b[1];
 			(*parent)->b[1] = node;
 		} else {
@@ -1756,51 +1758,6 @@ done:
 /*
  *  Below are the functions that only support unique keys (_cebu_*)
  */
-
-/* Generic tree insertion function for trees with unique keys. Inserts node
- * <node> into tree <tree>, with key type <key_type> and key <key_*>.
- * Returns the inserted node or the one that already contains the same key.
- */
-static inline __attribute__((always_inline))
-struct ceb_node *_cebu_insert(struct ceb_node **root,
-                              struct ceb_node *node,
-                              ptrdiff_t kofs,
-                              enum ceb_key_type key_type,
-                              uint32_t key_u32,
-                              uint64_t key_u64,
-                              const void *key_ptr)
-{
-	struct ceb_node **parent;
-	struct ceb_node *ret;
-	int nside;
-
-	if (!*root) {
-		/* empty tree, insert a leaf only */
-		node->b[0] = node->b[1] = node;
-		*root = node;
-		return node;
-	}
-
-	ret = _ceb_descend(root, CEB_WM_KEQ, kofs, key_type, key_u32, key_u64, key_ptr, &nside, &parent, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
-
-	if (!ret) {
-		/* The key was not in the tree, we can insert it. Better use an
-		 * "if" like this because the inline function above already has
-		 * quite identifiable code paths. This reduces the code and
-		 * optimizes it a bit.
-		 */
-		if (nside) {
-			node->b[1] = node;
-			node->b[0] = *parent;
-		} else {
-			node->b[0] = node;
-			node->b[1] = *parent;
-		}
-		*parent = node;
-		ret = node;
-	}
-	return ret;
-}
 
 /* Returns the first node or NULL if not found, assuming a tree made of keys of
  * type <key_type>, and optionally <key_len> for fixed-size arrays (otherwise 0).
