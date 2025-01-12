@@ -355,9 +355,9 @@ CEB_FDECL3(struct ceb_node *, cebul, _next, struct ceb_node **, root, ptrdiff_t,
 	unsigned long key = NODEK(node, kofs)->ul;
 
 	if (sizeof(long) <= 4)
-		return _cebu_next(root, kofs, CEB_KT_U32, key, 0, NULL);
+		return _ceb_next_unique(root, kofs, CEB_KT_U32, key, 0, NULL);
 	else
-		return _cebu_next(root, kofs, CEB_KT_U64, 0, key, NULL);
+		return _ceb_next_unique(root, kofs, CEB_KT_U64, 0, key, NULL);
 }
 
 /* search for the prev node before the specified one, and return it, or NULL if
@@ -370,9 +370,9 @@ CEB_FDECL3(struct ceb_node *, cebul, _prev, struct ceb_node **, root, ptrdiff_t,
 	unsigned long key = NODEK(node, kofs)->ul;
 
 	if (sizeof(long) <= 4)
-		return _cebu_prev(root, kofs, CEB_KT_U32, key, 0, NULL);
+		return _ceb_prev_unique(root, kofs, CEB_KT_U32, key, 0, NULL);
 	else
-		return _cebu_prev(root, kofs, CEB_KT_U64, 0, key, NULL);
+		return _ceb_prev_unique(root, kofs, CEB_KT_U64, 0, key, NULL);
 }
 
 /* look up the specified node with its key and deletes it if found, and in any
