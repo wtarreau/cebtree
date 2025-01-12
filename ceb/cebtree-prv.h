@@ -706,7 +706,7 @@ struct ceb_node *_cebu_descend(struct ceb_node **root,
 					if (mlen > xlen)
 						mlen = xlen;
 
-					if (strcmp(key_ptr + mlen / 8, (const void *)k->str + mlen / 8) == 0) {
+					if ((ssize_t)xlen < 0 || strcmp(key_ptr + mlen / 8, (const void *)k->str + mlen / 8) == 0) {
 						/* strcmp() still needed. E.g. 1 2 3 4 10 11 4 3 2 1 10 11 fails otherwise */
 						dbg(__LINE__, "equal", meth, kofs, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 						nparent = lparent;
@@ -755,7 +755,7 @@ struct ceb_node *_cebu_descend(struct ceb_node **root,
 					if (mlen > xlen)
 						mlen = xlen;
 
-					if (strcmp(key_ptr + mlen / 8, (const void *)k->ptr + mlen / 8) == 0) {
+					if ((ssize_t)xlen < 0 || strcmp(key_ptr + mlen / 8, (const void *)k->ptr + mlen / 8) == 0) {
 						/* strcmp() still needed. E.g. 1 2 3 4 10 11 4 3 2 1 10 11 fails otherwise */
 						dbg(__LINE__, "equal", meth, kofs, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 						nparent = lparent;
