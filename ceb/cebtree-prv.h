@@ -1537,7 +1537,9 @@ struct ceb_node *_ceb_lookup_lt(struct ceb_node **root,
 
 /* Searches in the tree <root> made of keys of type <key_type>, for the first
  * node containing the key <key_*> or the smallest one that's greater than it.
- * Returns NULL if not found.
+ * Returns NULL if not found. If <is_dup_ptr> is non-null, then duplicates are
+ * permitted and this variable is used to temporarily carry an internal state.
+
  */
 static inline __attribute__((always_inline))
 struct ceb_node *_ceb_lookup_ge(struct ceb_node **root,
@@ -1545,24 +1547,24 @@ struct ceb_node *_ceb_lookup_ge(struct ceb_node **root,
                                 enum ceb_key_type key_type,
                                 uint32_t key_u32,
                                 uint64_t key_u64,
-                                const void *key_ptr)
+                                const void *key_ptr,
+                                int *is_dup_ptr)
 {
 	struct ceb_node *ret = NULL;
 	struct ceb_node *restart;
-	int is_dup;
 
 	if (!*root)
 		return NULL;
 
-	ret = _ceb_descend(root, CEB_WM_KGE, kofs, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &restart, &is_dup);
+	ret = _ceb_descend(root, CEB_WM_KGE, kofs, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &restart, is_dup_ptr);
 	if (!ret) {
 		if (!restart)
 			return NULL;
 
-		ret = _ceb_descend(&restart, CEB_WM_NXT, kofs, key_type, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &is_dup);
+		ret = _ceb_descend(&restart, CEB_WM_NXT, kofs, key_type, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, is_dup_ptr);
 	}
 
-	if (ret && is_dup) {
+	if (ret && is_dup_ptr && *is_dup_ptr) {
 		/* on a duplicate, the first node is right->left */
 		ret = ret->b[1]->b[0];
 	}
@@ -1572,7 +1574,8 @@ struct ceb_node *_ceb_lookup_ge(struct ceb_node **root,
 /* Searches in the tree <root> made of keys of type <key_type>, for the first
  * node containing the lowest key that is strictly greater than <key_*>. Returns
  * NULL if not found. It's very similar to prev() except that the looked up
- * value doesn't need to exist.
+ * value doesn't need to exist. If <is_dup_ptr> is non-null, then duplicates are
+ * permitted and this variable is used to temporarily carry an internal state.
  */
 static inline __attribute__((always_inline))
 struct ceb_node *_ceb_lookup_gt(struct ceb_node **root,
@@ -1580,24 +1583,24 @@ struct ceb_node *_ceb_lookup_gt(struct ceb_node **root,
                                 enum ceb_key_type key_type,
                                 uint32_t key_u32,
                                 uint64_t key_u64,
-                                const void *key_ptr)
+                                const void *key_ptr,
+                                int *is_dup_ptr)
 {
 	struct ceb_node *ret = NULL;
 	struct ceb_node *restart;
-	int is_dup;
 
 	if (!*root)
 		return NULL;
 
-	ret = _ceb_descend(root, CEB_WM_KGT, kofs, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &restart, &is_dup);
+	ret = _ceb_descend(root, CEB_WM_KGT, kofs, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &restart, is_dup_ptr);
 	if (!ret) {
 		if (!restart)
 			return NULL;
 
-		ret = _ceb_descend(&restart, CEB_WM_NXT, kofs, key_type, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &is_dup);
+		ret = _ceb_descend(&restart, CEB_WM_NXT, kofs, key_type, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, is_dup_ptr);
 	}
 
-	if (ret && is_dup) {
+	if (ret && is_dup_ptr && *is_dup_ptr) {
 		/* on a duplicate, the first node is right->left */
 		ret = ret->b[1]->b[0];
 	}
@@ -1757,63 +1760,6 @@ done:
 /*
  *  Below are the functions that only support unique keys (_cebu_*)
  */
-
-/* Searches in the tree <root> made of keys of type <key_type>, for the node
- * containing the key <key_*> or the smallest one that's greater than it.
- * Returns NULL if not found.
- */
-static inline __attribute__((always_inline))
-struct ceb_node *_cebu_lookup_ge(struct ceb_node **root,
-                                 ptrdiff_t kofs,
-                                 enum ceb_key_type key_type,
-                                 uint32_t key_u32,
-                                 uint64_t key_u64,
-                                 const void *key_ptr)
-{
-	struct ceb_node *ret = NULL;
-	struct ceb_node *restart;
-
-	if (!*root)
-		return NULL;
-
-	ret = _ceb_descend(root, CEB_WM_KGE, kofs, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &restart, NULL);
-	if (ret)
-		return ret;
-
-	if (!restart)
-		return NULL;
-
-	return _ceb_descend(&restart, CEB_WM_NXT, kofs, key_type, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
-}
-
-/* Searches in the tree <root> made of keys of type <key_type>, for the node
- * containing the lowest key that is strictly greater than <key_*>. Returns
- * NULL if not found. It's very similar to prev() except that the looked up
- * value doesn't need to exist.
- */
-static inline __attribute__((always_inline))
-struct ceb_node *_cebu_lookup_gt(struct ceb_node **root,
-                                 ptrdiff_t kofs,
-                                 enum ceb_key_type key_type,
-                                 uint32_t key_u32,
-                                 uint64_t key_u64,
-                                 const void *key_ptr)
-{
-	struct ceb_node *ret = NULL;
-	struct ceb_node *restart;
-
-	if (!*root)
-		return NULL;
-
-	ret = _ceb_descend(root, CEB_WM_KGT, kofs, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &restart, NULL);
-	if (ret)
-		return ret;
-
-	if (!restart)
-		return NULL;
-
-	return _ceb_descend(&restart, CEB_WM_NXT, kofs, key_type, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
-}
 
 /* Searches in the tree <root> made of keys of type <key_type>, for the node
  * that contains the key <key_*>, and deletes it. If <node> is non-NULL, a
