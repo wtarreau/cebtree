@@ -1759,64 +1759,6 @@ done:
  *  Below are the functions that only support unique keys (_cebu_*)
  */
 
-/* Searches in the tree <root> made of keys of type <key_type>, for the next
- * node after the one containing the key <key_*>. Returns NULL if not found.
- * It's up to the caller to pass the current node's key in <key_*>. The
- * approach consists in looking up that node first, recalling the last time a
- * left turn was made, and returning the first node along the right branch at
- * that fork.
- */
-static inline __attribute__((always_inline))
-struct ceb_node *_cebu_next(struct ceb_node **root,
-                            ptrdiff_t kofs,
-                            enum ceb_key_type key_type,
-                            uint32_t key_u32,
-                            uint64_t key_u64,
-                            const void *key_ptr)
-{
-	struct ceb_node *restart;
-
-	if (!*root)
-		return NULL;
-
-	if (!_ceb_descend(root, CEB_WM_KNX, kofs, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &restart, NULL))
-		return NULL;
-
-	if (!restart)
-		return NULL;
-
-	return _ceb_descend(&restart, CEB_WM_NXT, kofs, key_type, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
-}
-
-/* Searches in the tree <root> made of keys of type <key_type>, for the prev
- * node before the one containing the key <key_*>. Returns NULL if not found.
- * It's up to the caller to pass the current node's key in <key_*>. The
- * approach consists in looking up that node first, recalling the last time a
- * right turn was made, and returning the last node along the left branch at
- * that fork.
- */
-static inline __attribute__((always_inline))
-struct ceb_node *_cebu_prev(struct ceb_node **root,
-                            ptrdiff_t kofs,
-                            enum ceb_key_type key_type,
-                            uint32_t key_u32,
-                            uint64_t key_u64,
-                            const void *key_ptr)
-{
-	struct ceb_node *restart;
-
-	if (!*root)
-		return NULL;
-
-	if (!_ceb_descend(root, CEB_WM_KPR, kofs, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &restart, NULL))
-		return NULL;
-
-	if (!restart)
-		return NULL;
-
-	return _ceb_descend(&restart, CEB_WM_PRV, kofs, key_type, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
-}
-
 /* Searches in the tree <root> made of keys of type <key_type>, for the node
  * containing the key <key_*>. Returns NULL if not found.
  */
