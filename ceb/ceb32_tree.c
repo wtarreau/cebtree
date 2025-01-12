@@ -73,7 +73,9 @@ CEB_FDECL2(struct ceb_node *, ceb32, _last, struct ceb_node **, root, ptrdiff_t,
  */
 CEB_FDECL3(struct ceb_node *, ceb32, _lookup, struct ceb_node **, root, ptrdiff_t, kofs, uint32_t, key)
 {
-	return _ceb_lookup(root, kofs, CEB_KT_U32, key, 0, NULL);
+	int is_dup = 0;
+
+	return _ceb_lookup(root, kofs, CEB_KT_U32, key, 0, NULL, &is_dup);
 }
 
 /* look up the specified key or the highest below it, and returns either the
@@ -234,7 +236,7 @@ CEB_FDECL2(struct ceb_node *, cebu32, _last, struct ceb_node **, root, ptrdiff_t
  */
 CEB_FDECL3(struct ceb_node *, cebu32, _lookup, struct ceb_node **, root, ptrdiff_t, kofs, uint32_t, key)
 {
-	return _cebu_lookup(root, kofs, CEB_KT_U32, key, 0, NULL);
+	return _ceb_lookup(root, kofs, CEB_KT_U32, key, 0, NULL, NULL);
 }
 
 /* look up the specified key or the highest below it, and returns either the

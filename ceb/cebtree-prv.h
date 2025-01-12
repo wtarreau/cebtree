@@ -1460,16 +1460,16 @@ struct ceb_node *_ceb_lookup(struct ceb_node **root,
                              enum ceb_key_type key_type,
                              uint32_t key_u32,
                              uint64_t key_u64,
-                             const void *key_ptr)
+                             const void *key_ptr,
+                             int *is_dup_ptr)
 {
 	struct ceb_node *ret;
-	int is_dup;
 
 	if (!*root)
 		return NULL;
 
-	ret = _ceb_descend(root, CEB_WM_KEQ, kofs, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &is_dup);
-	if (is_dup) {
+	ret = _ceb_descend(root, CEB_WM_KEQ, kofs, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, is_dup_ptr);
+	if (is_dup_ptr && *is_dup_ptr) {
 		/* on a duplicate, the first node is right->left */
 		ret = ret->b[1]->b[0];
 	}
@@ -1757,23 +1757,6 @@ done:
 /*
  *  Below are the functions that only support unique keys (_cebu_*)
  */
-
-/* Searches in the tree <root> made of keys of type <key_type>, for the node
- * containing the key <key_*>. Returns NULL if not found.
- */
-static inline __attribute__((always_inline))
-struct ceb_node *_cebu_lookup(struct ceb_node **root,
-                              ptrdiff_t kofs,
-                              enum ceb_key_type key_type,
-                              uint32_t key_u32,
-                              uint64_t key_u64,
-                              const void *key_ptr)
-{
-	if (!*root)
-		return NULL;
-
-	return _ceb_descend(root, CEB_WM_KEQ, kofs, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
-}
 
 /* Searches in the tree <root> made of keys of type <key_type>, for the node
  * containing the key <key_*> or the highest one that's lower than it. Returns
