@@ -1172,16 +1172,16 @@ static inline __attribute__((always_inline))
 struct ceb_node *_ceb_first(struct ceb_node **root,
                             ptrdiff_t kofs,
                             enum ceb_key_type key_type,
-                            uint64_t key_len)
+                            uint64_t key_len,
+                            int *is_dup_ptr)
 {
 	struct ceb_node *node;
-	int is_dup = 0;
 
 	if (!*root)
 		return NULL;
 
-	node = _ceb_descend(root, CEB_WM_FST, kofs, key_type, 0, key_len, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &is_dup);
-	if (node && is_dup) {
+	node = _ceb_descend(root, CEB_WM_FST, kofs, key_type, 0, key_len, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, is_dup_ptr);
+	if (node && is_dup_ptr && *is_dup_ptr) {
 		/* on a duplicate, the first node is right->left */
 		node = node->b[1]->b[0];
 	}
@@ -1758,21 +1758,6 @@ done:
 /*
  *  Below are the functions that only support unique keys (_cebu_*)
  */
-
-/* Returns the first node or NULL if not found, assuming a tree made of keys of
- * type <key_type>, and optionally <key_len> for fixed-size arrays (otherwise 0).
- */
-static inline __attribute__((always_inline))
-struct ceb_node *_cebu_first(struct ceb_node **root,
-                             ptrdiff_t kofs,
-                             enum ceb_key_type key_type,
-                             uint64_t key_len)
-{
-	if (!*root)
-		return NULL;
-
-	return _ceb_descend(root, CEB_WM_FST, kofs, key_type, 0, key_len, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
-}
 
 /* Returns the last node or NULL if not found, assuming a tree made of keys of
  * type <key_type>, and optionally <key_len> for fixed-size arrays (otherwise 0).

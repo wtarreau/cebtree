@@ -62,7 +62,9 @@ CEB_FDECL4(struct ceb_node *, cebib, _insert, struct ceb_node **, root, ptrdiff_
 /* return the first node or NULL if not found. */
 CEB_FDECL3(struct ceb_node *, cebib, _first, struct ceb_node **, root, ptrdiff_t, kofs, size_t, len)
 {
-	return _ceb_first(root, kofs, CEB_KT_IM, len);
+	int is_dup = 0;
+
+	return _ceb_first(root, kofs, CEB_KT_IM, len, &is_dup);
 }
 
 /* return the last node or NULL if not found. */
@@ -228,7 +230,7 @@ CEB_FDECL4(struct ceb_node *, cebuib, _insert, struct ceb_node **, root, ptrdiff
 /* return the first node or NULL if not found. */
 CEB_FDECL3(struct ceb_node *, cebuib, _first, struct ceb_node **, root, ptrdiff_t, kofs, size_t, len)
 {
-	return _cebu_first(root, kofs, CEB_KT_IM, len);
+	return _ceb_first(root, kofs, CEB_KT_IM, len, NULL);
 }
 
 /* return the last node or NULL if not found. */
