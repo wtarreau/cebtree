@@ -49,11 +49,12 @@
 CEB_FDECL3(struct ceb_node *, cebl, _insert, struct ceb_node **, root, ptrdiff_t, kofs, struct ceb_node *, node)
 {
 	unsigned long key = NODEK(node, kofs)->ul;
+	int is_dup = 0;
 
 	if (sizeof(long) <= 4)
-		return _ceb_insert(root, node, kofs, CEB_KT_U32, key, 0, NULL);
+		return _ceb_insert(root, node, kofs, CEB_KT_U32, key, 0, NULL, &is_dup);
 	else
-		return _ceb_insert(root, node, kofs, CEB_KT_U64, 0, key, NULL);
+		return _ceb_insert(root, node, kofs, CEB_KT_U64, 0, key, NULL, &is_dup);
 }
 
 /* return the first node or NULL if not found. */
@@ -260,9 +261,9 @@ CEB_FDECL3(struct ceb_node *, cebul, _insert, struct ceb_node **, root, ptrdiff_
 	unsigned long key = NODEK(node, kofs)->ul;
 
 	if (sizeof(long) <= 4)
-		return _cebu_insert(root, node, kofs, CEB_KT_U32, key, 0, NULL);
+		return _ceb_insert(root, node, kofs, CEB_KT_U32, key, 0, NULL, NULL);
 	else
-		return _cebu_insert(root, node, kofs, CEB_KT_U64, 0, key, NULL);
+		return _ceb_insert(root, node, kofs, CEB_KT_U64, 0, key, NULL, NULL);
 }
 
 /* return the first node or NULL if not found. */
