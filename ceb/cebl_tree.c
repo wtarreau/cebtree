@@ -281,9 +281,9 @@ CEB_FDECL2(struct ceb_node *, cebul, _first, struct ceb_node **, root, ptrdiff_t
 CEB_FDECL2(struct ceb_node *, cebul, _last, struct ceb_node **, root, ptrdiff_t, kofs)
 {
 	if (sizeof(long) <= 4)
-		return _cebu_last(root, kofs, CEB_KT_U32, 0);
+		return _ceb_last(root, kofs, CEB_KT_U32, 0);
 	else
-		return _cebu_last(root, kofs, CEB_KT_U64, 0);
+		return _ceb_last(root, kofs, CEB_KT_U64, 0);
 }
 
 /* look up the specified key, and returns either the node containing it, or
