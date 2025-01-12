@@ -1375,6 +1375,10 @@ static void cebu_default_dump_root(ptrdiff_t kofs, enum ceb_key_type key_type, s
 {
 	const struct ceb_node *node;
 
+	(void)key_type;
+	(void)kofs;
+	(void)ctx;
+
 	printf("  \"%lx_n\" [label=\"root\\n%lx\"]\n", (long)root, (long)root);
 
 	node = *root;
