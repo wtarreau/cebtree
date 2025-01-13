@@ -28,7 +28,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "cebtree-prv.h"
+
+#ifdef CEBTREE_DEV
+/* just to verify API compatibility */
 #include "cebu64_tree.h"
+#endif
 
 /*****************************************************************************\
  * The declarations below always cause two functions to be declared, one     *
