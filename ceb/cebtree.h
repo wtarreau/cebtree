@@ -41,43 +41,4 @@ static inline int ceb_intree(const struct ceb_node *node)
 	return !!node->b[0];
 }
 
-/* tag an untagged pointer */
-static inline struct ceb_node *__ceb_dotag(const struct ceb_node *node)
-{
-	return (struct ceb_node *)((size_t)node + 1);
-}
-
-/* untag a tagged pointer */
-static inline struct ceb_node *__ceb_untag(const struct ceb_node *node)
-{
-	return (struct ceb_node *)((size_t)node - 1);
-}
-
-/* clear a pointer's tag */
-static inline struct ceb_node *__ceb_clrtag(const struct ceb_node *node)
-{
-	return (struct ceb_node *)((size_t)node & ~((size_t)1));
-}
-
-/* returns whether a pointer is tagged */
-static inline int __ceb_tagged(const struct ceb_node *node)
-{
-	return !!((size_t)node & 1);
-}
-
-/* returns an integer equivalent of the pointer */
-static inline size_t __ceb_intptr(struct ceb_node *tree)
-{
-	return (size_t)tree;
-}
-
-///* returns true if at least one of the branches is a subtree node, indicating
-// * that the current node is at the top of a duplicate sub-tree and that all
-// * values below it are the same.
-// */
-//static inline int __ceb_is_dup(const struct ceb_node *node)
-//{
-//	return __ceb_tagged((struct ceb_node *)(__ceb_intptr(node->l) | __ceb_intptr(node->r)));
-//}
-
 #endif /* _CEBTREE_H */
