@@ -46,21 +46,4 @@ struct ceb_node *cebua_pick(struct ceb_node **root, const void *key);
 /* generic dump function */
 void ceba_default_dump(struct ceb_node **root, const char *label, const void *ctx, int sub);
 
-/* version taking a key offset */
-struct ceb_node *cebua_ofs_insert(struct ceb_node **root, ptrdiff_t kofs, struct ceb_node *node);
-struct ceb_node *cebua_ofs_first(struct ceb_node **root, ptrdiff_t kofs);
-struct ceb_node *cebua_ofs_last(struct ceb_node **root, ptrdiff_t kofs);
-struct ceb_node *cebua_ofs_lookup(struct ceb_node **root, ptrdiff_t kofs, const void *key);
-struct ceb_node *cebua_ofs_lookup_le(struct ceb_node **root, ptrdiff_t kofs, const void *key);
-struct ceb_node *cebua_ofs_lookup_lt(struct ceb_node **root, ptrdiff_t kofs, const void *key);
-struct ceb_node *cebua_ofs_lookup_ge(struct ceb_node **root, ptrdiff_t kofs, const void *key);
-struct ceb_node *cebua_ofs_lookup_gt(struct ceb_node **root, ptrdiff_t kofs, const void *key);
-struct ceb_node *cebua_ofs_next(struct ceb_node **root, ptrdiff_t kofs, struct ceb_node *node);
-struct ceb_node *cebua_ofs_prev(struct ceb_node **root, ptrdiff_t kofs, struct ceb_node *node);
-struct ceb_node *cebua_ofs_delete(struct ceb_node **root, ptrdiff_t kofs, struct ceb_node *node);
-struct ceb_node *cebua_ofs_pick(struct ceb_node **root, ptrdiff_t kofs, const void *key);
-
-/* generic dump function taking a key offset */
-void ceba_ofs_default_dump(struct ceb_node **root, ptrdiff_t kofs, const char *label, const void *ctx, int sub);
-
 #endif /* _CEBA_TREE_H */

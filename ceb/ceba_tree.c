@@ -30,7 +30,6 @@
 #endif
 
 #define CEB_USE_BASE
-#define CEB_USE_OFST
 #define CEB_KEY_TYPE    CEB_KT_ADDR
 #define CEB_MKEY_PFX    ceba
 #define CEB_UKEY_PFX    cebua

@@ -29,6 +29,9 @@
  *   - CEB_KEY_TYPE:   CEB_KT_ADDR
  *   - CEB_MKEY_PFX:   function name prefix for multi-key (ceba)
  *   - CEB_UKEY_PFX:   function name prefix for unique keys (cebua)
+ *
+ * There's no support for duplicates (we're indexing the node's address), nor
+ * for offsets (it makes no sense to apply an offset to the node's address).
  */
 #include "cebtree-prv.h"
 
