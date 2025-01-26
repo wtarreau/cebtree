@@ -108,7 +108,10 @@
  * first variant, it's always replaced by sizeof(struct ceb_node) in the calls
  * to the inline version.
  */
-#define CEB_FDECL2(type, pfx, sfx, type1, arg1, type2, arg2)		\
+#define CEB_FDECL2(type, pfx, sfx, type1, arg1, type2, arg2) \
+	_CEB_FDECL2(type, pfx, sfx, type1, arg1, type2, arg2)
+
+#define _CEB_FDECL2(type, pfx, sfx, type1, arg1, type2, arg2)		\
 	static inline __attribute__((always_inline))			\
 	type _##pfx##sfx(type1 arg1, type2 arg2);			\
 	type pfx##sfx(type1 arg1) {					\
@@ -122,6 +125,9 @@
 	/* function body follows */
 
 #define CEB_FDECL3(type, pfx, sfx, type1, arg1, type2, arg2, type3, arg3) \
+	_CEB_FDECL3(type, pfx, sfx, type1, arg1, type2, arg2, type3, arg3)
+
+#define _CEB_FDECL3(type, pfx, sfx, type1, arg1, type2, arg2, type3, arg3) \
 	static inline __attribute__((always_inline))			\
 	type _##pfx##sfx(type1 arg1, type2 arg2, type3 arg3);		\
 	type pfx##sfx(type1 arg1, type3 arg3) {				\
@@ -135,6 +141,9 @@
 	/* function body follows */
 
 #define CEB_FDECL4(type, pfx, sfx, type1, arg1, type2, arg2, type3, arg3, type4, arg4) \
+	_CEB_FDECL4(type, pfx, sfx, type1, arg1, type2, arg2, type3, arg3, type4, arg4)
+
+#define _CEB_FDECL4(type, pfx, sfx, type1, arg1, type2, arg2, type3, arg3, type4, arg4) \
 	static inline __attribute__((always_inline))			\
 	type _##pfx##sfx(type1 arg1, type2 arg2, type3 arg3, type4 arg4); \
 	type pfx##sfx(type1 arg1, type3 arg3, type4 arg4) {		\
@@ -148,6 +157,9 @@
 	/* function body follows */
 
 #define CEB_FDECL5(type, pfx, sfx, type1, arg1, type2, arg2, type3, arg3, type4, arg4, type5, arg5) \
+	_CEB_FDECL5(type, pfx, sfx, type1, arg1, type2, arg2, type3, arg3, type4, arg4, type5, arg5)
+
+#define _CEB_FDECL5(type, pfx, sfx, type1, arg1, type2, arg2, type3, arg3, type4, arg4, type5, arg5) \
 	static inline __attribute__((always_inline))			\
 	type _##pfx##sfx(type1 arg1, type2 arg2, type3 arg3, type4 arg4, type5 arg5); \
 	type pfx##sfx(type1 arg1, type3 arg3, type4 arg4, type5 arg5) {	\
