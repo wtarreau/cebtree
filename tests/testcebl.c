@@ -11,6 +11,10 @@
 
 #include "cebl_tree.h"
 
+#ifndef container_of
+#define container_of(ptr, type, name) ((type *)(((char *)(ptr)) - ((long)&((type *)0)->name)))
+#endif
+
 struct ceb_node *ceb_root = NULL;
 
 struct key {

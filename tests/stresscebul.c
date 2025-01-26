@@ -42,6 +42,10 @@
 #define __thread
 #endif
 
+#ifndef container_of
+#define container_of(ptr, type, name) ((type *)(((char *)(ptr)) - ((long)&((type *)0)->name)))
+#endif
+
 #define RND32SEED 2463534242U
 static __thread uint32_t rnd32seed = RND32SEED;
 static inline uint32_t rnd32()
