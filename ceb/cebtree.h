@@ -28,7 +28,6 @@
 #define _CEBTREE_H
 
 #include <stddef.h>
-#include "../common/tools.h"
 
 /* Standard node when using absolute pointers */
 struct ceb_node {

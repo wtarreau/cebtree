@@ -85,6 +85,7 @@
 
 #include <inttypes.h>
 #include <string.h>
+#include "../common/tools.h"
 #include "cebtree.h"
 
 /* If DEBUG is set, we'll print additional debugging info during the descent */
