@@ -18,7 +18,7 @@ all: test
 libcebtree.a: $(OBJS)
 	$(AR) rv $@ $^
 
-%.o: %.c ceb/cebtree-prv.h ceb/_ceb_int.c
+%.o: %.c ceb/cebtree-prv.h ceb/_ceb_int.c ceb/_ceb_blk.c
 	$(CC) $(CFLAGS) -I$(COMMON_DIR) -o $@ -c $<
 
 test: $(TEST_BIN)
