@@ -28,6 +28,10 @@ Key access mode :
     pointer is then of the same type as all other pointers and follows the
     addressing model.
 
+Key offset :
+  - none for immediate storage
+  - "o" for a specific offset (when the key is elsewhere in the structure)
+
 Key type and size (for both direct/indirect) :
   - 16 / 32 / 64 / l for fixed integer key sizes (l for long)
   - "b" for fixed size memory block ("binary")
@@ -40,13 +44,14 @@ Key sign (for integers) :
 
 That gives :
 
-  {eb,ceb}{,h,m,s}{u,}{,a,i}{,16,32,64,l,b,s}{i,}
-      \       \     \    \         \           \_ signed int y/n
-       \       \     \    \         \_ key type/size
-        \       \     \    \_ access mode ((dir)/abs/indir)
-         \       \     \_ unique y/n
-          \       \_ addressing: (abs)/huge/medium/small
-           \_ tree architecture
+  {eb,ceb}{,h,m,s}{u,}{,a,i}{,o}{,16,32,64,l,b,s}{i,}
+      \       \     \    \    \        \           \_ signed int y/n
+       \       \     \    \    \        \_ key type/size
+        \       \     \    \    \_ key offset ((immediate)/offset)
+         \       \     \    \_ access mode ((dir)/abs/indir)
+          \       \     \_ unique y/n
+           \       \_ addressing: (abs)/huge/medium/small
+            \_ tree architecture
 
 Not all combinations are necessarily valid. Only integers may have the "i"
 suffix, nodes storing their own address (suffixed with "a") have no type size.
