@@ -29,6 +29,8 @@
 #include "cebl_tree.h"
 #endif
 
+#define CEB_USE_BASE
+#define CEB_USE_OFST
 #define CEB_KEY_TYPE    unsigned long
 #define CEB_KEY_MEMBER  ul
 #define CEB_MKEY_PFX    cebl

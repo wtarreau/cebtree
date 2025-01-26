@@ -29,6 +29,8 @@
 #include "cebb_tree.h"
 #endif
 
+#define CEB_USE_BASE
+#define CEB_USE_OFST
 #define CEB_KEY_TYPE    CEB_KT_MB
 #define CEB_KEY_MEMBER  mb
 #define CEB_MKEY_PFX    cebb

@@ -97,9 +97,10 @@
 /* These macros are used by upper level files to create two variants of their
  * exported functions:
  *   - one which uses sizeof(struct ceb_node) as the key offset, for nodes with
- *     adjacent keys ; these ones are named <pfx><sfx>(root, ...)
+ *     adjacent keys ; these ones are named <pfx><sfx>(root, ...). This is
+ *     defined when CEB_USE_BASE is defined.
  *   - one with an explicit key offset passed by the caller right after the
- *     root.
+ *     root. This is defined when CEB_USE_OFST is defined.
  * Both rely on a forced inline version with a body that immediately follows
  * the declaration, so that the declaration looks like a single decorated
  * function while 2 are built in practice. There are variants for the basic one
@@ -108,18 +109,30 @@
  * first variant, it's always replaced by sizeof(struct ceb_node) in the calls
  * to the inline version.
  */
+#if defined(CEB_USE_BASE)
+# define _CEB_DEF_BASE(x) x
+#else
+# define _CEB_DEF_BASE(x)
+#endif
+
+#if defined(CEB_USE_OFST)
+# define _CEB_DEF_OFST(x) x
+#else
+# define _CEB_DEF_OFST(x)
+#endif
+
 #define CEB_FDECL2(type, pfx, sfx, type1, arg1, type2, arg2) \
 	_CEB_FDECL2(type, pfx, sfx, type1, arg1, type2, arg2)
 
 #define _CEB_FDECL2(type, pfx, sfx, type1, arg1, type2, arg2)		\
 	static inline __attribute__((always_inline))			\
 	type _##pfx##sfx(type1 arg1, type2 arg2);			\
-	type pfx##sfx(type1 arg1) {					\
+	_CEB_DEF_BASE(type pfx##sfx(type1 arg1) {			\
 		return _##pfx##sfx(arg1, sizeof(struct ceb_node));	\
-	}								\
-	type pfx##_ofs##sfx(type1 arg1, type2 arg2) {			\
+	})								\
+	_CEB_DEF_OFST(type pfx##_ofs##sfx(type1 arg1, type2 arg2) {	\
 		return _##pfx##sfx(arg1, arg2);				\
-	}								\
+	})								\
 	static inline __attribute__((always_inline))			\
 	type _##pfx##sfx(type1 arg1, type2 arg2)
 	/* function body follows */
@@ -130,12 +143,12 @@
 #define _CEB_FDECL3(type, pfx, sfx, type1, arg1, type2, arg2, type3, arg3) \
 	static inline __attribute__((always_inline))			\
 	type _##pfx##sfx(type1 arg1, type2 arg2, type3 arg3);		\
-	type pfx##sfx(type1 arg1, type3 arg3) {				\
+	_CEB_DEF_BASE(type pfx##sfx(type1 arg1, type3 arg3) {		\
 		return _##pfx##sfx(arg1, sizeof(struct ceb_node), arg3); \
-	}								\
-	type pfx##_ofs##sfx(type1 arg1, type2 arg2, type3 arg3) {	\
+	})								\
+	_CEB_DEF_OFST(type pfx##_ofs##sfx(type1 arg1, type2 arg2, type3 arg3) {	\
 		return _##pfx##sfx(arg1, arg2, arg3);			\
-	}								\
+	})								\
 	static inline __attribute__((always_inline))			\
 	type _##pfx##sfx(type1 arg1, type2 arg2, type3 arg3)
 	/* function body follows */
@@ -146,12 +159,12 @@
 #define _CEB_FDECL4(type, pfx, sfx, type1, arg1, type2, arg2, type3, arg3, type4, arg4) \
 	static inline __attribute__((always_inline))			\
 	type _##pfx##sfx(type1 arg1, type2 arg2, type3 arg3, type4 arg4); \
-	type pfx##sfx(type1 arg1, type3 arg3, type4 arg4) {		\
+	_CEB_DEF_BASE(type pfx##sfx(type1 arg1, type3 arg3, type4 arg4) {	\
 		return _##pfx##sfx(arg1, sizeof(struct ceb_node), arg3, arg4); \
-	}								\
-	type pfx##_ofs##sfx(type1 arg1, type2 arg2, type3 arg3, type4 arg4) { \
+	})								\
+	_CEB_DEF_OFST(type pfx##_ofs##sfx(type1 arg1, type2 arg2, type3 arg3, type4 arg4) { \
 		return _##pfx##sfx(arg1, arg2, arg3, arg4);		\
-	}								\
+	})								\
 	static inline __attribute__((always_inline))			\
 	type _##pfx##sfx(type1 arg1, type2 arg2, type3 arg3, type4 arg4)
 	/* function body follows */
@@ -162,12 +175,12 @@
 #define _CEB_FDECL5(type, pfx, sfx, type1, arg1, type2, arg2, type3, arg3, type4, arg4, type5, arg5) \
 	static inline __attribute__((always_inline))			\
 	type _##pfx##sfx(type1 arg1, type2 arg2, type3 arg3, type4 arg4, type5 arg5); \
-	type pfx##sfx(type1 arg1, type3 arg3, type4 arg4, type5 arg5) {	\
+	_CEB_DEF_BASE(type pfx##sfx(type1 arg1, type3 arg3, type4 arg4, type5 arg5) {	\
 		return _##pfx##sfx(arg1, sizeof(struct ceb_node), arg3, arg4, arg5); \
-	}								\
-	type pfx##_ofs##sfx(type1 arg1, type2 arg2, type3 arg3, type4 arg4, type5 arg5) { \
+	})										\
+	_CEB_DEF_OFST(type pfx##_ofs##sfx(type1 arg1, type2 arg2, type3 arg3, type4 arg4, type5 arg5) { \
 		return _##pfx##sfx(arg1, arg2, arg3, arg4, arg5);	\
-	}								\
+	})								\
 	static inline __attribute__((always_inline))			\
 	type _##pfx##sfx(type1 arg1, type2 arg2, type3 arg3, type4 arg4, type5 arg5)
 	/* function body follows */

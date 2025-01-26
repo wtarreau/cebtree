@@ -29,6 +29,8 @@
 #include "ceb64_tree.h"
 #endif
 
+#define CEB_USE_BASE
+#define CEB_USE_OFST
 #define CEB_KEY_TYPE    uint64_t
 #define CEB_KEY_MEMBER  u64
 #define CEB_MKEY_PFX    ceb64

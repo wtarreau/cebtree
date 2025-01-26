@@ -29,6 +29,8 @@
 #include "cebis_tree.h"
 #endif
 
+#define CEB_USE_BASE
+#define CEB_USE_OFST
 #define CEB_KEY_TYPE    CEB_KT_IS
 #define CEB_KEY_MEMBER  ptr
 #define CEB_MKEY_PFX    cebis
