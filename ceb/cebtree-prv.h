@@ -1788,8 +1788,13 @@ done:
 }
 
 /*
- * Functions used to dump trees in Dot format.
+ * Functions used to dump trees in Dot format. These are only enabled if
+ * CEB_ENABLE_DUMP is defined.
  */
+
+#if defined(CEB_ENABLE_DUMP)
+
+#include <stdio.h>
 
 /* dump the root and its link to the first node or leaf */
 __attribute__((unused))
@@ -2101,5 +2106,6 @@ static const struct ceb_node *ceb_default_dump_tree(ptrdiff_t kofs, enum ceb_key
 	return ceb_default_dump_tree(kofs, key_type, &node->b[1], xor, last, level + 1, ctx, sub, root_dump, node_dump, dups_dump, leaf_dump);
 }
 
+#endif /* CEB_ENABLE_DUMP */
 
 #endif /* _CEBTREE_PRV_H */

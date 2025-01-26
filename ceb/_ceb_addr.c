@@ -30,12 +30,7 @@
  *   - CEB_MKEY_PFX:   function name prefix for multi-key (ceba)
  *   - CEB_UKEY_PFX:   function name prefix for unique keys (cebua)
  */
-#include <stdio.h>
-#include <stdlib.h>
 #include "cebtree-prv.h"
-
-#define TO_STR(x) _TO_STR(x)
-#define _TO_STR(x) #x
 
 /*
  *  Below are the functions that only support unique keys (_cebu_*)
@@ -145,6 +140,17 @@ CEB_FDECL3(struct ceb_node *, CEB_UKEY_PFX, _pick, struct ceb_node **, root, ptr
 	return _ceb_delete(root, NULL, kofs, CEB_KEY_TYPE, 0, 0, key, NULL);
 }
 
+/*
+ * Functions used to dump trees in Dot format. These are only enabled if
+ * CEB_ENABLE_DUMP is defined.
+ */
+
+#if defined(CEB_ENABLE_DUMP)
+
+#include <stdio.h>
+#define TO_STR(x) _TO_STR(x)
+#define _TO_STR(x) #x
+
 /* dumps a ceb_node tree using the default functions above. If a node matches
  * <ctx>, this one will be highlighted in red. If the <sub> value is non-null,
  * only a subgraph will be printed. If it's null, and root is non-null, then
@@ -177,3 +183,5 @@ CEB_FDECL5(void, CEB_MKEY_PFX, _default_dump, struct ceb_node **, root, ptrdiff_
 	if (!sub && (root || !label))
 		printf("}\n");
 }
+
+#endif /* CEB_ENABLE_DUMP */

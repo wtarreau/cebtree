@@ -8,6 +8,7 @@ CEB_OBJ = $(CEB_SRC:%.c=%.o)
 
 OBJS = $(CEB_OBJ)
 
+WITH_DUMP= -DCEB_ENABLE_DUMP
 TEST_DIR = tests
 TEST_BIN = $(addprefix $(TEST_DIR)/,stresscebu32 stresscebu64 stresscebul speedcebul speedcebub speedcebus)
 TEST_BIN += $(addprefix $(TEST_DIR)/,testceb32 testceb64 testcebl testcebb testcebs)
@@ -19,7 +20,7 @@ libcebtree.a: $(OBJS)
 	$(AR) rv $@ $^
 
 %.o: %.c ceb/cebtree-prv.h ceb/_ceb_int.c ceb/_ceb_blk.c ceb/_ceb_str.c ceb/_ceb_addr.c
-	$(CC) $(CFLAGS) -I$(COMMON_DIR) -o $@ -c $<
+	$(CC) $(CFLAGS) -I$(COMMON_DIR) $(WITH_DUMP) -o $@ -c $<
 
 test: $(TEST_BIN)
 
