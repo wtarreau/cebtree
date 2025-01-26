@@ -31,7 +31,6 @@
  *   - CEB_MKEY_PFX:   function name prefix for multi-key
  *   - CEB_UKEY_PFX:   function name prefix for unique keys
  */
-#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "cebtree-prv.h"

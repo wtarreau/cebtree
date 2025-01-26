@@ -83,7 +83,9 @@
 #ifndef _CEBTREE_PRV_H
 #define _CEBTREE_PRV_H
 
+#include <sys/types.h>
 #include <inttypes.h>
+#include <stddef.h>
 #include <string.h>
 #include "../common/tools.h"
 #include "cebtree.h"
