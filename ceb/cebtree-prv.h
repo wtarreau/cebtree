@@ -103,6 +103,20 @@
 #define __builtin_prefetch(addr, ...) do { } while (0)
 #endif
 
+/* Vector-based string comparison can be disabled by setting CEB_NO_VECTOR. We
+ * can automatically detect -fsanitize=address on gcc and clang so we disable
+ * it as well in this case.
+ */
+#if !defined(CEB_NO_VECTOR)
+# if defined(__SANITIZE_ADDRESS__) // gcc
+#  define CEB_NO_VECTOR 1
+# elif defined(__has_feature)
+#  if __has_feature(address_sanitizer) // clang
+#   define CEB_NO_VECTOR 1
+#  endif
+# endif
+#endif
+
 /* FLSNZ: find last set bit for non-zero value. "Last" here means the highest
  * one. It returns a value from 1 to 32 for 1<<0 to 1<<31.
  */
@@ -277,6 +291,109 @@ size_t string_equal_bits(const unsigned char *a,
 {
 	size_t ofs = ignore >> 3;
 
+	/* we support a speedup for unaligned accesses on little endian. This
+	 * involves reading vectors and implies we will often read past the
+	 * trailing zero. There's no problem doing this before the end of a
+	 * page, but ASAN and Valgrind won't like it, reason why we disable
+	 * this when using ASAN and we can explicitly disable it by defining
+	 * CEB_NO_VECTOR. In order to measure the bit lengths, we'll need
+	 * __builtin_bswap which requires gcc >= 4.3.
+	 */
+#if !defined(CEB_NO_VECTOR) &&						\
+	((defined(__clang__)) ||                                        \
+	 (defined(__GNUC__) &&						\
+	  ((__GNUC__ >= 5) ||						\
+	   ((__GNUC__ == 4) && (__GNUC_MINOR__ >= 3))))) &&		\
+	(defined(__x86_64__) ||                                         \
+	 (defined(__ARM_FEATURE_UNALIGNED) &&				\
+	  defined(__ARMEL__) && defined(__ARM_ARCH_7A__)) ||		\
+	 (defined(__AARCH64EL__) &&					\
+	  (defined (__aarch64__) || defined(__ARM_ARCH_8A))))
+
+	uintptr_t ofsa, ofsb, max_words;
+	unsigned long l, r, x, z;
+
+	/* This block reads one unaligned word at a time till the next page
+	 * boundary. Then it goes on one byte at a time with the fallback code.
+	 * Calculating the exact number is expensive, because the number of
+	 * readable words (for a 64-bit machine) is defined by:
+	 *    0x1000 - ((((addr + ofs) & 0xfff) + 7) & 0x1ff8)
+	 * However this calculation is expensive, and this much cheaper
+	 * simplification only sacrifices the last 8 bytes of a page:
+	 *   (addr + ofs) & 0xff8) ^ 0xff8
+	 * The difference is about 5% of the code size for the strings code,
+	 * and the shorter form is actually significantly faster since on a
+	 * critical path for small strings.
+	 */
+	ofsa  = (uintptr_t)(a + ofs) & (0x1000 - sizeof(long));
+	ofsb  = (uintptr_t)(b + ofs) & (0x1000 - sizeof(long));
+	ofsa ^= (0x1000 - sizeof(long));
+	ofsb ^= (0x1000 - sizeof(long));
+	max_words = (ofsa < ofsb ? ofsa : ofsb) / sizeof(long);
+
+	l = 0;
+	while (max_words--) {
+		l = *(unsigned long *)(a + ofs);
+		r = *(unsigned long *)(b + ofs);
+		ofs += sizeof(long);
+
+		x = l ^ r;
+
+		/* check for the presence of a zero byte in one of the strings */
+		z = ((l - (unsigned long)0x0101010101010101ULL) &
+		     ~l & (unsigned long)0x8080808080808080ULL);
+
+		/* stop if there is one zero or if some bits differ */
+		if (z | x)
+			goto stop;
+
+		/* OK, all 64 bits are equal, continue */
+	}
+	goto by_one;
+
+	/* We know there is at least one zero or a difference so we'll stop.
+	 * For the zero, there will be 0x80 instead of the NULL bytes. For
+	 * the difference, we have at least one non-zero bit on the
+	 * differences. If the zero byte is strictly before the difference,
+	 * it means both words have the same zero byte, hence there is no
+	 * diference. Otherwise there's a difference at the position indicated
+	 * by the closest bit set in x from the beginning. In both cases, the
+	 * positions closest to the first bytes count, so we'll turn the words
+	 * to big endian. Note that comparing pure integer values does not work
+	 * due to possible zeroes past the first NUL that would affect the
+	 * comparison.
+	 */
+stop:
+	if (x) {
+		/* there's a difference between the two, let's figure
+		 * the first bit (highest).
+		 */
+		if (sizeof(long) > 4)
+			x = __builtin_bswap64(x);
+		else
+			x = __builtin_bswap32(x);
+
+		x = flsnz(x);
+	}
+
+	if (z) {
+		/* there's at least a zero, let's figure the first one. */
+		if (sizeof(long) > 4)
+			z = __builtin_bswap64(z);
+		else
+			z = __builtin_bswap32(z);
+		z = flsnz(z);
+		/* map it to the lowest bit of the byte */
+		z -= 7;
+	}
+
+	if (z > x)
+		return -1; /* bytes are equal up to the trailing zero */
+
+	/* return position of first difference */
+	return (ofs << 3) - x;
+by_one:
+#endif
 	return _string_equal_bits_by1(a, b, ofs);
 }
 
