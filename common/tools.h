@@ -1,8 +1,6 @@
 #ifndef _EBTREE_TOOLS_H
 #define _EBTREE_TOOLS_H
 
-#include "../common/compiler.h"
-
 /*****************************************************************************\
  * a few types we need below. Some of these may sometimes already be defined *
 \*****************************************************************************/
