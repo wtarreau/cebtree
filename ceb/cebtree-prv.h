@@ -87,7 +87,6 @@
 #include <inttypes.h>
 #include <stddef.h>
 #include <string.h>
-#include "../common/tools.h"
 #include "cebtree.h"
 
 /* If DEBUG is set, we'll print additional debugging info during the descent */
@@ -103,6 +102,169 @@
 #if defined(__TINYC__) && !defined(__builtin_prefetch)
 #define __builtin_prefetch(addr, ...) do { } while (0)
 #endif
+
+/* FLSNZ: find last set bit for non-zero value. "Last" here means the highest
+ * one. It returns a value from 1 to 32 for 1<<0 to 1<<31.
+ */
+
+#if defined(__GNUC__) && ((__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ >= 2)))
+/* gcc >= 4.2 brings __builtin_clz() and __builtin_clzl(), also usable for
+ * non-x86. However on x86 gcc does bad stuff if not properly handled. It xors
+ * the bsr return with 31 and since it doesn't know how to deal with a xor
+ * followed by a negation, it adds two instructions when using 32-clz(). Thus
+ * instead we first cancel the xor using another one then add one. Even on ARM
+ * that provides a clz instruction, it saves one register to proceed like this.
+ */
+
+#define flsnz8(x) flsnz32((unsigned char)x)
+
+static inline __attribute__((always_inline)) unsigned int flsnz32(unsigned int x)
+{
+	return (__builtin_clz(x) ^ 31) + 1;
+}
+
+static inline __attribute__((always_inline)) unsigned int flsnz64(unsigned long long x)
+{
+	return (__builtin_clzll(x) ^ 63) + 1;
+}
+
+#elif (defined(__i386__) || defined(__x86_64__)) && !defined(__atom__) /* Not gcc >= 4.2 */
+/* DO NOT USE ON ATOM! The instruction is emulated and is several times slower
+ * than doing the math by hand.
+ */
+#define flsnz8(x) flsnz32((unsigned char)x)
+
+static inline __attribute__((always_inline)) unsigned int flsnz32(unsigned int x)
+{
+	unsigned int r;
+	__asm__("bsrl %1,%0\n"
+	        : "=r" (r) : "rm" (x));
+	return r + 1;
+}
+
+#if defined(__x86_64__)
+static inline __attribute__((always_inline)) unsigned int flsnz64(unsigned long long x)
+{
+	unsigned long long r;
+	__asm__("bsrq %1,%0\n"
+	        : "=r" (r) : "rm" (x));
+	return r + 1;
+}
+#endif
+
+#else /* Neither gcc >= 4.2 nor x86, use generic code */
+
+static inline __attribute__((always_inline)) unsigned int flsnz8(unsigned int x)
+{
+	unsigned int ret = 0;
+	if (x >> 4) { x >>= 4; ret += 4; }
+	return ret + ((0xFFFFAA50U >> (x << 1)) & 3) + 1;
+}
+
+#define flsnz32(___a) ({ \
+	register unsigned int ___x, ___bits = 0; \
+	___x = (___a); \
+	if (___x & 0xffff0000) { ___x &= 0xffff0000; ___bits += 16;} \
+	if (___x & 0xff00ff00) { ___x &= 0xff00ff00; ___bits +=  8;} \
+	if (___x & 0xf0f0f0f0) { ___x &= 0xf0f0f0f0; ___bits +=  4;} \
+	if (___x & 0xcccccccc) { ___x &= 0xcccccccc; ___bits +=  2;} \
+	if (___x & 0xaaaaaaaa) { ___x &= 0xaaaaaaaa; ___bits +=  1;} \
+	___bits + 1; \
+	})
+
+static inline __attribute__((always_inline)) unsigned int flsnz64(unsigned long long x)
+{
+	unsigned int h;
+	unsigned int bits = 32;
+
+	h = x >> 32;
+	if (!h) {
+		h = x;
+		bits = 0;
+	}
+	return flsnz32(h) + bits;
+}
+
+#endif
+
+#define flsnz_long(x) ((sizeof(long) > 4) ? flsnz64(x) : flsnz32(x))
+#define flsnz(x) ((sizeof(x) > 4) ? flsnz64(x) : (sizeof(x) > 1) ? flsnz32(x) : flsnz8(x))
+
+/* Compare blocks <a> and <b> byte-to-byte, from bit <ignore> to bit <len-1>.
+ * Return the number of equal bits between strings, assuming that the first
+ * <ignore> bits are already identical. It is possible to return slightly more
+ * than <len> bits if <len> does not stop on a byte boundary and we find exact
+ * bytes. Note that parts or all of <ignore> bits may be rechecked. It is only
+ * passed here as a hint to speed up the check.
+ */
+static inline __attribute__((always_inline))
+size_t equal_bits(const unsigned char *a,
+                  const unsigned char *b,
+                  size_t ignore, size_t len)
+{
+	for (ignore >>= 3, a += ignore, b += ignore, ignore <<= 3;
+	     ignore < len; ) {
+		unsigned char c;
+
+		a++; b++;
+		ignore += 8;
+		c = b[-1] ^ a[-1];
+
+		if (c) {
+			/* OK now we know that old and new differ at byte <ptr> and that <c> holds
+			 * the bit differences. We have to find what bit is differing and report
+			 * it as the number of identical bits. Note that low bit numbers are
+			 * assigned to high positions in the byte, as we compare them as strings.
+			 */
+			ignore -= flsnz_long(c);
+			break;
+		}
+	}
+	return ignore;
+}
+
+/* Compare strings <a> and <b> byte-to-byte, from bit <ignore> to the last 0.
+ * Return the number of equal bits between strings, assuming that the first
+ * <ignore> bits are already identical. Note that parts or all of <ignore> bits
+ * may be rechecked. It is only passed here as a hint to speed up the check.
+ * The caller is responsible for not passing an <ignore> value larger than any
+ * of the two strings. However, referencing any bit from the trailing zero is
+ * permitted. Equal strings are reported as a negative number of bits, which
+ * indicates the end was reached.
+ */
+static inline __attribute__((always_inline))
+size_t string_equal_bits(const unsigned char *a,
+                         const unsigned char *b,
+                         size_t ignore)
+{
+	unsigned char c, d;
+	size_t beg;
+
+	beg = ignore >> 3;
+
+	/* skip known and identical bits. We stop at the first different byte
+	 * or at the first zero we encounter on either side.
+	 */
+	while (1) {
+		c = a[beg];
+		d = b[beg];
+		beg++;
+
+		c ^= d;
+		if (c)
+			break;
+		if (!d)
+			return (size_t)-1;
+	}
+
+	/* OK now we know that a and b differ at byte <beg>, or that both are zero.
+	 * We have to find what bit is differing and report it as the number of
+	 * identical bits. Note that low bit numbers are assigned to high positions
+	 * in the byte, as we compare them as strings.
+	 */
+	return (beg << 3) - flsnz(c);
+}
+
 
 /* These macros are used by upper level files to create two variants of their
  * exported functions:
