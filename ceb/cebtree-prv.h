@@ -97,6 +97,13 @@
 #define CEBDBG(x, ...) do { } while (0)
 #endif
 
+/* A few utility functions and macros that we need below */
+
+/* Define the missing __builtin_prefetch() for tcc. */
+#if defined(__TINYC__) && !defined(__builtin_prefetch)
+#define __builtin_prefetch(addr, ...) do { } while (0)
+#endif
+
 /* These macros are used by upper level files to create two variants of their
  * exported functions:
  *   - one which uses sizeof(struct ceb_node) as the key offset, for nodes with
