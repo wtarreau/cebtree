@@ -1,7 +1,5 @@
 CFLAGS = -O3 -W -Wall -Wdeclaration-after-statement -Wno-unused-parameter -ggdb3
 
-COMMON_DIR = common
-
 CEB_DIR = ceb
 CEB_SRC = $(wildcard $(CEB_DIR)/ceb*.c)
 CEB_OBJ = $(CEB_SRC:%.c=%.o)
@@ -20,15 +18,15 @@ libcebtree.a: $(OBJS)
 	$(AR) rv $@ $^
 
 %.o: %.c ceb/cebtree-prv.h ceb/_ceb_int.c ceb/_ceb_blk.c ceb/_ceb_str.c ceb/_ceb_addr.c
-	$(CC) $(CFLAGS) -I$(COMMON_DIR) $(WITH_DUMP) -o $@ -c $<
+	$(CC) $(CFLAGS) $(WITH_DUMP) -o $@ -c $<
 
 test: $(TEST_BIN)
 
 tests/%: tests/%.c libcebtree.a
-	$(CC) $(CFLAGS) -I$(COMMON_DIR) -I$(CEB_DIR) -o $@ $< -L. -lcebtree
+	$(CC) $(CFLAGS) -I$(CEB_DIR) -o $@ $< -L. -lcebtree
 
 tests/stresscebul: tests/stresscebul.c libcebtree.a
-	$(CC) $(CFLAGS) -I$(COMMON_DIR) -I$(CEB_DIR) -o $@ $< -L. -lcebtree -pthread
+	$(CC) $(CFLAGS) -I$(CEB_DIR) -o $@ $< -L. -lcebtree -pthread
 
 clean:
 	-rm -fv libcebtree.a $(OBJS) *~ *.rej core $(TEST_BIN) ${EXAMPLES}
