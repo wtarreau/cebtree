@@ -205,7 +205,7 @@ static forceinline int check_bits(const unsigned char *a,
 	 */
 	bit = ~len + (skip << 3) + 9; /* = (skip << 3) + (8 - len) */
 	ret = a[skip] ^ b[skip];
-	if (unlikely(bit >= 0))
+	if (bit >= 0)
 		return ret >> bit;
 	while (1) {
 		skip++;
