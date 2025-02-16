@@ -470,9 +470,9 @@ struct ceb_node *_ceb_descend(struct ceb_node **root,
 	dbg(__LINE__, "_enter__", meth, kofs, key_type, root, NULL, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 
 	/* the parent will be the (possibly virtual) node so that
-	 * &lparent->l == root.
+	 * &lparent->l == root, i.e. container_of(root, struct ceb_node, b[0]).
 	 */
-	lparent = container_of(root, struct ceb_node, b[0]);
+	lparent = (struct ceb_node *)((char *)root - (long)&((struct ceb_node *)0)->b[0]);
 	gparent = nparent = lparent;
 
 	/* for key-less descents we need to set the initial branch to take */
