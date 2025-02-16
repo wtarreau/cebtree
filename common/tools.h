@@ -162,9 +162,10 @@ static inline unsigned int flsnz64(unsigned long long x)
  * bytes. Note that parts or all of <ignore> bits may be rechecked. It is only
  * passed here as a hint to speed up the check.
  */
-static forceinline size_t equal_bits(const unsigned char *a,
-				     const unsigned char *b,
-				     size_t ignore, size_t len)
+static inline __attribute__((always_inline))
+size_t equal_bits(const unsigned char *a,
+                  const unsigned char *b,
+                  size_t ignore, size_t len)
 {
 	for (ignore >>= 3, a += ignore, b += ignore, ignore <<= 3;
 	     ignore < len; ) {
@@ -191,10 +192,11 @@ static forceinline size_t equal_bits(const unsigned char *a,
  * they already are on some bytes, this number of equal bytes to be skipped may
  * be passed in <skip>. It returns 0 if they match, otherwise non-zero.
  */
-static forceinline int check_bits(const unsigned char *a,
-				  const unsigned char *b,
-				  int skip,
-				  int len)
+static inline __attribute__((always_inline))
+int check_bits(const unsigned char *a,
+               const unsigned char *b,
+               int skip,
+               int len)
 {
 	int bit, ret;
 
@@ -228,9 +230,10 @@ static forceinline int check_bits(const unsigned char *a,
  * permitted. Equal strings are reported as a negative number of bits, which
  * indicates the end was reached.
  */
-static forceinline size_t string_equal_bits(const unsigned char *a,
-					     const unsigned char *b,
-					     size_t ignore)
+static inline __attribute__((always_inline))
+size_t string_equal_bits(const unsigned char *a,
+                         const unsigned char *b,
+                         size_t ignore)
 {
 	unsigned char c, d;
 	size_t beg;
@@ -259,7 +262,8 @@ static forceinline size_t string_equal_bits(const unsigned char *a,
 	return (beg << 3) - flsnz(c);
 }
 
-static forceinline int cmp_bits(const unsigned char *a, const unsigned char *b, unsigned int pos)
+static inline __attribute__((always_inline))
+int cmp_bits(const unsigned char *a, const unsigned char *b, unsigned int pos)
 {
 	unsigned int ofs;
 	unsigned char bit_a, bit_b;
@@ -273,7 +277,8 @@ static forceinline int cmp_bits(const unsigned char *a, const unsigned char *b, 
 	return bit_a - bit_b; /* -1: a<b; 0: a=b; 1: a>b */
 }
 
-static forceinline int get_bit(const unsigned char *a, unsigned int pos)
+static inline __attribute__((always_inline))
+int get_bit(const unsigned char *a, unsigned int pos)
 {
 	unsigned int ofs;
 
