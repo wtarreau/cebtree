@@ -1892,7 +1892,7 @@ struct ceb_node *_ceb_delete(struct ceb_node **root,
 				 */
 				first->b[0] = ret->b[0];
 				first->b[1] = ret->b[1];
-				nparent->b[npside] = first;
+				gparent->b[gpside] = first;
 			}
 			else {
 				/* first becomes the nodeless leaf since we only keep its leaf */
