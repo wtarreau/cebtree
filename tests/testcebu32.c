@@ -49,7 +49,7 @@ struct ceb_node *add_value(struct ceb_node **root, uint32_t value)
 
 int main(int argc, char **argv)
 {
-	const struct ceb_node *old;
+	const struct ceb_node *old, *node;
 	char *argv0 = *argv, *larg;
 	char *orig_argv;
 	char *p;
@@ -98,24 +98,36 @@ int main(int argc, char **argv)
 	for (p = orig_argv; p < larg; *p++ = ' ')
 		p += strlen(p);
 
-	printf("# Dump of all nodes using first() + next()\n");
-	for (i = 0, old = cebu32_first(&ceb_root); old; i++, old = cebu32_next(&ceb_root, (struct ceb_node*)old))
-		printf("# node[%d]=%p key=%u\n", i, old, container_of(old, struct key, node)->key);
+	for (i = 0, old = NULL, node = cebu32_first(&ceb_root); node; i++, node = cebu32_next(&ceb_root, (struct ceb_node*)(old = node))) {
+		if (node == old) {
+			printf("# BUG! prev(%p) = %p!\n", old, node);
+			exit(1);
+		}
+		printf("# node[%d]=%p key=%u\n", i, node, container_of(node, struct key, node)->key);
+	}
 
 	printf("# Dump of all nodes using last() + prev()\n");
-	for (i = 0, old = cebu32_last(&ceb_root); old; i++, old = cebu32_prev(&ceb_root, (struct ceb_node*)old))
-		printf("# node[%d]=%p key=%u\n", i, old, container_of(old, struct key, node)->key);
-
+	for (i = 0, old = NULL, node = cebu32_last(&ceb_root); node; i++, node = cebu32_prev(&ceb_root, (struct ceb_node*)(old = node))) {
+		if (node == old) {
+			printf("# BUG! prev(%p) = %p!\n", old, node);
+			exit(1);
+		}
+		printf("# node[%d]=%p key=%u\n", i, node, container_of(node, struct key, node)->key);
+	}
 
 	printf("# Removing all keys one at a time\n");
-	while ((old = cebu32_first(&ceb_root))) {
-		cebu32_delete(&ceb_root, (struct ceb_node*)old);
+	for (old = NULL; (node = cebu32_first(&ceb_root)); old = node) {
+		if (node == old) {
+			printf("# BUG! first() after delete(%p) = %p!\n", old, node);
+			exit(1);
+		}
+		cebu32_delete(&ceb_root, (struct ceb_node*)node);
 		if (debug) {
 			char cmd[100];
 			size_t len;
 
-			len = snprintf(cmd, sizeof(cmd), "delete(%p:%d)", old, container_of(old, struct key, node)->key);
-			cebu32_default_dump(&ceb_root, len < sizeof(cmd) ? cmd : orig_argv, old, debug);
+			len = snprintf(cmd, sizeof(cmd), "delete(%p:%d)", node, container_of(node, struct key, node)->key);
+			cebu32_default_dump(&ceb_root, len < sizeof(cmd) ? cmd : orig_argv, node, debug);
 			debug++;
 		}
 	}

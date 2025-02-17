@@ -153,7 +153,7 @@ void usage(const char *name)
 int main(int argc, char **argv)
 {
 	int entries, lookups, loops, found, i;
-	const struct ceb_node *old;
+	const struct ceb_node *old, *node;
 	struct ceb_node *prev, *ret;
 	char *orig_argv;
 	struct key *key;
@@ -253,19 +253,33 @@ int main(int argc, char **argv)
 	}
 
 	printf("# Dump of all nodes using first() + next()\n");
-	for (i = 0, old = cebus_first(&ceb_root); old; i++, old = cebus_next(&ceb_root, (struct ceb_node*)old))
-		printf("# node[%d]=%p key=%s\n", i, old, container_of(old, struct key, node)->key);
+	for (i = 0, old = NULL, node = cebus_first(&ceb_root); node; i++, node = cebus_next(&ceb_root, (struct ceb_node*)(old = node))) {
+		if (node == old) {
+			printf("# BUG! next(%p) = %p!\n", old, node);
+			exit(1);
+		}
+		printf("# node[%d]=%p key=%s\n", i, node, container_of(node, struct key, node)->key);
+	}
 
 	printf("# Dump of all nodes using last() + prev()\n");
-	for (i = 0, old = cebus_last(&ceb_root); old; i++, old = cebus_prev(&ceb_root, (struct ceb_node*)old))
-		printf("# node[%d]=%p key=%s\n", i, old, container_of(old, struct key, node)->key);
+	for (i = 0, old = NULL, node = cebus_last(&ceb_root); node; i++, node = cebus_prev(&ceb_root, (struct ceb_node*)(old = node))) {
+		if (node == old) {
+			printf("# BUG! prev(%p) = %p!\n", old, node);
+			exit(1);
+		}
+		printf("# node[%d]=%p key=%s\n", i, node, container_of(node, struct key, node)->key);
+	}
 
 	if (!debug && dump)
 		cebus_default_dump(&ceb_root, orig_argv, 0, 0);
 
 	printf("# Removing all keys one at a time\n");
-	while ((old = cebus_first(&ceb_root))) {
-		cebus_delete(&ceb_root, (struct ceb_node*)old);
+	for (old = NULL; (node = cebus_first(&ceb_root)); old = node) {
+		if (node == old) {
+			printf("# BUG! first() after delete(%p) = %p!\n", old, node);
+			exit(1);
+		}
+		cebus_delete(&ceb_root, (struct ceb_node*)node);
 	}
 
 	if (debug)

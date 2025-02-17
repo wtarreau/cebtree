@@ -49,7 +49,7 @@ struct ceb_node *add_value(struct ceb_node **root, uint32_t value)
 
 int main(int argc, char **argv)
 {
-	const struct ceb_node *old;
+	const struct ceb_node *old, *node;
 	char *argv0 = *argv, *larg;
 	char *orig_argv;
 	char *p;
@@ -99,16 +99,30 @@ int main(int argc, char **argv)
 	//	cebu32_default_dump(&ceb_root, orig_argv, 0);
 
 	printf("# Dump of all nodes using first() + next()\n");
-	for (i = 0, old = cebub_first(&ceb_root, sizeof(uint32_t)); old; i++, old = cebub_next(&ceb_root, (struct ceb_node*)old, sizeof(uint32_t)))
-		printf("# node[%d]=%p key=%u\n", i, old, container_of(old, struct key, node)->key);
+	for (i = 0, old = NULL, node = cebub_first(&ceb_root, sizeof(uint32_t)); node; i++, node = cebub_next(&ceb_root, (struct ceb_node*)(old = node), sizeof(uint32_t))) {
+		if (node == old) {
+			printf("# BUG! prev(%p) = %p!\n", old, node);
+			exit(1);
+		}
+		printf("# node[%d]=%p key=%u\n", i, node, container_of(node, struct key, node)->key);
+	}
 
 	printf("# Dump of all nodes using last() + prev()\n");
-	for (i = 0, old = cebub_last(&ceb_root, sizeof(uint32_t)); old; i++, old = cebub_prev(&ceb_root, (struct ceb_node*)old, sizeof(uint32_t)))
-		printf("# node[%d]=%p key=%u\n", i, old, container_of(old, struct key, node)->key);
+	for (i = 0, old = NULL, node = cebub_last(&ceb_root, sizeof(uint32_t)); node; i++, node = cebub_prev(&ceb_root, (struct ceb_node*)(old = node), sizeof(uint32_t))) {
+		if (node == old) {
+			printf("# BUG! prev(%p) = %p!\n", old, node);
+			exit(1);
+		}
+		printf("# node[%d]=%p key=%u\n", i, node, container_of(node, struct key, node)->key);
+	}
 
 	printf("# Removing all keys one at a time\n");
-	while ((old = cebub_first(&ceb_root, sizeof(uint32_t)))) {
-		cebub_delete(&ceb_root, (struct ceb_node*)old, sizeof(uint32_t));
+	for (old = NULL; (node = cebub_first(&ceb_root, sizeof(uint32_t))); old = node) {
+		if (node == old) {
+			printf("# BUG! first() after delete(%p) = %p!\n", old, node);
+			exit(1);
+		}
+		cebub_delete(&ceb_root, (struct ceb_node*)node, sizeof(uint32_t));
 	}
 
 	return 0;

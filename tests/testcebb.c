@@ -49,7 +49,7 @@ struct ceb_node *add_value(struct ceb_node **root, uint32_t value)
 
 int main(int argc, char **argv)
 {
-	const struct ceb_node *old;
+	const struct ceb_node *old, *node;
 	char *argv0 = *argv, *larg;
 	char *orig_argv;
 	char *p;
@@ -99,16 +99,30 @@ int main(int argc, char **argv)
 	//	ceb32_default_dump(&ceb_root, orig_argv, 0);
 
 	printf("# Dump of all nodes using first() + next()\n");
-	for (i = 0, old = cebb_first(&ceb_root, sizeof(uint32_t)); old; i++, old = cebb_next(&ceb_root, (struct ceb_node*)old, sizeof(uint32_t)))
-		printf("# node[%d]=%p key=%u\n", i, old, container_of(old, struct key, node)->key);
+	for (i = 0, old = NULL, node = cebb_first(&ceb_root, sizeof(uint32_t)); node; i++, node = cebb_next(&ceb_root, (struct ceb_node*)(old = node), sizeof(uint32_t))) {
+		if (node == old) {
+			printf("# BUG! prev(%p) = %p!\n", old, node);
+			exit(1);
+		}
+		printf("# node[%d]=%p key=%u\n", i, node, container_of(node, struct key, node)->key);
+	}
 
 	printf("# Dump of all nodes using last() + prev()\n");
-	for (i = 0, old = cebb_last(&ceb_root, sizeof(uint32_t)); old; i++, old = cebb_prev(&ceb_root, (struct ceb_node*)old, sizeof(uint32_t)))
-		printf("# node[%d]=%p key=%u\n", i, old, container_of(old, struct key, node)->key);
+	for (i = 0, old = NULL, node = cebb_last(&ceb_root, sizeof(uint32_t)); node; i++, node = cebb_prev(&ceb_root, (struct ceb_node*)(old = node), sizeof(uint32_t))) {
+		if (node == old) {
+			printf("# BUG! prev(%p) = %p!\n", old, node);
+			exit(1);
+		}
+		printf("# node[%d]=%p key=%u\n", i, node, container_of(node, struct key, node)->key);
+	}
 
 	printf("# Removing all keys one at a time\n");
-	while ((old = cebb_first(&ceb_root, sizeof(uint32_t)))) {
-		cebb_delete(&ceb_root, (struct ceb_node*)old, sizeof(uint32_t));
+	for (old = NULL; (node = cebb_first(&ceb_root, sizeof(uint32_t))); old = node) {
+		if (node == old) {
+			printf("# BUG! first() after delete(%p) = %p!\n", old, node);
+			exit(1);
+		}
+		cebb_delete(&ceb_root, (struct ceb_node*)node, sizeof(uint32_t));
 	}
 
 	return 0;
