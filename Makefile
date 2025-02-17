@@ -21,6 +21,12 @@ libcebtree.a: $(OBJS)
 	$(CC) $(CFLAGS) $(WITH_DUMP) -o $@ -c $<
 
 test: $(TEST_BIN)
+	@for t in $(filter $(TEST_DIR)/testceb%,$^); do    \
+		for args in "3 2 1" "3 3 2 2 1 1"; do      \
+			echo "=== $$t $$args ===";         \
+			$$t $$args || exit 1;              \
+		done;                                      \
+	done
 
 tests/%: tests/%.c libcebtree.a
 	$(CC) $(CFLAGS) -I$(CEB_DIR) -o $@ $< -L. -lcebtree
