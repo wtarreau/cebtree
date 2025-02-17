@@ -1533,7 +1533,7 @@ struct ceb_node *_ceb_prev_dup(struct ceb_node **root,
 	 *     hence we visit node->b[0] to switch to the previous dup.
 	 *   - from is the first dup so we've visited them all.
 	 */
-	if ((node == from && is_dup) || (node->b[1]->b[0] != from))
+	if (is_dup && (node == from || node->b[1]->b[0] != from))
 		return from->b[0];
 
 	/* there's no other dup here */
@@ -1638,7 +1638,7 @@ struct ceb_node *_ceb_prev(struct ceb_node **root,
 	 *   - from is the first dup so we've visited them all, we now need
 	 *     to jump to the previous unique value.
 	 */
-	if ((node == from && is_dup) || (node->b[1]->b[0] != from))
+	if (is_dup && (node == from || node->b[1]->b[0] != from))
 		return from->b[0];
 
 	/* look up the previous unique entry */
