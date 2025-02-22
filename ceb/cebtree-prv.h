@@ -325,17 +325,35 @@ size_t string_equal_bits(const unsigned char *a,
 	 * and the shorter form is actually significantly faster since on a
 	 * critical path for small strings.
 	 */
-	ofsa  = (uintptr_t)(a + ofs) & (0x1000 - sizeof(long));
-	ofsb  = (uintptr_t)(b + ofs) & (0x1000 - sizeof(long));
-	ofsa ^= (0x1000 - sizeof(long));
-	ofsb ^= (0x1000 - sizeof(long));
-	max_words = (ofsa < ofsb ? ofsa : ofsb) / sizeof(long);
+//	ofsa  = (uintptr_t)(a + ofs) & (0x1000 - sizeof(long));
+//	ofsb  = (uintptr_t)(b + ofs) & (0x1000 - sizeof(long));
+//	ofsa ^= (0x1000 - sizeof(long));
+//	ofsb ^= (0x1000 - sizeof(long));
+//	max_words = (ofsa < ofsb ? ofsa : ofsb) / sizeof(long);
+//
+//	max_words += ofs;
+
+	/* count how many bytes exceed a page */
+	ofsa  = (uintptr_t)(a + ofs + 0x1000 - sizeof(long));
+	ofsb  = (uintptr_t)(b + ofs + 0x1000 - sizeof(long));
+	ofsa &= 0xfff; // how many bytes too much
+	ofsb &= 0xfff; // how many bytes too much
+
+	//max_words  = (ofsa > ofsb ? ofsa : ofsb);
+
+	max_words  = (ofsa > ofsb ? ofsa : ofsb) ^ 0xfff;
+
+	//ofsa ^= 0xfff; // how many bytes too much
+	//ofsb ^= 0xfff; // how many bytes too much
+	//max_words = (ofsa < ofsb ? ofsa : ofsb);
 
 	l = 0;
-	while (max_words--) {
+	max_words += ofs;
+	while (ofs < max_words/*max_words >= 8*/) {
 		l = *(unsigned long *)(a + ofs);
 		r = *(unsigned long *)(b + ofs);
 		ofs += sizeof(long);
+		//max_words -= 8;
 
 		x = l ^ r;
 
@@ -344,7 +362,7 @@ size_t string_equal_bits(const unsigned char *a,
 		     ~l & (unsigned long)0x8080808080808080ULL);
 
 		/* stop if there is one zero or if some bits differ */
-		if (z | x)
+		if (z || x)
 			goto stop;
 
 		/* OK, all 64 bits are equal, continue */
