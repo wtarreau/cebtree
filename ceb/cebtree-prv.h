@@ -223,7 +223,45 @@ size_t equal_bits(const unsigned char *a,
 	return ignore;
 }
 
-/* Compare strings <a> and <b> byte-to-byte, from bit <ignore> to the last 0.
+/* Compare strings <a> and <b> byte-to-byte, from byte <ofs> to the last 0.
+ * Return the number of equal bits between strings, assuming that the first
+ * <ofs> byts are already identical. The caller is responsible for not passing
+ * an <ofs> value larger than any of the two strings. However, referencing the
+ * trailing zero is permitted. Equal strings are reported as a negative number
+ * of bits, which indicates the end was reached.
+ */
+static inline __attribute__((always_inline))
+size_t _string_equal_bits_by1(const unsigned char *a,
+                              const unsigned char *b,
+                              size_t ofs)
+{
+	unsigned char c, d;
+
+	/* skip known and identical bytes. We stop at the first different byte
+	 * or at the first zero we encounter on either side.
+	 */
+	while (1) {
+		c = a[ofs];
+		d = b[ofs];
+		ofs++;
+
+		c ^= d;
+		if (c)
+			break;
+		if (!d)
+			return (size_t)-1;
+	}
+
+	/* OK now we know that a and b differ at byte <ofs>, or that both are zero.
+	 * We have to find what bit is differing and report it as the number of
+	 * identical bits. Note that low bit numbers are assigned to high positions
+	 * in the byte, as we compare them as strings.
+	 */
+	return (ofs << 3) - flsnz8(c);
+}
+
+/* Compare strings <a> and <b>, from bit <ignore> to the last 0. Depending on
+ * build options and optimizations, it may possibly read past the last zero.
  * Return the number of equal bits between strings, assuming that the first
  * <ignore> bits are already identical. Note that parts or all of <ignore> bits
  * may be rechecked. It is only passed here as a hint to speed up the check.
@@ -237,32 +275,9 @@ size_t string_equal_bits(const unsigned char *a,
                          const unsigned char *b,
                          size_t ignore)
 {
-	unsigned char c, d;
-	size_t beg;
+	size_t ofs = ignore >> 3;
 
-	beg = ignore >> 3;
-
-	/* skip known and identical bits. We stop at the first different byte
-	 * or at the first zero we encounter on either side.
-	 */
-	while (1) {
-		c = a[beg];
-		d = b[beg];
-		beg++;
-
-		c ^= d;
-		if (c)
-			break;
-		if (!d)
-			return (size_t)-1;
-	}
-
-	/* OK now we know that a and b differ at byte <beg>, or that both are zero.
-	 * We have to find what bit is differing and report it as the number of
-	 * identical bits. Note that low bit numbers are assigned to high positions
-	 * in the byte, as we compare them as strings.
-	 */
-	return (beg << 3) - flsnz(c);
+	return _string_equal_bits_by1(a, b, ofs);
 }
 
 
