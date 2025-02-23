@@ -268,36 +268,36 @@ size_t _string_equal_bits_by1(const unsigned char *a,
 		d = b[ofs + 0];
 
 		c ^= d;
-		if (c)
+		if (__builtin_expect(c, 0))
 			goto brk1;
-		if (!d)
+		if (__builtin_expect(!d, 0))
 			goto same;
 
 		c = a[ofs + 1];
 		d = b[ofs + 1];
 
 		c ^= d;
-		if (c)
+		if (__builtin_expect(c, 0))
 			goto brk2;
-		if (!d)
+		if (__builtin_expect(!d, 0))
 			goto same;
 
 		c = a[ofs + 2];
 		d = b[ofs + 2];
 
 		c ^= d;
-		if (c)
+		if (__builtin_expect(c, 0))
 			goto brk3;
-		if (!d)
+		if (__builtin_expect(!d, 0))
 			goto same;
 
 		c = a[ofs + 3];
 		d = b[ofs + 3];
 
 		c ^= d;
-		if (c)
+		if (__builtin_expect(c, 0))
 			goto brk4;
-		if (!d)
+		if (__builtin_expect(!d, 0))
 			goto same;
 	}
 brk4:
