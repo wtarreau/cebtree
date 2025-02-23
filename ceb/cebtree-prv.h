@@ -89,6 +89,15 @@
 #include <string.h>
 #include "cebtree.h"
 
+#if !defined(CEB_NO_VECTOR) && !defined(CEB_NO_SSE) &&			\
+	((defined(__clang__)) ||                                        \
+	 (defined(__GNUC__) &&						\
+	  ((__GNUC__ >= 5) ||						\
+	   ((__GNUC__ == 4) && (__GNUC_MINOR__ >= 3))))) &&		\
+	defined(__x86_64__)
+#include <emmintrin.h>
+#endif
+
 /* If DEBUG is set, we'll print additional debugging info during the descent */
 #ifdef DEBUG
 #define CEBDBG(x, ...) fprintf(stderr, x, ##__VA_ARGS__)
@@ -299,7 +308,116 @@ size_t string_equal_bits(const unsigned char *a,
 	 * CEB_NO_VECTOR. In order to measure the bit lengths, we'll need
 	 * __builtin_bswap which requires gcc >= 4.3.
 	 */
-#if !defined(CEB_NO_VECTOR) &&						\
+#if !defined(CEB_NO_VECTOR) && !defined(CEB_NO_SSE) &&			\
+	((defined(__clang__)) ||                                        \
+	 (defined(__GNUC__) &&						\
+	  ((__GNUC__ >= 5) ||						\
+	   ((__GNUC__ == 4) && (__GNUC_MINOR__ >= 3))))) &&		\
+	defined(__x86_64__)
+
+	/* use SSE2 */
+
+	uintptr_t ofsa, ofsb, max_words;
+	unsigned int xbit, zbit;
+	__m128i l, r;
+	__m128i x, z; // zero
+
+	/* This block reads one unaligned 128-bit SIMD word at a time till the
+	 * next page boundary. Then it goes on one byte at a time with the
+	 * fallback code. Calculating the exact number is expensive, because
+	 * the number of readable words (for a 128-bit machine) is defined by:
+	 *    0x1000 - ((((addr + ofs) & 0xfff) + 15) & 0x1ff0)
+	 * However this calculation is expensive, and this much cheaper
+	 * simplification only sacrifices the last word of a page:
+	 *   ((addr + ofs) ^ 0xfff) & 0xff0
+	 * The difference is about 5% of the code size for the strings code,
+	 * and the shorter form is actually significantly faster since on a
+	 * critical path for small strings.
+	 */
+
+
+	/* count how many bytes exceed a page */
+	ofsa  = (uintptr_t)(a + ofs);
+	ofsb  = (uintptr_t)(b + ofs);
+	ofsa ^= 0xfff; // how many bytes too much
+	ofsb ^= 0xfff; // how many bytes too much
+	ofsa &= 0xff0; // how many bytes too much
+	ofsb &= 0xff0; // how many bytes too much
+
+	max_words = (ofsa < ofsb ? ofsa : ofsb);
+
+	max_words += ofs;
+
+	z = _mm_setzero_si128();
+
+	while (1) {
+		if (ofs >= max_words)
+			goto by_one;
+
+		l = _mm_loadu_si128 ((const void*)(a + ofs));
+		r = _mm_loadu_si128 ((const void*)(b + ofs));
+
+		ofs += sizeof(l);
+
+		r = _mm_xor_si128(l, r);   // r ^= l
+
+		// cmpeq sets 0xFF for equal bytes, 0 for others. Inverting
+		// it gives 0xFF for different bytes, 0 for equal. This will
+		// point to bytes that differ between r and l.
+		x = _mm_cmpeq_epi8(r, z);
+		x = _mm_xor_si128(x, _mm_set1_epi8(-1));
+		xbit = _mm_movemask_epi8(x); // sets one bit per non-zero byte
+
+		/* check for the presence of a zero byte in one of the strings */
+		l = _mm_cmpeq_epi8(l, z);   // sets 0xFF in zero bytes, 0x00 in other ones
+		zbit = _mm_movemask_epi8(l); // sets one bit per zero byte
+
+		/* stop if there is one zero or if some bits differ */
+		if (__builtin_expect(xbit || zbit, 0))
+			break;
+		/* OK, all 64 bits are equal, continue */
+	}
+
+	if (zbit) {
+		/* there's at least a zero, let's find the first zero byte. The
+		 * first zero corresponds to the smallest bit set in zbit. The
+		 * first different byte corresponds to the smallest bit in xbit.
+		 * As such, if we have a bit set in zbit strictly below the
+		 * smallest bit set in xbit, we've won. We can check this with
+		 * (~xbit) & (xbit - 1) & zbit, since the first two will set
+		 * only all bits below the first bit to 1.
+		 */
+		if (~xbit & (xbit - 1) & zbit)
+			return -1;
+	}
+
+	/* let's figure the first different bit (highest) */
+
+	/* we know xbit is non-null here, so r contains some non-zero bits.
+	 * We need to swap the bytes so as to see the word in big-endian first
+	 * before using flsnz. xbit contains bits in the lowest byte if the
+	 * difference is in the first 64 bits, otherwise the difference is in
+	 * the second part.
+	 */
+	{
+		uint64_t r64;
+
+		if (!(xbit & 0xff)) {
+			r = _mm_srli_si128(r, 8); // shift by 8 bytes
+			xbit = 0;
+		}
+		else {
+			xbit = 64;
+		}
+
+		r64 = _mm_cvtsi128_si64(r);
+		r64 = __builtin_bswap64(r64);
+		xbit += flsnz(r64);
+	}
+	return (ofs << 3) - xbit;
+
+by_one:
+#elif !defined(CEB_NO_VECTOR) &&						\
 	((defined(__clang__)) ||                                        \
 	 (defined(__GNUC__) &&						\
 	  ((__GNUC__ >= 5) ||						\
