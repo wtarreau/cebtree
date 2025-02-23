@@ -311,7 +311,7 @@ size_t string_equal_bits(const unsigned char *a,
 	  (defined (__aarch64__) || defined(__ARM_ARCH_8A))))
 
 	uintptr_t ofsa, ofsb, max_words;
-	unsigned long l, r, x, z;
+	unsigned long l, r;
 	unsigned int xbit;
 
 	/* This block reads one unaligned word at a time till the next page
@@ -348,27 +348,48 @@ size_t string_equal_bits(const unsigned char *a,
 	//ofsb ^= 0xfff; // how many bytes too much
 	//max_words = (ofsa < ofsb ? ofsa : ofsb);
 
-	l = 0;
 	max_words += ofs;
-	while (ofs < max_words/*max_words >= 8*/) {
+	while (1) {
+		if (ofs >= max_words/*max_words < 8*/)
+			goto by_one;
+
 		l = *(unsigned long *)(a + ofs);
 		r = *(unsigned long *)(b + ofs);
-		ofs += sizeof(long);
 		//max_words -= 8;
+		ofs += sizeof(long);
 
-		x = l ^ r;
+		r = l ^ r;
 
 		/* check for the presence of a zero byte in one of the strings */
-		z = ((l - (unsigned long)0x0101010101010101ULL) &
+		l = ((l - (unsigned long)0x0101010101010101ULL) &
 		     ~l & (unsigned long)0x8080808080808080ULL);
 
 		/* stop if there is one zero or if some bits differ */
-		if (z || x)
-			goto stop;
-
+		if (__builtin_expect(l || r, 0))
+			break;
 		/* OK, all 64 bits are equal, continue */
 	}
-	goto by_one;
+
+	/* let's figure the first different bit (highest) */
+	r = (sizeof(long) > 4) ? __builtin_bswap64(r) : __builtin_bswap32(r);
+	xbit = r ? flsnz(r) : 0;
+
+	if (l) {
+		/* there's at least a zero, let's find the first zero byte. It
+		 * was replaced above with a 0x80 while all other ones are zero.
+		 */
+		l = (sizeof(long) > 4) ? __builtin_bswap64(l) : __builtin_bswap32(l);
+
+		/* map it to the lowest bit of the byte, and verify if it's
+		 * before the first difference, in which case the strings are
+		 * equal.
+		 */
+		if (flsnz(l) - 7 > xbit)
+			return -1;
+	}
+
+	/* return position of first difference */
+	return (ofs << 3) - xbit;
 
 	/* We know there is at least one zero or a difference so we'll stop.
 	 * For the zero, there will be 0x80 instead of the NULL bytes. For
@@ -382,27 +403,6 @@ size_t string_equal_bits(const unsigned char *a,
 	 * due to possible zeroes past the first NUL that would affect the
 	 * comparison.
 	 */
-stop:
-	/* let's figure the first different bit (highest) */
-	x = (sizeof(long) > 4) ? __builtin_bswap64(x) : __builtin_bswap32(x);
-	xbit = x ? flsnz(x) : 0;
-
-	if (z) {
-		/* there's at least a zero, let's find the first zero byte. It
-		 * was replaced above with a 0x80 while all other ones are zero.
-		 */
-		z = (sizeof(long) > 4) ? __builtin_bswap64(z) : __builtin_bswap32(z);
-
-		/* map it to the lowest bit of the byte, and verify if it's
-		 * before the first difference, in which case the strings are
-		 * equal.
-		 */
-		if (flsnz(z) - 7 > xbit)
-			return -1;
-	}
-
-	/* return position of first difference */
-	return (ofs << 3) - xbit;
 by_one:
 #endif
 	return _string_equal_bits_by1(a, b, ofs);
