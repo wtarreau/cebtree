@@ -284,7 +284,7 @@ size_t _string_equal_bits_by1(const unsigned char *a,
  * permitted. Equal strings are reported as a negative number of bits, which
  * indicates the end was reached.
  */
-static inline __attribute__((always_inline))
+static inline //__attribute__((always_inline))
 size_t string_equal_bits(const unsigned char *a,
                          const unsigned char *b,
                          size_t ignore)
