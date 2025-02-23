@@ -342,11 +342,11 @@ size_t string_equal_bits(const unsigned char *a,
 
 	//max_words  = (ofsa > ofsb ? ofsa : ofsb);
 
-	max_words  = (ofsa > ofsb ? ofsa : ofsb) ^ 0xfff;
+	//max_words  = (ofsa > ofsb ? ofsa : ofsb) ^ 0xfff;
 
-	//ofsa ^= 0xfff; // how many bytes too much
-	//ofsb ^= 0xfff; // how many bytes too much
-	//max_words = (ofsa < ofsb ? ofsa : ofsb);
+	ofsa ^= 0xfff; // how many bytes too much
+	ofsb ^= 0xfff; // how many bytes too much
+	max_words = (ofsa < ofsb ? ofsa : ofsb);
 
 	max_words += ofs;
 	while (1) {
