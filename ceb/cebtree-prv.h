@@ -432,25 +432,19 @@ by_one:
 	unsigned long l, r;
 	unsigned int xbit;
 
-	/* This block reads one unaligned word at a time till the next page
-	 * boundary. Then it goes on one byte at a time with the fallback code.
-	 * Calculating the exact number is expensive, because the number of
-	 * readable words (for a 64-bit machine) is defined by:
+	/* This block reads one unaligned 64-bit word at a time till the
+	 * next page boundary. Then it goes on one byte at a time with the
+	 * fallback code. Calculating the exact number is expensive, because
+	 * the number of readable words (for a 64-bit machine) is defined by:
 	 *    0x1000 - ((((addr + ofs) & 0xfff) + 7) & 0x1ff8)
 	 * However this calculation is expensive, and this much cheaper
-	 * simplification only sacrifices the last 8 bytes of a page:
-	 *   (addr + ofs) & 0xff8) ^ 0xff8
+	 * simplification only sacrifices the last word of a page:
+	 *   ((addr + ofs) ^ 0xfff) & 0xff8
 	 * The difference is about 5% of the code size for the strings code,
 	 * and the shorter form is actually significantly faster since on a
 	 * critical path for small strings.
 	 */
-//	ofsa  = (uintptr_t)(a + ofs) & (0x1000 - sizeof(long));
-//	ofsb  = (uintptr_t)(b + ofs) & (0x1000 - sizeof(long));
-//	ofsa ^= (0x1000 - sizeof(long));
-//	ofsb ^= (0x1000 - sizeof(long));
-//	max_words = (ofsa < ofsb ? ofsa : ofsb) / sizeof(long);
-//
-//	max_words += ofs;
+
 
 	/* count how many bytes exceed a page */
 	ofsa  = (uintptr_t)(a + ofs);
@@ -460,20 +454,15 @@ by_one:
 	ofsa &= 0xff8; // how many bytes too much
 	ofsb &= 0xff8; // how many bytes too much
 
-	//max_words  = (ofsa > ofsb ? ofsa : ofsb);
-
-	//max_words  = (ofsa > ofsb ? ofsa : ofsb) ^ 0xfff;
-
 	max_words = (ofsa < ofsb ? ofsa : ofsb);
 
 	max_words += ofs;
 	while (1) {
-		if (ofs >= max_words/*max_words < 8*/)
+		if (ofs >= max_words)
 			goto by_one;
 
 		l = *(unsigned long *)(a + ofs);
 		r = *(unsigned long *)(b + ofs);
-		//max_words -= 8;
 		ofs += sizeof(long);
 
 		r = l ^ r;
