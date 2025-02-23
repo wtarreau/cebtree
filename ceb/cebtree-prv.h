@@ -477,39 +477,27 @@ by_one:
 		/* OK, all 64 bits are equal, continue */
 	}
 
-	/* let's figure the first different bit (highest) */
-	r = (sizeof(long) > 4) ? __builtin_bswap64(r) : __builtin_bswap32(r);
-	xbit = r ? flsnz(r) : 0;
-
-	if (l) {
-		/* there's at least a zero, let's find the first zero byte. It
-		 * was replaced above with a 0x80 while all other ones are zero.
+	if (__builtin_expect(l, 1)) {
+		/* there's at least a zero, let's find the first zero byte. The
+		 * first zero corresponds to the smallest bit set in l. The
+		 * first different byte corresponds to the smallest bit in r.
+		 * As such, if we have a bit set in l strictly below the
+		 * smallest bit set in r, we've won. We can check this with
+		 * (~r) & (r - 1) & l, since the first two will set
+		 * only all bits below the first bit to 1.
 		 */
-		l = (sizeof(long) > 4) ? __builtin_bswap64(l) : __builtin_bswap32(l);
-
-		/* map it to the lowest bit of the byte, and verify if it's
-		 * before the first difference, in which case the strings are
-		 * equal.
-		 */
-		if (flsnz(l) - 7 > xbit)
+		if (~r & (r - 1) & l)
 			return -1;
 	}
 
+	/* let's figure the first different bit (highest). When we reach this
+	 * point, we know this bit exists, so r is non-zero.
+	 */
+	r = (sizeof(long) > 4) ? __builtin_bswap64(r) : __builtin_bswap32(r);
+	xbit = flsnz(r);
+
 	/* return position of first difference */
 	return (ofs << 3) - xbit;
-
-	/* We know there is at least one zero or a difference so we'll stop.
-	 * For the zero, there will be 0x80 instead of the NULL bytes. For
-	 * the difference, we have at least one non-zero bit on the
-	 * differences. If the zero byte is strictly before the difference,
-	 * it means both words have the same zero byte, hence there is no
-	 * diference. Otherwise there's a difference at the position indicated
-	 * by the closest bit set in x from the beginning. In both cases, the
-	 * positions closest to the first bytes count, so we'll turn the words
-	 * to big endian. Note that comparing pure integer values does not work
-	 * due to possible zeroes past the first NUL that would affect the
-	 * comparison.
-	 */
 by_one:
 #endif
 	return _string_equal_bits_by1(a, b, ofs);
