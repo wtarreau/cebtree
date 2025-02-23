@@ -312,6 +312,7 @@ size_t string_equal_bits(const unsigned char *a,
 
 	uintptr_t ofsa, ofsb, max_words;
 	unsigned long l, r, x, z;
+	unsigned int xbit;
 
 	/* This block reads one unaligned word at a time till the next page
 	 * boundary. Then it goes on one byte at a time with the fallback code.
@@ -382,34 +383,26 @@ size_t string_equal_bits(const unsigned char *a,
 	 * comparison.
 	 */
 stop:
-	if (x) {
-		/* there's a difference between the two, let's figure
-		 * the first bit (highest).
-		 */
-		if (sizeof(long) > 4)
-			x = __builtin_bswap64(x);
-		else
-			x = __builtin_bswap32(x);
-
-		x = flsnz(x);
-	}
+	/* let's figure the first different bit (highest) */
+	x = (sizeof(long) > 4) ? __builtin_bswap64(x) : __builtin_bswap32(x);
+	xbit = x ? flsnz(x) : 0;
 
 	if (z) {
-		/* there's at least a zero, let's figure the first one. */
-		if (sizeof(long) > 4)
-			z = __builtin_bswap64(z);
-		else
-			z = __builtin_bswap32(z);
-		z = flsnz(z);
-		/* map it to the lowest bit of the byte */
-		z -= 7;
+		/* there's at least a zero, let's find the first zero byte. It
+		 * was replaced above with a 0x80 while all other ones are zero.
+		 */
+		z = (sizeof(long) > 4) ? __builtin_bswap64(z) : __builtin_bswap32(z);
+
+		/* map it to the lowest bit of the byte, and verify if it's
+		 * before the first difference, in which case the strings are
+		 * equal.
+		 */
+		if (flsnz(z) - 7 > xbit)
+			return -1;
 	}
 
-	if (z > x)
-		return -1; /* bytes are equal up to the trailing zero */
-
 	/* return position of first difference */
-	return (ofs << 3) - x;
+	return (ofs << 3) - xbit;
 by_one:
 #endif
 	return _string_equal_bits_by1(a, b, ofs);
