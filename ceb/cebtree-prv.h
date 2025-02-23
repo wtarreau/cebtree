@@ -335,17 +335,17 @@ size_t string_equal_bits(const unsigned char *a,
 //	max_words += ofs;
 
 	/* count how many bytes exceed a page */
-	ofsa  = (uintptr_t)(a + ofs - sizeof(long));
-	ofsb  = (uintptr_t)(b + ofs - sizeof(long));
-	ofsa &= 0xfff; // how many bytes too much
-	ofsb &= 0xfff; // how many bytes too much
+	ofsa  = (uintptr_t)(a + ofs);
+	ofsb  = (uintptr_t)(b + ofs);
+	ofsa ^= 0xfff; // how many bytes too much
+	ofsb ^= 0xfff; // how many bytes too much
+	ofsa &= 0xff8; // how many bytes too much
+	ofsb &= 0xff8; // how many bytes too much
 
 	//max_words  = (ofsa > ofsb ? ofsa : ofsb);
 
 	//max_words  = (ofsa > ofsb ? ofsa : ofsb) ^ 0xfff;
 
-	ofsa ^= 0xfff; // how many bytes too much
-	ofsb ^= 0xfff; // how many bytes too much
 	max_words = (ofsa < ofsb ? ofsa : ofsb);
 
 	max_words += ofs;
