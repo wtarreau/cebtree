@@ -538,6 +538,14 @@ static void dbg(int line,
 		      p ? p->b[1] : NULL, (long long)(p ? NODEK(p->b[1], kofs)->u64 : 0), rlen,
 		      xlen);
 		break;
+	case CEB_KT_ADDR:
+		/* key type is the node's address */
+		CEBDBG("%04d (%8s) m=%s.%s key=%#llx root=%p pxor=%#llx p=%p,%#llx(^%#llx) l=%p,%#llx(^%#llx) r=%p,%#llx(^%#llx) l^r=%#llx\n",
+		      line, pfx, kstr, mstr, (long long)(uintptr_t)key_ptr, root, (long long)px64,
+		      p, (long long)(uintptr_t)p, nlen,
+		      p ? p->b[0] : NULL, p ? (long long)(uintptr_t)p->b[0] : 0, llen,
+		      p ? p->b[1] : NULL, p ? (long long)(uintptr_t)p->b[1] : 0, rlen,
+		      xlen);
 	case CEB_KT_MB:
 		CEBDBG("%04d (%8s) m=%s.%s key=%p root=%p plen=%ld p=%p,%p(^%lld) l=%p,%p(^%lld) r=%p,%p(^%lld) l^r=%lld\n",
 		      line, pfx, kstr, mstr, key_ptr, root, (long)plen,
@@ -570,14 +578,6 @@ static void dbg(int line,
 		      p ? p->b[1] : NULL, p ? (const char *)NODEK(p->b[1], kofs)->ptr : "-", ~rlen,
 		      ~xlen);
 		break;
-	case CEB_KT_ADDR:
-		/* key type is the node's address */
-		CEBDBG("%04d (%8s) m=%s.%s key=%#llx root=%p pxor=%#llx p=%p,%#llx(^%#llx) l=%p,%#llx(^%#llx) r=%p,%#llx(^%#llx) l^r=%#llx\n",
-		      line, pfx, kstr, mstr, (long long)(uintptr_t)key_ptr, root, (long long)px64,
-		      p, (long long)(uintptr_t)p, nlen,
-		      p ? p->b[0] : NULL, p ? (long long)(uintptr_t)p->b[0] : 0, llen,
-		      p ? p->b[1] : NULL, p ? (long long)(uintptr_t)p->b[1] : 0, rlen,
-		      xlen);
 	}
 }
 #else
@@ -826,6 +826,46 @@ struct ceb_node *_ceb_descend(struct ceb_node **root,
 				break;
 			}
 		}
+		else if (key_type == CEB_KT_ADDR) {
+			uintptr_t xoraddr;   // left vs right branch xor
+			uintptr_t kl, kr;
+
+			kl = (uintptr_t)l; kr = (uintptr_t)r;
+			xoraddr = kl ^ kr;
+
+			if (xoraddr > (uintptr_t)pxor64) { // test using 2 4 6 4
+				dbg(__LINE__, "xor>", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+				break;
+			}
+
+			if (meth >= CEB_WM_KEQ) {
+				/* "found" is not used here */
+				kl ^= (uintptr_t)key_ptr; kr ^= (uintptr_t)key_ptr;
+				brside = kl >= kr;
+
+				/* let's stop if our key is not there */
+
+				if (kl > xoraddr && kr > xoraddr) {
+					dbg(__LINE__, "mismatch", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+					break;
+				}
+
+				if (ret_npside || ret_nparent) {
+					if ((uintptr_t)key_ptr == (uintptr_t)node) {
+						dbg(__LINE__, "equal", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+						nparent = lparent;
+						npside  = lpside;
+					}
+				}
+			}
+			pxor64 = xoraddr;
+			if (ret_is_dup && !xoraddr) {
+				/* both sides are equal, that's a duplicate */
+				dbg(__LINE__, "dup>", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+				is_dup = 1;
+				break;
+			}
+		}
 		else if (key_type == CEB_KT_MB || key_type == CEB_KT_IM) {
 			size_t xlen = 0; // left vs right matching length
 
@@ -934,46 +974,6 @@ struct ceb_node *_ceb_descend(struct ceb_node **root,
 				break;
 			}
 		}
-		else if (key_type == CEB_KT_ADDR) {
-			uintptr_t xoraddr;   // left vs right branch xor
-			uintptr_t kl, kr;
-
-			kl = (uintptr_t)l; kr = (uintptr_t)r;
-			xoraddr = kl ^ kr;
-
-			if (xoraddr > (uintptr_t)pxor64) { // test using 2 4 6 4
-				dbg(__LINE__, "xor>", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
-				break;
-			}
-
-			if (meth >= CEB_WM_KEQ) {
-				/* "found" is not used here */
-				kl ^= (uintptr_t)key_ptr; kr ^= (uintptr_t)key_ptr;
-				brside = kl >= kr;
-
-				/* let's stop if our key is not there */
-
-				if (kl > xoraddr && kr > xoraddr) {
-					dbg(__LINE__, "mismatch", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
-					break;
-				}
-
-				if (ret_npside || ret_nparent) {
-					if ((uintptr_t)key_ptr == (uintptr_t)node) {
-						dbg(__LINE__, "equal", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
-						nparent = lparent;
-						npside  = lpside;
-					}
-				}
-			}
-			pxor64 = xoraddr;
-			if (ret_is_dup && !xoraddr) {
-				/* both sides are equal, that's a duplicate */
-				dbg(__LINE__, "dup>", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
-				is_dup = 1;
-				break;
-			}
-		}
 
 		/* shift all copies by one */
 		gparent = lparent;
@@ -1036,6 +1036,9 @@ struct ceb_node *_ceb_descend(struct ceb_node **root,
 		case CEB_KT_U64:
 			*ret_nside = key_u64 >= k->u64;
 			break;
+		case CEB_KT_ADDR:
+			*ret_nside = (uintptr_t)key_ptr >= (uintptr_t)node;
+			break;
 		case CEB_KT_MB:
 		case CEB_KT_IM:
 			*ret_nside = (uint64_t)plen / 8 == key_u64 ||
@@ -1046,9 +1049,6 @@ struct ceb_node *_ceb_descend(struct ceb_node **root,
 		case CEB_KT_IS:
 			*ret_nside = found ||
 				strcmp(key_ptr + plen / 8, (const void *)((key_type == CEB_KT_ST) ? k->str : k->ptr) + plen / 8) >= 0;
-			break;
-		case CEB_KT_ADDR:
-			*ret_nside = (uintptr_t)key_ptr >= (uintptr_t)node;
 			break;
 		}
 	}
@@ -1109,6 +1109,16 @@ struct ceb_node *_ceb_descend(struct ceb_node **root,
 			    (meth == CEB_WM_KLT && k->u64 <  key_u64))
 				return node;
 		}
+		else if (key_type == CEB_KT_ADDR) {
+			if ((meth == CEB_WM_KEQ && (uintptr_t)node == (uintptr_t)key_ptr) ||
+			    (meth == CEB_WM_KNX && (uintptr_t)node == (uintptr_t)key_ptr) ||
+			    (meth == CEB_WM_KPR && (uintptr_t)node == (uintptr_t)key_ptr) ||
+			    (meth == CEB_WM_KGE && (uintptr_t)node >= (uintptr_t)key_ptr) ||
+			    (meth == CEB_WM_KGT && (uintptr_t)node >  (uintptr_t)key_ptr) ||
+			    (meth == CEB_WM_KLE && (uintptr_t)node <= (uintptr_t)key_ptr) ||
+			    (meth == CEB_WM_KLT && (uintptr_t)node <  (uintptr_t)key_ptr))
+				return node;
+		}
 		else if (key_type == CEB_KT_MB || key_type == CEB_KT_IM) {
 			int diff;
 
@@ -1141,16 +1151,6 @@ struct ceb_node *_ceb_descend(struct ceb_node **root,
 			    (meth == CEB_WM_KGT && diff >  0) ||
 			    (meth == CEB_WM_KLE && diff <= 0) ||
 			    (meth == CEB_WM_KLT && diff <  0))
-				return node;
-		}
-		else if (key_type == CEB_KT_ADDR) {
-			if ((meth == CEB_WM_KEQ && (uintptr_t)node == (uintptr_t)key_ptr) ||
-			    (meth == CEB_WM_KNX && (uintptr_t)node == (uintptr_t)key_ptr) ||
-			    (meth == CEB_WM_KPR && (uintptr_t)node == (uintptr_t)key_ptr) ||
-			    (meth == CEB_WM_KGE && (uintptr_t)node >= (uintptr_t)key_ptr) ||
-			    (meth == CEB_WM_KGT && (uintptr_t)node >  (uintptr_t)key_ptr) ||
-			    (meth == CEB_WM_KLE && (uintptr_t)node <= (uintptr_t)key_ptr) ||
-			    (meth == CEB_WM_KLT && (uintptr_t)node <  (uintptr_t)key_ptr))
 				return node;
 		}
 	} else if (meth == CEB_WM_FST || meth == CEB_WM_LST) {
