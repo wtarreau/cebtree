@@ -826,19 +826,20 @@ struct ceb_node *_ceb_descend(struct ceb_node **root,
 				break;
 			}
 		}
-		else if (key_type == CEB_KT_MB) {
+		else if (key_type == CEB_KT_MB || key_type == CEB_KT_IM) {
 			size_t xlen = 0; // left vs right matching length
 
 			if (meth >= CEB_WM_KEQ) {
 				/* measure identical lengths */
-				llen = equal_bits(key_ptr, l->mb, 0, key_u64 << 3);
-				rlen = equal_bits(key_ptr, r->mb, 0, key_u64 << 3);
+				llen = equal_bits(key_ptr, (key_type == CEB_KT_MB) ? l->mb : l->ptr, 0, key_u64 << 3);
+				rlen = equal_bits(key_ptr, (key_type == CEB_KT_MB) ? r->mb : r->ptr, 0, key_u64 << 3);
 				brside = llen <= rlen;
 				if (llen == rlen && (uint64_t)llen == key_u64 << 3)
 					found = 1;
 			}
 
-			xlen = equal_bits(l->mb, r->mb, 0, key_u64 << 3);
+			xlen = equal_bits((key_type == CEB_KT_MB) ? l->mb : l->ptr,
+					  (key_type == CEB_KT_MB) ? r->mb : r->ptr, 0, key_u64 << 3);
 			if (xlen < plen) {
 				/* this is a leaf. E.g. triggered using 2 4 6 4 */
 				dbg(__LINE__, "xor>", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
@@ -859,7 +860,8 @@ struct ceb_node *_ceb_descend(struct ceb_node **root,
 					if (mlen > xlen)
 						mlen = xlen;
 
-					if ((uint64_t)xlen / 8 == key_u64 || memcmp(key_ptr + mlen / 8, k->mb + mlen / 8, key_u64 - mlen / 8) == 0) {
+					if ((uint64_t)xlen / 8 == key_u64 ||
+					    memcmp(key_ptr + mlen / 8, ((key_type == CEB_KT_MB) ? k->mb : k->ptr) + mlen / 8, key_u64 - mlen / 8) == 0) {
 						dbg(__LINE__, "equal", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 						nparent = lparent;
 						npside  = lpside;
@@ -875,56 +877,7 @@ struct ceb_node *_ceb_descend(struct ceb_node **root,
 				break;
 			}
 		}
-		else if (key_type == CEB_KT_IM) {
-			size_t xlen = 0; // left vs right matching length
-
-			if (meth >= CEB_WM_KEQ) {
-				/* measure identical lengths */
-				llen = equal_bits(key_ptr, l->ptr, 0, key_u64 << 3);
-				rlen = equal_bits(key_ptr, r->ptr, 0, key_u64 << 3);
-				brside = llen <= rlen;
-				if (llen == rlen && (uint64_t)llen == key_u64 << 3)
-					found = 1;
-			}
-
-			xlen = equal_bits(l->ptr, r->ptr, 0, key_u64 << 3);
-			if (xlen < plen) {
-				/* this is a leaf. E.g. triggered using 2 4 6 4 */
-				dbg(__LINE__, "xor>", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
-				break;
-			}
-
-			if (meth >= CEB_WM_KEQ) {
-				/* let's stop if our key is not there */
-
-				if (llen < xlen && rlen < xlen) {
-					dbg(__LINE__, "mismatch", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
-					break;
-				}
-
-				if (ret_npside || ret_nparent) { // delete ?
-					size_t mlen = llen > rlen ? llen : rlen;
-
-					if (mlen > xlen)
-						mlen = xlen;
-
-					if ((uint64_t)xlen / 8 == key_u64 || memcmp(key_ptr + mlen / 8, k->ptr + mlen / 8, key_u64 - mlen / 8) == 0) {
-						dbg(__LINE__, "equal", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
-						nparent = lparent;
-						npside  = lpside;
-						found = 1;
-					}
-				}
-			}
-			plen = xlen;
-			if (ret_is_dup && (uint64_t)xlen / 8 == key_u64) {
-				/* both sides are equal, that's a duplicate */
-				dbg(__LINE__, "dup>", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
-				is_dup = 1;
-				break;
-			}
-		}
-		else if (key_type == CEB_KT_ST) {
+		else if (key_type == CEB_KT_ST || key_type == CEB_KT_IS) {
 			size_t xlen = 0; // left vs right matching length
 
 			if (meth >= CEB_WM_KEQ) {
@@ -934,14 +887,15 @@ struct ceb_node *_ceb_descend(struct ceb_node **root,
 				 * leaf. We take that negative length for an
 				 * infinite one, hence the uint cast.
 				 */
-				llen = string_equal_bits(key_ptr, l->str, 0);
-				rlen = string_equal_bits(key_ptr, r->str, 0);
+				llen = string_equal_bits(key_ptr, (key_type == CEB_KT_ST) ? l->str : l->ptr, 0);
+				rlen = string_equal_bits(key_ptr, (key_type == CEB_KT_ST) ? r->str : r->ptr, 0);
 				brside = (size_t)llen <= (size_t)rlen;
 				if ((ssize_t)llen < 0 || (ssize_t)rlen < 0)
 					found = 1;
 			}
 
-			xlen = string_equal_bits(l->str, r->str, 0);
+			xlen = string_equal_bits((key_type == CEB_KT_ST) ? l->str : l->ptr,
+						 (key_type == CEB_KT_ST) ? r->str : r->ptr, 0);
 			if (xlen < plen) {
 				/* this is a leaf. E.g. triggered using 2 4 6 4 */
 				dbg(__LINE__, "xor>", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
@@ -962,7 +916,8 @@ struct ceb_node *_ceb_descend(struct ceb_node **root,
 					if (mlen > xlen)
 						mlen = xlen;
 
-					if ((ssize_t)xlen < 0 || strcmp(key_ptr + mlen / 8, (const void *)k->str + mlen / 8) == 0) {
+					if ((ssize_t)xlen < 0 ||
+					    strcmp(key_ptr + mlen / 8, (const void *)((key_type == CEB_KT_ST) ? k->str : k->ptr) + mlen / 8) == 0) {
 						/* strcmp() still needed. E.g. 1 2 3 4 10 11 4 3 2 1 10 11 fails otherwise */
 						dbg(__LINE__, "equal", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 						nparent = lparent;
@@ -974,61 +929,6 @@ struct ceb_node *_ceb_descend(struct ceb_node **root,
 			plen = xlen;
 			if (ret_is_dup && (ssize_t)xlen < 0) {
 				/* exact match, that's a duplicate */
-				dbg(__LINE__, "dup>", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
-				is_dup = 1;
-				break;
-			}
-		}
-		else if (key_type == CEB_KT_IS) {
-			size_t xlen = 0; // left vs right matching length
-
-			if (meth >= CEB_WM_KEQ) {
-				/* Note that a negative length indicates an
-				 * equal value with the final zero reached, but
-				 * it is still needed to descend to find the
-				 * leaf. We take that negative length for an
-				 * infinite one, hence the uint cast.
-				 */
-				llen = string_equal_bits(key_ptr, l->ptr, 0);
-				rlen = string_equal_bits(key_ptr, r->ptr, 0);
-				brside = (size_t)llen <= (size_t)rlen;
-				if ((ssize_t)llen < 0 || (ssize_t)rlen < 0)
-					found = 1;
-			}
-
-			xlen = string_equal_bits(l->ptr, r->ptr, 0);
-			if (xlen < plen) {
-				/* this is a leaf. E.g. triggered using 2 4 6 4 */
-				dbg(__LINE__, "xor>", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
-				break;
-			}
-
-			if (meth >= CEB_WM_KEQ) {
-				/* let's stop if our key is not there */
-
-				if ((unsigned)llen < (unsigned)xlen && (unsigned)rlen < (unsigned)xlen) {
-					dbg(__LINE__, "mismatch", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
-					break;
-				}
-
-				if (ret_npside || ret_nparent) { // delete ?
-					size_t mlen = llen > rlen ? llen : rlen;
-
-					if (mlen > xlen)
-						mlen = xlen;
-
-					if ((ssize_t)xlen < 0 || strcmp(key_ptr + mlen / 8, (const void *)k->ptr + mlen / 8) == 0) {
-						/* strcmp() still needed. E.g. 1 2 3 4 10 11 4 3 2 1 10 11 fails otherwise */
-						dbg(__LINE__, "equal", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
-						nparent = lparent;
-						npside  = lpside;
-						found = 1;
-					}
-				}
-			}
-			plen = xlen;
-			if (ret_is_dup && (ssize_t)xlen < 0) {
-				/* both sides are equal, that's a duplicate */
 				dbg(__LINE__, "dup>", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 				is_dup = 1;
 				break;
@@ -1137,16 +1037,15 @@ struct ceb_node *_ceb_descend(struct ceb_node **root,
 			*ret_nside = key_u64 >= k->u64;
 			break;
 		case CEB_KT_MB:
-			*ret_nside = (uint64_t)plen / 8 == key_u64 || memcmp(key_ptr + plen / 8, k->mb + plen / 8, key_u64 - plen / 8) >= 0;
-			break;
 		case CEB_KT_IM:
-			*ret_nside = (uint64_t)plen / 8 == key_u64 || memcmp(key_ptr + plen / 8, k->ptr + plen / 8, key_u64 - plen / 8) >= 0;
+			*ret_nside = (uint64_t)plen / 8 == key_u64 ||
+				memcmp(key_ptr + plen / 8, ((key_type == CEB_KT_MB) ? k->mb : k->ptr) + plen / 8, key_u64 - plen / 8) >= 0;
 			break;
+
 		case CEB_KT_ST:
-			*ret_nside = found || strcmp(key_ptr + plen / 8, (const void *)k->str + plen / 8) >= 0;
-			break;
 		case CEB_KT_IS:
-			*ret_nside = found || strcmp(key_ptr + plen / 8, (const void *)k->ptr + plen / 8) >= 0;
+			*ret_nside = found ||
+				strcmp(key_ptr + plen / 8, (const void *)((key_type == CEB_KT_ST) ? k->str : k->ptr) + plen / 8) >= 0;
 			break;
 		case CEB_KT_ADDR:
 			*ret_nside = (uintptr_t)key_ptr >= (uintptr_t)node;
@@ -1210,13 +1109,13 @@ struct ceb_node *_ceb_descend(struct ceb_node **root,
 			    (meth == CEB_WM_KLT && k->u64 <  key_u64))
 				return node;
 		}
-		else if (key_type == CEB_KT_MB) {
+		else if (key_type == CEB_KT_MB || key_type == CEB_KT_IM) {
 			int diff;
 
 			if ((uint64_t)plen / 8 == key_u64)
 				diff = 0;
 			else
-				diff = memcmp(k->mb + plen / 8, key_ptr + plen / 8, key_u64 - plen / 8);
+				diff = memcmp(((key_type == CEB_KT_MB) ? k->mb : k->ptr) + plen / 8, key_ptr + plen / 8, key_u64 - plen / 8);
 
 			if ((meth == CEB_WM_KEQ && diff == 0) ||
 			    (meth == CEB_WM_KNX && diff == 0) ||
@@ -1227,47 +1126,13 @@ struct ceb_node *_ceb_descend(struct ceb_node **root,
 			    (meth == CEB_WM_KLT && diff <  0))
 				return node;
 		}
-		else if (key_type == CEB_KT_IM) {
-			int diff;
-
-			if ((uint64_t)plen / 8 == key_u64)
-				diff = 0;
-			else
-				diff = memcmp(k->ptr + plen / 8, key_ptr + plen / 8, key_u64 - plen / 8);
-
-			if ((meth == CEB_WM_KEQ && diff == 0) ||
-			    (meth == CEB_WM_KNX && diff == 0) ||
-			    (meth == CEB_WM_KPR && diff == 0) ||
-			    (meth == CEB_WM_KGE && diff >= 0) ||
-			    (meth == CEB_WM_KGT && diff >  0) ||
-			    (meth == CEB_WM_KLE && diff <= 0) ||
-			    (meth == CEB_WM_KLT && diff <  0))
-				return node;
-		}
-		else if (key_type == CEB_KT_ST) {
+		else if (key_type == CEB_KT_ST || key_type == CEB_KT_IS) {
 			int diff;
 
 			if (found)
 				diff = 0;
 			else
-				diff = strcmp((const void *)k->str + plen / 8, key_ptr + plen / 8);
-
-			if ((meth == CEB_WM_KEQ && diff == 0) ||
-			    (meth == CEB_WM_KNX && diff == 0) ||
-			    (meth == CEB_WM_KPR && diff == 0) ||
-			    (meth == CEB_WM_KGE && diff >= 0) ||
-			    (meth == CEB_WM_KGT && diff >  0) ||
-			    (meth == CEB_WM_KLE && diff <= 0) ||
-			    (meth == CEB_WM_KLT && diff <  0))
-				return node;
-		}
-		else if (key_type == CEB_KT_IS) {
-			int diff;
-
-			if (found)
-				diff = 0;
-			else
-				diff = strcmp((const void *)k->ptr + plen / 8, key_ptr + plen / 8);
+				diff = strcmp((const void *)((key_type == CEB_KT_ST) ? k->str : k->ptr) + plen / 8, key_ptr + plen / 8);
 
 			if ((meth == CEB_WM_KEQ && diff == 0) ||
 			    (meth == CEB_WM_KNX && diff == 0) ||
