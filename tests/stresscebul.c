@@ -135,7 +135,7 @@ struct item {
 /* thread context */
 struct ctx {
 	struct item table[TBLSIZE];
-	struct ceb_node *ceb_root;
+	struct ceb_root *ceb_root;
 	unsigned long min, max;
 	pthread_t thr;
 	unsigned long loops;

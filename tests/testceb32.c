@@ -15,14 +15,14 @@
 #define container_of(ptr, type, name) ((type *)(((char *)(ptr)) - ((long)&((type *)0)->name)))
 #endif
 
-struct ceb_node *ceb_root = NULL;
+struct ceb_root *ceb_root = NULL;
 
 struct key {
 	struct ceb_node node;
 	uint32_t key;
 };
 
-struct ceb_node *add_value(struct ceb_node **root, uint32_t value)
+struct ceb_node *add_value(struct ceb_root **root, uint32_t value)
 {
 	struct key *key;
 	struct ceb_node *prev, *ret;

@@ -277,6 +277,31 @@ same:
 	return (size_t)-1;
 }
 
+/* pointer tagging / untagging, to turn ceb_root to ceb_node and conversely */
+
+/* tag an untagged pointer (node -> root) */
+static inline struct ceb_root *_ceb_dotag(const struct ceb_node *node, const uintptr_t tag)
+{
+	return (struct ceb_root *)((uintptr_t)node + tag);
+}
+
+/* untag a tagged pointer (root -> node) */
+static inline struct ceb_node *_ceb_untag(const struct ceb_root *node, const uintptr_t tag)
+{
+	return (struct ceb_node *)((uintptr_t)node - tag);
+}
+
+/* clear a pointer's tag, regardless of its previous value */
+static inline struct ceb_node *_ceb_clrtag(const struct ceb_root *node)
+{
+	return (struct ceb_node *)node;
+}
+
+/* report the pointer's tag */
+static inline uintptr_t _ceb_gettag(const struct ceb_root *node)
+{
+	return (uintptr_t)node & (uintptr_t)1;
+}
 
 /* These macros are used by upper level files to create two variants of their
  * exported functions:
@@ -420,9 +445,14 @@ union ceb_key_storage {
 __attribute__((unused))
 static inline uint64_t _xor_branches(ptrdiff_t kofs, enum ceb_key_type key_type, uint32_t key_u32,
                                      uint64_t key_u64, const void *key_ptr,
-                                     const struct ceb_node *l,
-                                     const struct ceb_node *r)
+                                     const struct ceb_root *_l,
+                                     const struct ceb_root *_r)
 {
+	const struct ceb_node *l, *r;
+
+	l = _ceb_clrtag(_l);
+	r = _ceb_clrtag(_r);
+
 	if (l && r) {
 		if (key_type == CEB_KT_MB)
 			return (key_u64 << 3) - equal_bits(NODEK(l, kofs)->mb, NODEK(r, kofs)->mb, 0, key_u64 << 3);
@@ -597,7 +627,7 @@ static void dbg(int line,
  * key_ptr, and pxor64 will be used internally.
  */
 static inline __attribute__((always_inline))
-struct ceb_node *_ceb_descend(struct ceb_node **root,
+struct ceb_node *_ceb_descend(struct ceb_root **root,
                               enum ceb_walk_meth meth,
                               ptrdiff_t kofs,
                               enum ceb_key_type key_type,
@@ -605,14 +635,14 @@ struct ceb_node *_ceb_descend(struct ceb_node **root,
                               uint64_t key_u64,
                               const void *key_ptr,
                               int *ret_nside,
-                              struct ceb_node ***ret_root,
+                              struct ceb_root ***ret_root,
                               struct ceb_node **ret_lparent,
                               int *ret_lpside,
                               struct ceb_node **ret_nparent,
                               int *ret_npside,
                               struct ceb_node **ret_gparent,
                               int *ret_gpside,
-                              struct ceb_node **ret_back,
+                              struct ceb_root **ret_back,
                               int *ret_is_dup)
 {
 #if defined(__GNUC__) && (__GNUC__ >= 12) && !defined(__OPTIMIZE__)
@@ -670,7 +700,7 @@ struct ceb_node *_ceb_descend(struct ceb_node **root,
 	while (1) {
 		union ceb_key_storage *l, *r;
 
-		node = *root;
+		node = _ceb_clrtag(*root);
 
 		/* Tests have shown that for write-intensive workloads (many
 		 * insertions/deletion), prefetching for reads is counter
@@ -1011,7 +1041,7 @@ struct ceb_node *_ceb_descend(struct ceb_node **root,
 			dbg(__LINE__, "side0", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 		}
 
-		if (node == *root) {
+		if (node == _ceb_clrtag(*root)) {
 			/* loops over itself, it's either a leaf or the single and last list element of a dup sub-tree */
 			dbg(__LINE__, "loop", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 			break;
@@ -1084,7 +1114,7 @@ struct ceb_node *_ceb_descend(struct ceb_node **root,
 		*ret_gparent = gparent;
 
 	if (ret_back)
-		*ret_back = bnode;
+		*ret_back = _ceb_dotag(bnode, 0);
 
 	if (ret_is_dup)
 		*ret_is_dup = is_dup;
@@ -1190,7 +1220,7 @@ struct ceb_node *_ceb_descend(struct ceb_node **root,
  * is used to temporarily carry an internal state.
  */
 static inline __attribute__((always_inline))
-struct ceb_node *_ceb_insert(struct ceb_node **root,
+struct ceb_node *_ceb_insert(struct ceb_root **root,
                              struct ceb_node *node,
                              ptrdiff_t kofs,
                              enum ceb_key_type key_type,
@@ -1199,14 +1229,14 @@ struct ceb_node *_ceb_insert(struct ceb_node **root,
                              const void *key_ptr,
                              int *is_dup_ptr)
 {
-	struct ceb_node **parent;
+	struct ceb_root **parent;
 	struct ceb_node *ret;
 	int nside;
 
 	if (!*root) {
 		/* empty tree, insert a leaf only */
-		node->b[0] = node->b[1] = node;
-		*root = node;
+		node->b[0] = node->b[1] = _ceb_dotag(node, 0);
+		*root = _ceb_dotag(node, 0);
 		return node;
 	}
 
@@ -1219,13 +1249,13 @@ struct ceb_node *_ceb_insert(struct ceb_node **root,
 		 * optimizes it a bit.
 		 */
 		if (nside) {
-			node->b[1] = node;
+			node->b[1] = _ceb_dotag(node, 0);
 			node->b[0] = *parent;
 		} else {
-			node->b[0] = node;
+			node->b[0] = _ceb_dotag(node, 0);
 			node->b[1] = *parent;
 		}
-		*parent = node;
+		*parent = _ceb_dotag(node, 0);
 		ret = node;
 	} else if (is_dup_ptr) {
 		/* The key was found. We must insert after it as the last
@@ -1237,12 +1267,12 @@ struct ceb_node *_ceb_insert(struct ceb_node **root,
 		node->b[0] = *parent;
 
 		if (*is_dup_ptr) {
-			node->b[1] = (*parent)->b[1];
-			(*parent)->b[1] = node;
+			node->b[1] = _ceb_untag(*parent, 0)->b[1];
+			_ceb_untag(*parent, 0)->b[1] = _ceb_dotag(node, 0);
 		} else {
-			node->b[1] = node;
+			node->b[1] = _ceb_dotag(node, 0);
 		}
-		*parent = node;
+		*parent = _ceb_dotag(node, 0);
 		ret = node;
 	}
 	return ret;
@@ -1253,7 +1283,7 @@ struct ceb_node *_ceb_insert(struct ceb_node **root,
  * If the tree starts with duplicates, the first of them is returned.
  */
 static inline __attribute__((always_inline))
-struct ceb_node *_ceb_first(struct ceb_node **root,
+struct ceb_node *_ceb_first(struct ceb_root **root,
                             ptrdiff_t kofs,
                             enum ceb_key_type key_type,
                             uint64_t key_len,
@@ -1267,7 +1297,7 @@ struct ceb_node *_ceb_first(struct ceb_node **root,
 	node = _ceb_descend(root, CEB_WM_FST, kofs, key_type, 0, key_len, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, is_dup_ptr);
 	if (node && is_dup_ptr && *is_dup_ptr) {
 		/* on a duplicate, the first node is right->left */
-		node = node->b[1]->b[0];
+		node = _ceb_clrtag(_ceb_untag(node->b[1], 0)->b[0]);
 	}
 	return node;
 }
@@ -1277,7 +1307,7 @@ struct ceb_node *_ceb_first(struct ceb_node **root,
  * If the tree ends with duplicates, the last of them is returned.
  */
 static inline __attribute__((always_inline))
-struct ceb_node *_ceb_last(struct ceb_node **root,
+struct ceb_node *_ceb_last(struct ceb_root **root,
                            ptrdiff_t kofs,
                            enum ceb_key_type key_type,
                            uint64_t key_len)
@@ -1297,14 +1327,14 @@ struct ceb_node *_ceb_last(struct ceb_node **root,
  * that fork.
  */
 static inline __attribute__((always_inline))
-struct ceb_node *_ceb_next_unique(struct ceb_node **root,
+struct ceb_node *_ceb_next_unique(struct ceb_root **root,
                                   ptrdiff_t kofs,
                                   enum ceb_key_type key_type,
                                   uint32_t key_u32,
                                   uint64_t key_u64,
                                   const void *key_ptr)
 {
-	struct ceb_node *restart;
+	struct ceb_root *restart;
 
 	if (!*root)
 		return NULL;
@@ -1326,14 +1356,14 @@ struct ceb_node *_ceb_next_unique(struct ceb_node **root,
  * that fork.
  */
 static inline __attribute__((always_inline))
-struct ceb_node *_ceb_prev_unique(struct ceb_node **root,
+struct ceb_node *_ceb_prev_unique(struct ceb_root **root,
                                   ptrdiff_t kofs,
                                   enum ceb_key_type key_type,
                                   uint32_t key_u32,
                                   uint64_t key_u64,
                                   const void *key_ptr)
 {
-	struct ceb_node *restart;
+	struct ceb_root *restart;
 
 	if (!*root)
 		return NULL;
@@ -1352,7 +1382,7 @@ struct ceb_node *_ceb_prev_unique(struct ceb_node **root,
  * It's up to the caller to pass the current node's key in <key_*>.
  */
 static inline __attribute__((always_inline))
-struct ceb_node *_ceb_next_dup(struct ceb_node **root,
+struct ceb_node *_ceb_next_dup(struct ceb_root **root,
                                ptrdiff_t kofs,
                                enum ceb_key_type key_type,
                                uint32_t key_u32,
@@ -1379,10 +1409,10 @@ struct ceb_node *_ceb_next_dup(struct ceb_node **root,
 	 * jump to node->b[1]. Otherwise we take from->b[1].
 	 */
 	if (node != from) {
-		if (node->b[1]->b[0] == from)
-			return node->b[1];
+		if (_ceb_clrtag(_ceb_untag(node->b[1], 0)->b[0]) == from)
+			return _ceb_clrtag(node->b[1]);
 		else
-			return from->b[1];
+			return _ceb_clrtag(from->b[1]);
 	}
 
 	/* there's no other dup here */
@@ -1394,7 +1424,7 @@ struct ceb_node *_ceb_next_dup(struct ceb_node **root,
  * It's up to the caller to pass the current node's key in <key_*>.
  */
 static inline __attribute__((always_inline))
-struct ceb_node *_ceb_prev_dup(struct ceb_node **root,
+struct ceb_node *_ceb_prev_dup(struct ceb_root **root,
                                ptrdiff_t kofs,
                                enum ceb_key_type key_type,
                                uint32_t key_u32,
@@ -1420,8 +1450,8 @@ struct ceb_node *_ceb_prev_dup(struct ceb_node **root,
 	 *     hence we visit node->b[0] to switch to the previous dup.
 	 *   - from is the first dup so we've visited them all.
 	 */
-	if (is_dup && (node == from || node->b[1]->b[0] != from))
-		return from->b[0];
+	if (is_dup && (node == from || _ceb_clrtag(_ceb_untag(node->b[1], 0)->b[0]) != from))
+		return _ceb_clrtag(from->b[0]);
 
 	/* there's no other dup here */
 	return NULL;
@@ -1436,7 +1466,7 @@ struct ceb_node *_ceb_prev_dup(struct ceb_node **root,
  * will be visited in insertion order prior to jumping to different keys.
  */
 static inline __attribute__((always_inline))
-struct ceb_node *_ceb_next(struct ceb_node **root,
+struct ceb_node *_ceb_next(struct ceb_root **root,
                            ptrdiff_t kofs,
                            enum ceb_key_type key_type,
                            uint32_t key_u32,
@@ -1444,7 +1474,7 @@ struct ceb_node *_ceb_next(struct ceb_node **root,
                            const void *key_ptr,
                            const struct ceb_node *from)
 {
-	struct ceb_node *restart;
+	struct ceb_root *restart;
 	struct ceb_node *node;
 	int is_dup;
 
@@ -1460,14 +1490,14 @@ struct ceb_node *_ceb_next(struct ceb_node **root,
 	 * the starting point belongs to a dup list and is not the last one.
 	 * We must then visit the other members. We cannot navigate from the
 	 * regular leaf node (the first one) but we can easily verify if we're
-	 * on that one by checking if it's node->b[1]->b[0], in which case we
+	 * on that one by checking if it's _ceb_untag(node->b[1], 0)->b[0], in which case we
 	 * jump to node->b[1]. Otherwise we take from->b[1].
 	 */
 	if (node != from) {
-		if (node->b[1]->b[0] == from)
-			return node->b[1];
+		if (_ceb_clrtag(_ceb_untag(node->b[1], 0)->b[0]) == from)
+			return _ceb_clrtag(node->b[1]);
 		else
-			return from->b[1];
+			return _ceb_clrtag(from->b[1]);
 	}
 
 	/* Here the looked up node was found (node == from) and we can look up
@@ -1482,7 +1512,7 @@ struct ceb_node *_ceb_next(struct ceb_node **root,
 	node = _ceb_descend(&restart, CEB_WM_NXT, kofs, key_type, 0, key_u64, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &is_dup);
 	if (node && is_dup) {
 		/* on a duplicate, the first node is right->left */
-		node = node->b[1]->b[0];
+		node = _ceb_clrtag(_ceb_untag(node->b[1], 0)->b[0]);
 	}
 	return node;
 }
@@ -1497,7 +1527,7 @@ struct ceb_node *_ceb_next(struct ceb_node **root,
  * keys.
  */
 static inline __attribute__((always_inline))
-struct ceb_node *_ceb_prev(struct ceb_node **root,
+struct ceb_node *_ceb_prev(struct ceb_root **root,
                            ptrdiff_t kofs,
                            enum ceb_key_type key_type,
                            uint32_t key_u32,
@@ -1505,7 +1535,7 @@ struct ceb_node *_ceb_prev(struct ceb_node **root,
                            const void *key_ptr,
                            const struct ceb_node *from)
 {
-	struct ceb_node *restart;
+	struct ceb_root *restart;
 	struct ceb_node *node;
 	int is_dup;
 
@@ -1525,8 +1555,8 @@ struct ceb_node *_ceb_prev(struct ceb_node **root,
 	 *   - from is the first dup so we've visited them all, we now need
 	 *     to jump to the previous unique value.
 	 */
-	if (is_dup && (node == from || node->b[1]->b[0] != from))
-		return from->b[0];
+	if (is_dup && (node == from || _ceb_clrtag(_ceb_untag(node->b[1], 0)->b[0]) != from))
+		return _ceb_clrtag(from->b[0]);
 
 	/* look up the previous unique entry */
 	if (!restart)
@@ -1540,7 +1570,7 @@ struct ceb_node *_ceb_prev(struct ceb_node **root,
  * node containing the key <key_*>. Returns NULL if not found.
  */
 static inline __attribute__((always_inline))
-struct ceb_node *_ceb_lookup(struct ceb_node **root,
+struct ceb_node *_ceb_lookup(struct ceb_root **root,
                              ptrdiff_t kofs,
                              enum ceb_key_type key_type,
                              uint32_t key_u32,
@@ -1556,7 +1586,7 @@ struct ceb_node *_ceb_lookup(struct ceb_node **root,
 	ret = _ceb_descend(root, CEB_WM_KEQ, kofs, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, is_dup_ptr);
 	if (ret && is_dup_ptr && *is_dup_ptr) {
 		/* on a duplicate, the first node is right->left */
-		ret = ret->b[1]->b[0];
+		ret = _ceb_clrtag(_ceb_untag(ret->b[1], 0)->b[0]);
 	}
 	return ret;
 }
@@ -1566,7 +1596,7 @@ struct ceb_node *_ceb_lookup(struct ceb_node **root,
  * Returns NULL if not found.
  */
 static inline __attribute__((always_inline))
-struct ceb_node *_ceb_lookup_le(struct ceb_node **root,
+struct ceb_node *_ceb_lookup_le(struct ceb_root **root,
                                 ptrdiff_t kofs,
                                 enum ceb_key_type key_type,
                                 uint32_t key_u32,
@@ -1574,7 +1604,7 @@ struct ceb_node *_ceb_lookup_le(struct ceb_node **root,
                                 const void *key_ptr)
 {
 	struct ceb_node *ret = NULL;
-	struct ceb_node *restart;
+	struct ceb_root *restart;
 
 	if (!*root)
 		return NULL;
@@ -1596,7 +1626,7 @@ struct ceb_node *_ceb_lookup_le(struct ceb_node **root,
  * looked up value doesn't need to exist.
  */
 static inline __attribute__((always_inline))
-struct ceb_node *_ceb_lookup_lt(struct ceb_node **root,
+struct ceb_node *_ceb_lookup_lt(struct ceb_root **root,
                                 ptrdiff_t kofs,
                                 enum ceb_key_type key_type,
                                 uint32_t key_u32,
@@ -1604,7 +1634,7 @@ struct ceb_node *_ceb_lookup_lt(struct ceb_node **root,
                                 const void *key_ptr)
 {
 	struct ceb_node *ret = NULL;
-	struct ceb_node *restart;
+	struct ceb_root *restart;
 
 	if (!*root)
 		return NULL;
@@ -1627,7 +1657,7 @@ struct ceb_node *_ceb_lookup_lt(struct ceb_node **root,
 
  */
 static inline __attribute__((always_inline))
-struct ceb_node *_ceb_lookup_ge(struct ceb_node **root,
+struct ceb_node *_ceb_lookup_ge(struct ceb_root **root,
                                 ptrdiff_t kofs,
                                 enum ceb_key_type key_type,
                                 uint32_t key_u32,
@@ -1636,7 +1666,7 @@ struct ceb_node *_ceb_lookup_ge(struct ceb_node **root,
                                 int *is_dup_ptr)
 {
 	struct ceb_node *ret = NULL;
-	struct ceb_node *restart;
+	struct ceb_root *restart;
 
 	if (!*root)
 		return NULL;
@@ -1651,7 +1681,7 @@ struct ceb_node *_ceb_lookup_ge(struct ceb_node **root,
 
 	if (ret && is_dup_ptr && *is_dup_ptr) {
 		/* on a duplicate, the first node is right->left */
-		ret = ret->b[1]->b[0];
+		ret = _ceb_clrtag(_ceb_untag(ret->b[1], 0)->b[0]);
 	}
 	return ret;
 }
@@ -1663,7 +1693,7 @@ struct ceb_node *_ceb_lookup_ge(struct ceb_node **root,
  * permitted and this variable is used to temporarily carry an internal state.
  */
 static inline __attribute__((always_inline))
-struct ceb_node *_ceb_lookup_gt(struct ceb_node **root,
+struct ceb_node *_ceb_lookup_gt(struct ceb_root **root,
                                 ptrdiff_t kofs,
                                 enum ceb_key_type key_type,
                                 uint32_t key_u32,
@@ -1672,7 +1702,7 @@ struct ceb_node *_ceb_lookup_gt(struct ceb_node **root,
                                 int *is_dup_ptr)
 {
 	struct ceb_node *ret = NULL;
-	struct ceb_node *restart;
+	struct ceb_root *restart;
 
 	if (!*root)
 		return NULL;
@@ -1687,7 +1717,7 @@ struct ceb_node *_ceb_lookup_gt(struct ceb_node **root,
 
 	if (ret && is_dup_ptr && *is_dup_ptr) {
 		/* on a duplicate, the first node is right->left */
-		ret = ret->b[1]->b[0];
+		ret = _ceb_clrtag(_ceb_untag(ret->b[1], 0)->b[0]);
 	}
 	return ret;
 }
@@ -1703,7 +1733,7 @@ struct ceb_node *_ceb_lookup_gt(struct ceb_node **root,
  * permitted and this variable is used to temporarily carry an internal state.
  */
 static inline __attribute__((always_inline))
-struct ceb_node *_ceb_delete(struct ceb_node **root,
+struct ceb_node *_ceb_delete(struct ceb_root **root,
                              struct ceb_node *node,
                              ptrdiff_t kofs,
                              enum ceb_key_type key_type,
@@ -1765,25 +1795,25 @@ struct ceb_node *_ceb_delete(struct ceb_node **root,
 		struct ceb_node *first, *last;
 
 		last = ret;
-		first = last->b[1];
+		first = _ceb_clrtag(last->b[1]);
 
 		/* cases 1 and 2 below */
-		if (!node || node == first->b[0]) {
+		if (!node || node == _ceb_clrtag(first->b[0])) {
 			/* node unspecified or the first, remove the first entry (the leaf) */
-			ret = first->b[0]; // update return node
+			ret = _ceb_clrtag(first->b[0]); // update return node
 			last->b[1] = first->b[1]; // new first (remains OK if last==first)
 
-			if (ret->b[0] != ret || ret->b[1] != ret) {
+			if (_ceb_clrtag(ret->b[0]) != ret || _ceb_clrtag(ret->b[1]) != ret) {
 				/* not the nodeless leaf, a node exists, put it
 				 * on the first and update its parent.
 				 */
 				first->b[0] = ret->b[0];
 				first->b[1] = ret->b[1];
-				gparent->b[gpside] = first;
+				gparent->b[gpside] = _ceb_dotag(first, 0);
 			}
 			else {
 				/* first becomes the nodeless leaf since we only keep its leaf */
-				first->b[0] = first->b[1] = first;
+				first->b[0] = first->b[1] = _ceb_dotag(first, 0);
 			}
 			/* done */
 		} else {
@@ -1791,8 +1821,8 @@ struct ceb_node *_ceb_delete(struct ceb_node **root,
 			 * manipulate the list.
 			 */
 			ret = node;
-			((node == first) ? last : node->b[0])->b[1] = node->b[1];
-			*((node == last) ? &lparent->b[lpside] : &node->b[1]->b[0]) = node->b[0];
+			((node == first) ? last : _ceb_untag(node->b[0], 0))->b[1] = node->b[1];
+			*((node == last) ? &lparent->b[lpside] : &_ceb_untag(node->b[1], 0)->b[0]) = node->b[0];
 			/* done */
 		}
 		goto mark_and_leave;
@@ -1823,7 +1853,7 @@ struct ceb_node *_ceb_delete(struct ceb_node **root,
 			/* we're removing the node-less item, the parent will
 			 * take this role.
 			 */
-			lparent->b[0] = lparent->b[1] = lparent;
+			lparent->b[0] = lparent->b[1] = _ceb_dotag(lparent, 0);
 			goto mark_and_leave;
 		}
 
@@ -1833,7 +1863,7 @@ struct ceb_node *_ceb_delete(struct ceb_node **root,
 		 */
 		lparent->b[0] = ret->b[0];
 		lparent->b[1] = ret->b[1];
-		nparent->b[npside] = lparent;
+		nparent->b[npside] = _ceb_dotag(lparent, 0);
 
 	mark_and_leave:
 		/* now mark the node as deleted */
@@ -1854,7 +1884,7 @@ done:
 
 /* dump the root and its link to the first node or leaf */
 __attribute__((unused))
-static void ceb_default_dump_root(ptrdiff_t kofs, enum ceb_key_type key_type, struct ceb_node *const *root, const void *ctx, int sub)
+static void ceb_default_dump_root(ptrdiff_t kofs, enum ceb_key_type key_type, struct ceb_root *const *root, const void *ctx, int sub)
 {
 	const struct ceb_node *node;
 	uint64_t pxor;
@@ -1864,7 +1894,7 @@ static void ceb_default_dump_root(ptrdiff_t kofs, enum ceb_key_type key_type, st
 	else
 		printf("  \"%lx_n_%d\" [label=\"root\\n%lx\\ntree #%d\"]\n", (long)root, sub, (long)root, sub);
 
-	node = *root;
+	node = _ceb_clrtag(*root);
 	if (node) {
 		/* under the root we've either a node or the first leaf */
 
@@ -1913,13 +1943,13 @@ static void ceb_default_dump_node(ptrdiff_t kofs, enum ceb_key_type key_type, co
 
 	/* xor of the keys of the left branch's lower branches */
 	lxor = _xor_branches(kofs, key_type, 0, 0, NULL,
-			     (((struct ceb_node*)node->b[0])->b[0]),
-			     (((struct ceb_node*)node->b[0])->b[1]));
+			     (_ceb_clrtag(node->b[0])->b[0]),
+			     (_ceb_clrtag(node->b[0])->b[1]));
 
 	/* xor of the keys of the right branch's lower branches */
 	rxor = _xor_branches(kofs, key_type, 0, 0, NULL,
-			     (((struct ceb_node*)node->b[1])->b[0]),
-			     (((struct ceb_node*)node->b[1])->b[1]));
+			     (_ceb_clrtag(node->b[1])->b[0]),
+			     (_ceb_clrtag(node->b[1])->b[1]));
 
 	switch (key_type) {
 	case CEB_KT_ADDR:
@@ -1929,14 +1959,14 @@ static void ceb_default_dump_node(ptrdiff_t kofs, enum ceb_key_type key_type, co
 		       (long)node, sub, (long)node, level, flsnz(pxor) - 1, int_key, (ctx == node) ? " color=red" : "");
 
 		printf("  \"%lx_n_%d\" -> \"%lx_%c_%d\" [label=\"L\" arrowsize=0.66%s%s];\n",
-		       (long)node, sub, (long)node->b[0],
-		       (lxor < pxor && ((struct ceb_node*)node->b[0])->b[0] != ((struct ceb_node*)node->b[0])->b[1] && lxor) ? 'n' : 'l',
-		       sub, (node == node->b[0]) ? " dir=both" : "", (ctx == node->b[0]) ? " color=red" : "");
+		       (long)node, sub, (long)_ceb_clrtag(node->b[0]),
+		       (lxor < pxor && _ceb_clrtag(node->b[0])->b[0] != _ceb_clrtag(node->b[0])->b[1] && lxor) ? 'n' : 'l',
+		       sub, (node == _ceb_clrtag(node->b[0])) ? " dir=both" : "", (ctx == _ceb_clrtag(node->b[0])) ? " color=red" : "");
 
 		printf("  \"%lx_n_%d\" -> \"%lx_%c_%d\" [label=\"R\" arrowsize=0.66%s%s];\n",
-		       (long)node, sub, (long)node->b[1],
-		       (rxor < pxor && ((struct ceb_node*)node->b[1])->b[0] != ((struct ceb_node*)node->b[1])->b[1] && rxor) ? 'n' : 'l',
-		       sub, (node == node->b[1]) ? " dir=both" : "", (ctx == node->b[1]) ? " color=red" : "");
+		       (long)node, sub, (long)_ceb_clrtag(node->b[1]),
+		       (rxor < pxor && _ceb_clrtag(node->b[1])->b[0] != _ceb_clrtag(node->b[1])->b[1] && rxor) ? 'n' : 'l',
+		       sub, (node == _ceb_clrtag(node->b[1])) ? " dir=both" : "", (ctx == _ceb_clrtag(node->b[1])) ? " color=red" : "");
 		break;
 	case CEB_KT_MB:
 		break;
@@ -1948,14 +1978,14 @@ static void ceb_default_dump_node(ptrdiff_t kofs, enum ceb_key_type key_type, co
 		       (long)node, sub, (long)node, level, (long)~pxor, str_key, (ctx == node) ? " color=red" : "");
 
 		printf("  \"%lx_n_%d\" -> \"%lx_%c_%d\" [label=\"L\" arrowsize=0.66%s%s];\n",
-		       (long)node, sub, (long)node->b[0],
-		       (lxor < pxor && ((struct ceb_node*)node->b[0])->b[0] != ((struct ceb_node*)node->b[0])->b[1] && lxor) ? 'n' : 'l',
-		       sub, (node == node->b[0]) ? " dir=both" : "", (ctx == node->b[0]) ? " color=red" : "");
+		       (long)node, sub, (long)_ceb_clrtag(node->b[0]),
+		       (lxor < pxor && _ceb_clrtag(node->b[0])->b[0] != _ceb_clrtag(node->b[0])->b[1] && lxor) ? 'n' : 'l',
+		       sub, (node == _ceb_clrtag(node->b[0])) ? " dir=both" : "", (ctx == _ceb_clrtag(node->b[0])) ? " color=red" : "");
 
 		printf("  \"%lx_n_%d\" -> \"%lx_%c_%d\" [label=\"R\" arrowsize=0.66%s%s];\n",
-		       (long)node, sub, (long)node->b[1],
-		       (rxor < pxor && ((struct ceb_node*)node->b[1])->b[0] != ((struct ceb_node*)node->b[1])->b[1] && rxor) ? 'n' : 'l',
-		       sub, (node == node->b[1]) ? " dir=both" : "", (ctx == node->b[1]) ? " color=red" : "");
+		       (long)node, sub, (long)_ceb_clrtag(node->b[1]),
+		       (rxor < pxor && _ceb_clrtag(node->b[1])->b[0] != _ceb_clrtag(node->b[1])->b[1] && rxor) ? 'n' : 'l',
+		       sub, (node == _ceb_clrtag(node->b[1])) ? " dir=both" : "", (ctx == _ceb_clrtag(node->b[1])) ? " color=red" : "");
 		break;
 	}
 }
@@ -1994,13 +2024,12 @@ static void ceb_default_dump_dups(ptrdiff_t kofs, enum ceb_key_type key_type, co
 	 * that node either has both sides equal to itself, or a distinct
 	 * neighbours.
 	 */
-	leaf = node->b[1]->b[0];
+	leaf = _ceb_clrtag(_ceb_untag(node->b[1], 0)->b[0]);
 
 	is_last = 1;
-	if (leaf->b[0] != leaf || leaf->b[1] != leaf)
+	if (_ceb_clrtag(leaf->b[0]) != leaf || _ceb_clrtag(leaf->b[1]) != leaf)
 		is_last = _xor_branches(kofs, key_type, 0, 0, NULL,
-					((struct ceb_node*)leaf->b[0]),
-					((struct ceb_node*)leaf->b[1])) != 0;
+					leaf->b[0], leaf->b[1]) != 0;
 
 	switch (key_type) {
 	case CEB_KT_ADDR:
@@ -2010,11 +2039,11 @@ static void ceb_default_dump_dups(ptrdiff_t kofs, enum ceb_key_type key_type, co
 		       (long)node, sub, (long)node, level, int_key, (ctx == node) ? " color=red" : "");
 
 		printf("  \"%lx_l_%d\":sw -> \"%lx_l_%d\":n [taillabel=\"L\" arrowsize=0.66%s];\n",
-		       (long)node, sub, (long)node->b[0], sub, (ctx == node->b[0]) ? " color=red" : "");
+		       (long)node, sub, (long)_ceb_clrtag(node->b[0]), sub, (ctx == _ceb_clrtag(node->b[0])) ? " color=red" : "");
 
 		printf("  \"%lx_l_%d\":%s -> \"%lx_l_%d\":%s [taillabel=\"R\" arrowsize=0.66%s];\n",
 		       (long)node, sub, is_last ? "se" : "ne",
-		       (long)node->b[1], sub, is_last ? "e" : "s", (ctx == node->b[1]) ? " color=red" : "");
+		       (long)_ceb_clrtag(node->b[1]), sub, is_last ? "e" : "s", (ctx == _ceb_clrtag(node->b[1])) ? " color=red" : "");
 		break;
 	case CEB_KT_MB:
 		break;
@@ -2026,11 +2055,11 @@ static void ceb_default_dump_dups(ptrdiff_t kofs, enum ceb_key_type key_type, co
 		       (long)node, sub, (long)node, level, str_key, (ctx == node) ? " color=red" : "");
 
 		printf("  \"%lx_l_%d\":sw -> \"%lx_l_%d\":n [taillabel=\"L\" arrowsize=0.66%s];\n",
-		       (long)node, sub, (long)node->b[0], sub, (ctx == node->b[0]) ? " color=red" : "");
+		       (long)node, sub, (long)_ceb_clrtag(node->b[0]), sub, (ctx == _ceb_clrtag(node->b[0])) ? " color=red" : "");
 
 		printf("  \"%lx_l_%d\":%s -> \"%lx_l_%d\":%s [taillabel=\"R\" arrowsize=0.66%s];\n",
 		       (long)node, sub, is_last ? "se" : "ne",
-		       (long)node->b[1], sub, is_last ? "e" : "s", (ctx == node->b[1]) ? " color=red" : "");
+		       (long)_ceb_clrtag(node->b[1]), sub, is_last ? "e" : "s", (ctx == _ceb_clrtag(node->b[1])) ? " color=red" : "");
 		break;
 	}
 }
@@ -2098,14 +2127,14 @@ static void ceb_default_dump_leaf(ptrdiff_t kofs, enum ceb_key_type key_type, co
  * callbacks above if left NULL.
  */
 __attribute__((unused))
-static const struct ceb_node *ceb_default_dump_tree(ptrdiff_t kofs, enum ceb_key_type key_type, struct ceb_node *const *root,
+static const struct ceb_node *ceb_default_dump_tree(ptrdiff_t kofs, enum ceb_key_type key_type, struct ceb_root *const *root,
                                                     uint64_t pxor, const void *last, int level, const void *ctx, int sub,
-                                                    void (*root_dump)(ptrdiff_t kofs, enum ceb_key_type key_type, struct ceb_node *const *root, const void *ctx, int sub),
+                                                    void (*root_dump)(ptrdiff_t kofs, enum ceb_key_type key_type, struct ceb_root *const *root, const void *ctx, int sub),
                                                     void (*node_dump)(ptrdiff_t kofs, enum ceb_key_type key_type, const struct ceb_node *node, int level, const void *ctx, int sub),
                                                     void (*dups_dump)(ptrdiff_t kofs, enum ceb_key_type key_type, const struct ceb_node *node, int level, const void *ctx, int sub),
                                                     void (*leaf_dump)(ptrdiff_t kofs, enum ceb_key_type key_type, const struct ceb_node *node, int level, const void *ctx, int sub))
 {
-	const struct ceb_node *node = *root;
+	const struct ceb_node *node = _ceb_clrtag(*root);
 	uint64_t xor;
 
 	if (!node) /* empty tree */
@@ -2131,7 +2160,7 @@ static const struct ceb_node *ceb_default_dump_tree(ptrdiff_t kofs, enum ceb_key
 	/* regular nodes, all branches are canonical */
 
 	while (1) {
-		if (node->b[0] == node && node->b[1] == node) {
+		if (_ceb_clrtag(node->b[0]) == node && _ceb_clrtag(node->b[1]) == node) {
 			/* first inserted leaf */
 			leaf_dump(kofs, key_type, node, level, ctx, sub);
 			return node;
@@ -2146,7 +2175,7 @@ static const struct ceb_node *ceb_default_dump_tree(ptrdiff_t kofs, enum ceb_key
 		 * we dump it and walk to the left until we find the node.
 		 */
 		dups_dump(kofs, key_type, node, level, ctx, sub);
-		node = node->b[0];
+		node = _ceb_clrtag(node->b[0]);
 	}
 
 	if (pxor && xor >= pxor) {

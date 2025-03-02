@@ -29,9 +29,14 @@
 
 #include <stddef.h>
 
+/* This is what a tagged pointer points to, as found on the root or any branch.
+ * It's only a forward declaration so that it is never directly dereferenced.
+ */
+struct ceb_root;
+
 /* Standard node when using absolute pointers */
 struct ceb_node {
-	struct ceb_node *b[2]; /* branches: 0=left, 1=right */
+	struct ceb_root *b[2]; /* branches: 0=left, 1=right */
 };
 
 /* indicates whether a valid node is in a tree or not */

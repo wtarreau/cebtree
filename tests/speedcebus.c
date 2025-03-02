@@ -11,7 +11,7 @@
 
 #include "cebus_tree.h"
 
-struct ceb_node *ceb_root = NULL;
+struct ceb_root *ceb_root = NULL;
 
 struct key {
 	struct ceb_node node;

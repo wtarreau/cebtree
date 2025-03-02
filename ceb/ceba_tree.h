@@ -30,20 +30,20 @@
 #include "cebtree.h"
 
 /* simpler version */
-struct ceb_node *cebua_insert(struct ceb_node **root, struct ceb_node *node);
-struct ceb_node *cebua_first(struct ceb_node **root);
-struct ceb_node *cebua_last(struct ceb_node **root);
-struct ceb_node *cebua_lookup(struct ceb_node **root, const void *key);
-struct ceb_node *cebua_lookup_le(struct ceb_node **root, const void *key);
-struct ceb_node *cebua_lookup_lt(struct ceb_node **root, const void *key);
-struct ceb_node *cebua_lookup_ge(struct ceb_node **root, const void *key);
-struct ceb_node *cebua_lookup_gt(struct ceb_node **root, const void *key);
-struct ceb_node *cebua_next(struct ceb_node **root, struct ceb_node *node);
-struct ceb_node *cebua_prev(struct ceb_node **root, struct ceb_node *node);
-struct ceb_node *cebua_delete(struct ceb_node **root, struct ceb_node *node);
-struct ceb_node *cebua_pick(struct ceb_node **root, const void *key);
+struct ceb_node *cebua_insert(struct ceb_root **root, struct ceb_node *node);
+struct ceb_node *cebua_first(struct ceb_root **root);
+struct ceb_node *cebua_last(struct ceb_root **root);
+struct ceb_node *cebua_lookup(struct ceb_root **root, const void *key);
+struct ceb_node *cebua_lookup_le(struct ceb_root **root, const void *key);
+struct ceb_node *cebua_lookup_lt(struct ceb_root **root, const void *key);
+struct ceb_node *cebua_lookup_ge(struct ceb_root **root, const void *key);
+struct ceb_node *cebua_lookup_gt(struct ceb_root **root, const void *key);
+struct ceb_node *cebua_next(struct ceb_root **root, struct ceb_node *node);
+struct ceb_node *cebua_prev(struct ceb_root **root, struct ceb_node *node);
+struct ceb_node *cebua_delete(struct ceb_root **root, struct ceb_node *node);
+struct ceb_node *cebua_pick(struct ceb_root **root, const void *key);
 
 /* generic dump function */
-void ceba_default_dump(struct ceb_node **root, const char *label, const void *ctx, int sub);
+void ceba_default_dump(struct ceb_root **root, const char *label, const void *ctx, int sub);
 
 #endif /* _CEBA_TREE_H */
