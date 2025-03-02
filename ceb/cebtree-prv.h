@@ -1428,7 +1428,7 @@ struct ceb_node *_ceb_next_unique(struct ceb_node **root,
 	if (!restart)
 		return NULL;
 
-	return _ceb_descend(&restart, CEB_WM_NXT, kofs, key_type, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	return _ceb_descend(&restart, CEB_WM_NXT, kofs, key_type, 0, key_u64, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 }
 
 /* Searches in the tree <root> made of keys of type <key_type>, for the prev
@@ -1457,7 +1457,7 @@ struct ceb_node *_ceb_prev_unique(struct ceb_node **root,
 	if (!restart)
 		return NULL;
 
-	return _ceb_descend(&restart, CEB_WM_PRV, kofs, key_type, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	return _ceb_descend(&restart, CEB_WM_PRV, kofs, key_type, 0, key_u64, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 }
 
 /* Searches in the tree <root> made of keys of type <key_type>, for the next
@@ -1592,7 +1592,7 @@ struct ceb_node *_ceb_next(struct ceb_node **root,
 	/* this look up will stop on the topmost dup in a sub-tree which is
 	 * also the last one. Thanks to restart we know that this entry exists.
 	 */
-	node = _ceb_descend(&restart, CEB_WM_NXT, kofs, key_type, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &is_dup);
+	node = _ceb_descend(&restart, CEB_WM_NXT, kofs, key_type, 0, key_u64, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &is_dup);
 	if (node && is_dup) {
 		/* on a duplicate, the first node is right->left */
 		node = node->b[1]->b[0];
@@ -1646,7 +1646,7 @@ struct ceb_node *_ceb_prev(struct ceb_node **root,
 		return NULL;
 
 	/* Note that the descent stops on the last dup which is the one we want */
-	return _ceb_descend(&restart, CEB_WM_PRV, kofs, key_type, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &is_dup);
+	return _ceb_descend(&restart, CEB_WM_PRV, kofs, key_type, 0, key_u64, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &is_dup);
 }
 
 /* Searches in the tree <root> made of keys of type <key_type>, for the first
@@ -1700,7 +1700,7 @@ struct ceb_node *_ceb_lookup_le(struct ceb_node **root,
 	if (!restart)
 		return NULL;
 
-	return _ceb_descend(&restart, CEB_WM_PRV, kofs, key_type, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	return _ceb_descend(&restart, CEB_WM_PRV, kofs, key_type, 0, key_u64, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 }
 
 /* Searches in the tree <root> made of keys of type <key_type>, for the last
@@ -1730,7 +1730,7 @@ struct ceb_node *_ceb_lookup_lt(struct ceb_node **root,
 	if (!restart)
 		return NULL;
 
-	return _ceb_descend(&restart, CEB_WM_PRV, kofs, key_type, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	return _ceb_descend(&restart, CEB_WM_PRV, kofs, key_type, 0, key_u64, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 }
 
 /* Searches in the tree <root> made of keys of type <key_type>, for the first
@@ -1759,7 +1759,7 @@ struct ceb_node *_ceb_lookup_ge(struct ceb_node **root,
 		if (!restart)
 			return NULL;
 
-		ret = _ceb_descend(&restart, CEB_WM_NXT, kofs, key_type, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, is_dup_ptr);
+		ret = _ceb_descend(&restart, CEB_WM_NXT, kofs, key_type, 0, key_u64, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, is_dup_ptr);
 	}
 
 	if (ret && is_dup_ptr && *is_dup_ptr) {
@@ -1795,7 +1795,7 @@ struct ceb_node *_ceb_lookup_gt(struct ceb_node **root,
 		if (!restart)
 			return NULL;
 
-		ret = _ceb_descend(&restart, CEB_WM_NXT, kofs, key_type, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, is_dup_ptr);
+		ret = _ceb_descend(&restart, CEB_WM_NXT, kofs, key_type, 0, key_u64, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, is_dup_ptr);
 	}
 
 	if (ret && is_dup_ptr && *is_dup_ptr) {
