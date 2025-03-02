@@ -659,8 +659,8 @@ struct ceb_node *_ceb_descend(struct ceb_root **root,
 	struct ceb_node *nparent = NULL;
 	struct ceb_node *bnode = NULL;
 	struct ceb_node *lparent;
-	uint32_t pxor32 = ~0U;   // previous xor between branches
-	uint64_t pxor64 = ~0ULL; // previous xor between branches
+	uint32_t pxor32 __attribute__((unused)) = ~0U;   // previous xor between branches
+	uint64_t pxor64 __attribute__((unused)) = ~0ULL; // previous xor between branches
 	int gpside = 0;   // side on the grand parent
 	int npside = 0;   // side on the node's parent
 	long lpside = 0;  // side on the leaf's parent
@@ -787,18 +787,19 @@ struct ceb_node *_ceb_descend(struct ceb_root **root,
 			uint32_t kl, kr;
 
 			kl = l->u32; kr = r->u32;
-			xor32 = kl ^ kr;
-
-			if (xor32 > pxor32) { // test using 2 4 6 4
-				dbg(__LINE__, "xor>", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
-				break;
-			}
-
 			if (meth >= CEB_WM_KEQ) {
 				/* "found" is not used here */
 				kl ^= key_u32; kr ^= key_u32;
 				brside = kl >= kr;
+			}
 
+			if (is_leaf) {
+				dbg(__LINE__, "xor>", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+				break;
+			}
+
+			xor32 = kl ^ kr;
+			if (meth >= CEB_WM_KEQ) {
 				/* let's stop if our key is not there */
 
 				if (kl > xor32 && kr > xor32) {
@@ -827,18 +828,19 @@ struct ceb_node *_ceb_descend(struct ceb_root **root,
 			uint64_t kl, kr;
 
 			kl = l->u64; kr = r->u64;
-			xor64 = kl ^ kr;
-
-			if (xor64 > pxor64) { // test using 2 4 6 4
-				dbg(__LINE__, "xor>", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
-				break;
-			}
-
 			if (meth >= CEB_WM_KEQ) {
 				/* "found" is not used here */
 				kl ^= key_u64; kr ^= key_u64;
 				brside = kl >= kr;
+			}
 
+			if (is_leaf) {
+				dbg(__LINE__, "xor>", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+				break;
+			}
+
+			xor64 = kl ^ kr;
+			if (meth >= CEB_WM_KEQ) {
 				/* let's stop if our key is not there */
 
 				if (kl > xor64 && kr > xor64) {
@@ -867,18 +869,19 @@ struct ceb_node *_ceb_descend(struct ceb_root **root,
 			uintptr_t kl, kr;
 
 			kl = (uintptr_t)l; kr = (uintptr_t)r;
-			xoraddr = kl ^ kr;
-
-			if (xoraddr > (uintptr_t)pxor64) { // test using 2 4 6 4
-				dbg(__LINE__, "xor>", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
-				break;
-			}
-
 			if (meth >= CEB_WM_KEQ) {
 				/* "found" is not used here */
 				kl ^= (uintptr_t)key_ptr; kr ^= (uintptr_t)key_ptr;
 				brside = kl >= kr;
+			}
 
+			if (is_leaf) {
+				dbg(__LINE__, "xor>", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+				break;
+			}
+
+			xoraddr = kl ^ kr;
+			if (meth >= CEB_WM_KEQ) {
 				/* let's stop if our key is not there */
 
 				if (kl > xoraddr && kr > xoraddr) {
