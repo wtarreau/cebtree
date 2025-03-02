@@ -895,13 +895,17 @@ struct ceb_node *_ceb_descend(struct ceb_node **root,
 				}
 
 				if (ret_npside || ret_nparent) { // delete ?
-					size_t mlen = llen > rlen ? llen : rlen;
-
-					if (mlen > xlen)
-						mlen = xlen;
-
+					/* When deleting we need to verify if the current node matches the key because
+					 * we'll have to remember the node's parent. Since the searched key belongs to
+					 * the tree, we know that the differences between it and the node's key may only
+					 * arise after the split bit defined by the two branches. This permits to only
+					 * compare the bits that differ after xlen, or even none at all if both match
+					 * (duplicates). If this were to be used with keys not in the tree (e.g. the
+					 * "pick()" operation, the comparison would need to be performed starting from
+					 * min(xlen, max(llen, rlen)).
+					 */
 					if ((uint64_t)xlen / 8 == key_u64 ||
-					    memcmp(key_ptr + mlen / 8, ((key_type == CEB_KT_MB) ? k->mb : k->ptr) + mlen / 8, key_u64 - mlen / 8) == 0) {
+					    memcmp(key_ptr + xlen / 8, ((key_type == CEB_KT_MB) ? k->mb : k->ptr) + xlen / 8, key_u64 - xlen / 8) == 0) {
 						dbg(__LINE__, "equal", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 						nparent = lparent;
 						npside  = lpside;
@@ -951,13 +955,17 @@ struct ceb_node *_ceb_descend(struct ceb_node **root,
 				}
 
 				if (ret_npside || ret_nparent) { // delete ?
-					size_t mlen = llen > rlen ? llen : rlen;
-
-					if (mlen > xlen)
-						mlen = xlen;
-
+					/* When deleting we need to verify if the current node matches the key because
+					 * we'll have to remember the node's parent. Since the searched key belongs to
+					 * the tree, we know that the differences between it and the node's key may only
+					 * arise after the split bit defined by the two branches. This permits to only
+					 * compare the bits that differ after xlen, or even none at all if both match
+					 * (duplicates). If this were to be used with keys not in the tree (e.g. the
+					 * "pick()" operation, the comparison would need to be performed starting from
+					 * min(xlen, max(llen, rlen)).
+					 */
 					if ((ssize_t)xlen < 0 ||
-					    strcmp(key_ptr + mlen / 8, (const void *)((key_type == CEB_KT_ST) ? k->str : k->ptr) + mlen / 8) == 0) {
+					    strcmp(key_ptr + xlen / 8, (const void *)((key_type == CEB_KT_ST) ? k->str : k->ptr) + xlen / 8) == 0) {
 						/* strcmp() still needed. E.g. 1 2 3 4 10 11 4 3 2 1 10 11 fails otherwise */
 						dbg(__LINE__, "equal", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 						nparent = lparent;
@@ -1004,7 +1012,7 @@ struct ceb_node *_ceb_descend(struct ceb_node **root,
 		}
 
 		if (node == *root) {
-			/* loops over itself, it's a leaf */
+			/* loops over itself, it's either a leaf or the single and last list element of a dup sub-tree */
 			dbg(__LINE__, "loop", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 			break;
 		}
