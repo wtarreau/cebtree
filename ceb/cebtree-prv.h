@@ -670,6 +670,7 @@ struct ceb_node *_ceb_descend(struct ceb_root **root,
 	size_t plen = 0;  // previous common len between branches
 	int is_dup = 0;   // returned key is a duplicate
 	int found = 0;    // key was found (saves an extra strcmp for arrays)
+	int is_leaf = 0;  // set if the current node is a leaf
 
 	dbg(__LINE__, "_enter__", meth, kofs, key_type, root, NULL, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 
@@ -701,7 +702,10 @@ struct ceb_node *_ceb_descend(struct ceb_root **root,
 		union ceb_key_storage *l, *r;
 		struct ceb_root *_l, *_r;
 
-		node = _ceb_clrtag(*root);
+		_l = *root;
+		is_leaf = _ceb_gettag(_l);
+		node = _ceb_clrtag(_l);
+
 		_l = node->b[0]; // tagged versions
 		_r = node->b[1];
 
@@ -903,20 +907,23 @@ struct ceb_node *_ceb_descend(struct ceb_root **root,
 
 			if (meth >= CEB_WM_KEQ) {
 				/* measure identical lengths */
-				llen = equal_bits(key_ptr, (key_type == CEB_KT_MB) ? l->mb : l->ptr, 0, key_u64 << 3);
-				rlen = equal_bits(key_ptr, (key_type == CEB_KT_MB) ? r->mb : r->ptr, 0, key_u64 << 3);
+				size_t clen = is_leaf ? 0 : plen; // common length
+
+				llen = equal_bits(key_ptr, (key_type == CEB_KT_MB) ? l->mb : l->ptr, clen, key_u64 << 3);
+				rlen = equal_bits(key_ptr, (key_type == CEB_KT_MB) ? r->mb : r->ptr, clen, key_u64 << 3);
 				brside = llen <= rlen;
 				if (llen == rlen && (uint64_t)llen == key_u64 << 3)
 					found = 1;
 			}
 
-			xlen = equal_bits((key_type == CEB_KT_MB) ? l->mb : l->ptr,
-					  (key_type == CEB_KT_MB) ? r->mb : r->ptr, 0, key_u64 << 3);
-			if (xlen < plen) {
+			if (is_leaf) {
 				/* this is a leaf. E.g. triggered using 2 4 6 4 */
 				dbg(__LINE__, "xor>", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 				break;
 			}
+
+			xlen = equal_bits((key_type == CEB_KT_MB) ? l->mb : l->ptr,
+					  (key_type == CEB_KT_MB) ? r->mb : r->ptr, plen, key_u64 << 3);
 
 			if (meth >= CEB_WM_KEQ) {
 				/* let's stop if our key is not there */
@@ -963,20 +970,23 @@ struct ceb_node *_ceb_descend(struct ceb_root **root,
 				 * leaf. We take that negative length for an
 				 * infinite one, hence the uint cast.
 				 */
-				llen = string_equal_bits(key_ptr, (key_type == CEB_KT_ST) ? l->str : l->ptr, 0);
-				rlen = string_equal_bits(key_ptr, (key_type == CEB_KT_ST) ? r->str : r->ptr, 0);
+				size_t clen = is_leaf ? 0 : plen; // common length
+
+				llen = string_equal_bits(key_ptr, (key_type == CEB_KT_ST) ? l->str : l->ptr, clen);
+				rlen = string_equal_bits(key_ptr, (key_type == CEB_KT_ST) ? r->str : r->ptr, clen);
 				brside = (size_t)llen <= (size_t)rlen;
 				if ((ssize_t)llen < 0 || (ssize_t)rlen < 0)
 					found = 1;
 			}
 
-			xlen = string_equal_bits((key_type == CEB_KT_ST) ? l->str : l->ptr,
-						 (key_type == CEB_KT_ST) ? r->str : r->ptr, 0);
-			if (xlen < plen) {
+			if (is_leaf) {
 				/* this is a leaf. E.g. triggered using 2 4 6 4 */
 				dbg(__LINE__, "xor>", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 				break;
 			}
+
+			xlen = string_equal_bits((key_type == CEB_KT_ST) ? l->str : l->ptr,
+						 (key_type == CEB_KT_ST) ? r->str : r->ptr, plen);
 
 			if (meth >= CEB_WM_KEQ) {
 				/* let's stop if our key is not there */
