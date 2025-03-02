@@ -612,7 +612,7 @@ struct ceb_node *_ceb_descend(struct ceb_node **root,
 #pragma GCC diagnostic ignored "-Wstringop-overread"
 #endif
 	struct ceb_node *node;
-	union ceb_key_storage *l, *r, *k;
+	union ceb_key_storage *k;
 	struct ceb_node *gparent = NULL;
 	struct ceb_node *nparent = NULL;
 	struct ceb_node *bnode = NULL;
@@ -656,6 +656,8 @@ struct ceb_node *_ceb_descend(struct ceb_node **root,
 	 * and pxorXX==~0 for scalars.
 	 */
 	while (1) {
+		union ceb_key_storage *l, *r;
+
 		node = *root;
 
 		/* Tests have shown that for write-intensive workloads (many
