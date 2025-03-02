@@ -699,8 +699,11 @@ struct ceb_node *_ceb_descend(struct ceb_root **root,
 	 */
 	while (1) {
 		union ceb_key_storage *l, *r;
+		struct ceb_root *_l, *_r;
 
 		node = _ceb_clrtag(*root);
+		_l = node->b[0]; // tagged versions
+		_r = node->b[1];
 
 		/* Tests have shown that for write-intensive workloads (many
 		 * insertions/deletion), prefetching for reads is counter
@@ -710,26 +713,25 @@ struct ceb_node *_ceb_descend(struct ceb_root **root,
 		 */
 		if (ret_lpside) {
 			/* this is a deletion, prefetch for writes */
-			__builtin_prefetch(node->b[0], 1);
-			__builtin_prefetch(node->b[1], 1);
+			__builtin_prefetch(_l, 1);
+			__builtin_prefetch(_r, 1);
 		}
 
 		/* neither pointer is tagged */
 		k = NODEK(node, kofs);
-		l = NODEK(_ceb_clrtag(node->b[0]), kofs);
-		r = NODEK(_ceb_clrtag(node->b[1]), kofs);
-
-		dbg(__LINE__, "newp", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 
 		/* two equal pointers identifies either the nodeless leaf or
-		 * the 2nd dup of a sub-tree. Both are leaves anyway, but we
-		 * must not yet stop here for a dup as we may want to report
-		 * it.
+		 * the 2nd dup of a sub-tree. Only the former is tagged though.
 		 */
-		if (l == r && r == k) {
+		if (_l == _r && _ceb_gettag(_l)) {
 			dbg(__LINE__, "l==r", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 			break;
 		}
+
+		l = NODEK(_ceb_clrtag(_l), kofs);
+		r = NODEK(_ceb_clrtag(_r), kofs);
+
+		dbg(__LINE__, "newp", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 
 		/* In the following block, we're dealing with type-specific
 		 * operations which follow the same construct for each type:
