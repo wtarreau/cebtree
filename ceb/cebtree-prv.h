@@ -294,7 +294,7 @@ static inline struct ceb_node *_ceb_untag(const struct ceb_root *node, const uin
 /* clear a pointer's tag, regardless of its previous value */
 static inline struct ceb_node *_ceb_clrtag(const struct ceb_root *node)
 {
-	return (struct ceb_node *)node;
+	return (struct ceb_node *)((uintptr_t)node & ~(uintptr_t)1);
 }
 
 /* report the pointer's tag */
@@ -716,8 +716,8 @@ struct ceb_node *_ceb_descend(struct ceb_root **root,
 
 		/* neither pointer is tagged */
 		k = NODEK(node, kofs);
-		l = NODEK(node->b[0], kofs);
-		r = NODEK(node->b[1], kofs);
+		l = NODEK(_ceb_clrtag(node->b[0]), kofs);
+		r = NODEK(_ceb_clrtag(node->b[1]), kofs);
 
 		dbg(__LINE__, "newp", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 
@@ -1235,8 +1235,8 @@ struct ceb_node *_ceb_insert(struct ceb_root **root,
 
 	if (!*root) {
 		/* empty tree, insert a leaf only */
-		node->b[0] = node->b[1] = _ceb_dotag(node, 0);
-		*root = _ceb_dotag(node, 0);
+		node->b[0] = node->b[1] = _ceb_dotag(node, 1);
+		*root = _ceb_dotag(node, 1);
 		return node;
 	}
 
@@ -1249,10 +1249,10 @@ struct ceb_node *_ceb_insert(struct ceb_root **root,
 		 * optimizes it a bit.
 		 */
 		if (nside) {
-			node->b[1] = _ceb_dotag(node, 0);
+			node->b[1] = _ceb_dotag(node, 1);
 			node->b[0] = *parent;
 		} else {
-			node->b[0] = _ceb_dotag(node, 0);
+			node->b[0] = _ceb_dotag(node, 1);
 			node->b[1] = *parent;
 		}
 		*parent = _ceb_dotag(node, 0);
@@ -1793,9 +1793,11 @@ struct ceb_node *_ceb_delete(struct ceb_root **root,
 		 *         *((node == last) ? parent : &node->b[1]->b[0]) = node->b[0];
 		 */
 		struct ceb_node *first, *last;
+		struct ceb_root *parent;
 
 		last = ret;
-		first = _ceb_clrtag(last->b[1]);
+		parent = last->b[1];
+		first = _ceb_clrtag(parent);
 
 		/* cases 1 and 2 below */
 		if (!node || node == _ceb_clrtag(first->b[0])) {
@@ -1809,11 +1811,11 @@ struct ceb_node *_ceb_delete(struct ceb_root **root,
 				 */
 				first->b[0] = ret->b[0];
 				first->b[1] = ret->b[1];
-				gparent->b[gpside] = _ceb_dotag(first, 0);
+				gparent->b[gpside] = parent;
 			}
 			else {
 				/* first becomes the nodeless leaf since we only keep its leaf */
-				first->b[0] = first->b[1] = _ceb_dotag(first, 0);
+				first->b[0] = first->b[1] = _ceb_dotag(first, 1);
 			}
 			/* done */
 		} else {
@@ -1853,7 +1855,7 @@ struct ceb_node *_ceb_delete(struct ceb_root **root,
 			/* we're removing the node-less item, the parent will
 			 * take this role.
 			 */
-			lparent->b[0] = lparent->b[1] = _ceb_dotag(lparent, 0);
+			lparent->b[0] = lparent->b[1] = _ceb_dotag(lparent, 1);
 			goto mark_and_leave;
 		}
 
