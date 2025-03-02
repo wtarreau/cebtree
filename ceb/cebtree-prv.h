@@ -611,7 +611,7 @@ struct ceb_node *_ceb_descend(struct ceb_node **root,
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wstringop-overread"
 #endif
-	struct ceb_node *p;
+	struct ceb_node *node;
 	union ceb_key_storage *l, *r, *k;
 	struct ceb_node *gparent = NULL;
 	struct ceb_node *nparent = NULL;
@@ -656,7 +656,7 @@ struct ceb_node *_ceb_descend(struct ceb_node **root,
 	 * and pxorXX==~0 for scalars.
 	 */
 	while (1) {
-		p = *root;
+		node = *root;
 
 		/* Tests have shown that for write-intensive workloads (many
 		 * insertions/deletion), prefetching for reads is counter
@@ -666,16 +666,16 @@ struct ceb_node *_ceb_descend(struct ceb_node **root,
 		 */
 		if (ret_lpside) {
 			/* this is a deletion, prefetch for writes */
-			__builtin_prefetch(p->b[0], 1);
-			__builtin_prefetch(p->b[1], 1);
+			__builtin_prefetch(node->b[0], 1);
+			__builtin_prefetch(node->b[1], 1);
 		}
 
 		/* neither pointer is tagged */
-		k = NODEK(p, kofs);
-		l = NODEK(p->b[0], kofs);
-		r = NODEK(p->b[1], kofs);
+		k = NODEK(node, kofs);
+		l = NODEK(node->b[0], kofs);
+		r = NODEK(node->b[1], kofs);
 
-		dbg(__LINE__, "newp", meth, kofs, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+		dbg(__LINE__, "newp", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 
 		/* two equal pointers identifies either the nodeless leaf or
 		 * the 2nd dup of a sub-tree. Both are leaves anyway, but we
@@ -683,7 +683,7 @@ struct ceb_node *_ceb_descend(struct ceb_node **root,
 		 * it.
 		 */
 		if (l == r && r == k) {
-			dbg(__LINE__, "l==r", meth, kofs, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+			dbg(__LINE__, "l==r", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 			break;
 		}
 
@@ -740,7 +740,7 @@ struct ceb_node *_ceb_descend(struct ceb_node **root,
 			xor32 = kl ^ kr;
 
 			if (xor32 > pxor32) { // test using 2 4 6 4
-				dbg(__LINE__, "xor>", meth, kofs, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+				dbg(__LINE__, "xor>", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 				break;
 			}
 
@@ -752,13 +752,13 @@ struct ceb_node *_ceb_descend(struct ceb_node **root,
 				/* let's stop if our key is not there */
 
 				if (kl > xor32 && kr > xor32) {
-					dbg(__LINE__, "mismatch", meth, kofs, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+					dbg(__LINE__, "mismatch", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 					break;
 				}
 
 				if (ret_npside || ret_nparent) {
 					if (key_u32 == k->u32) {
-						dbg(__LINE__, "equal", meth, kofs, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+						dbg(__LINE__, "equal", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 						nparent = lparent;
 						npside  = lpside;
 					}
@@ -767,7 +767,7 @@ struct ceb_node *_ceb_descend(struct ceb_node **root,
 			pxor32 = xor32;
 			if (ret_is_dup && !xor32) {
 				/* both sides are equal, that's a duplicate */
-				dbg(__LINE__, "dup>", meth, kofs, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+				dbg(__LINE__, "dup>", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 				is_dup = 1;
 				break;
 			}
@@ -780,7 +780,7 @@ struct ceb_node *_ceb_descend(struct ceb_node **root,
 			xor64 = kl ^ kr;
 
 			if (xor64 > pxor64) { // test using 2 4 6 4
-				dbg(__LINE__, "xor>", meth, kofs, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+				dbg(__LINE__, "xor>", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 				break;
 			}
 
@@ -792,13 +792,13 @@ struct ceb_node *_ceb_descend(struct ceb_node **root,
 				/* let's stop if our key is not there */
 
 				if (kl > xor64 && kr > xor64) {
-					dbg(__LINE__, "mismatch", meth, kofs, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+					dbg(__LINE__, "mismatch", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 					break;
 				}
 
 				if (ret_npside || ret_nparent) {
 					if (key_u64 == k->u64) {
-						dbg(__LINE__, "equal", meth, kofs, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+						dbg(__LINE__, "equal", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 						nparent = lparent;
 						npside  = lpside;
 					}
@@ -807,7 +807,7 @@ struct ceb_node *_ceb_descend(struct ceb_node **root,
 			pxor64 = xor64;
 			if (ret_is_dup && !xor64) {
 				/* both sides are equal, that's a duplicate */
-				dbg(__LINE__, "dup>", meth, kofs, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+				dbg(__LINE__, "dup>", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 				is_dup = 1;
 				break;
 			}
@@ -827,7 +827,7 @@ struct ceb_node *_ceb_descend(struct ceb_node **root,
 			xlen = equal_bits(l->mb, r->mb, 0, key_u64 << 3);
 			if (xlen < plen) {
 				/* this is a leaf. E.g. triggered using 2 4 6 4 */
-				dbg(__LINE__, "xor>", meth, kofs, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+				dbg(__LINE__, "xor>", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 				break;
 			}
 
@@ -835,7 +835,7 @@ struct ceb_node *_ceb_descend(struct ceb_node **root,
 				/* let's stop if our key is not there */
 
 				if (llen < xlen && rlen < xlen) {
-					dbg(__LINE__, "mismatch", meth, kofs, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+					dbg(__LINE__, "mismatch", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 					break;
 				}
 
@@ -846,7 +846,7 @@ struct ceb_node *_ceb_descend(struct ceb_node **root,
 						mlen = xlen;
 
 					if ((uint64_t)xlen / 8 == key_u64 || memcmp(key_ptr + mlen / 8, k->mb + mlen / 8, key_u64 - mlen / 8) == 0) {
-						dbg(__LINE__, "equal", meth, kofs, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+						dbg(__LINE__, "equal", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 						nparent = lparent;
 						npside  = lpside;
 						found = 1;
@@ -856,7 +856,7 @@ struct ceb_node *_ceb_descend(struct ceb_node **root,
 			plen = xlen;
 			if (ret_is_dup && (uint64_t)xlen / 8 == key_u64) {
 				/* both sides are equal, that's a duplicate */
-				dbg(__LINE__, "dup>", meth, kofs, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+				dbg(__LINE__, "dup>", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 				is_dup = 1;
 				break;
 			}
@@ -876,7 +876,7 @@ struct ceb_node *_ceb_descend(struct ceb_node **root,
 			xlen = equal_bits(l->ptr, r->ptr, 0, key_u64 << 3);
 			if (xlen < plen) {
 				/* this is a leaf. E.g. triggered using 2 4 6 4 */
-				dbg(__LINE__, "xor>", meth, kofs, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+				dbg(__LINE__, "xor>", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 				break;
 			}
 
@@ -884,7 +884,7 @@ struct ceb_node *_ceb_descend(struct ceb_node **root,
 				/* let's stop if our key is not there */
 
 				if (llen < xlen && rlen < xlen) {
-					dbg(__LINE__, "mismatch", meth, kofs, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+					dbg(__LINE__, "mismatch", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 					break;
 				}
 
@@ -895,7 +895,7 @@ struct ceb_node *_ceb_descend(struct ceb_node **root,
 						mlen = xlen;
 
 					if ((uint64_t)xlen / 8 == key_u64 || memcmp(key_ptr + mlen / 8, k->ptr + mlen / 8, key_u64 - mlen / 8) == 0) {
-						dbg(__LINE__, "equal", meth, kofs, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+						dbg(__LINE__, "equal", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 						nparent = lparent;
 						npside  = lpside;
 						found = 1;
@@ -905,7 +905,7 @@ struct ceb_node *_ceb_descend(struct ceb_node **root,
 			plen = xlen;
 			if (ret_is_dup && (uint64_t)xlen / 8 == key_u64) {
 				/* both sides are equal, that's a duplicate */
-				dbg(__LINE__, "dup>", meth, kofs, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+				dbg(__LINE__, "dup>", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 				is_dup = 1;
 				break;
 			}
@@ -930,7 +930,7 @@ struct ceb_node *_ceb_descend(struct ceb_node **root,
 			xlen = string_equal_bits(l->str, r->str, 0);
 			if (xlen < plen) {
 				/* this is a leaf. E.g. triggered using 2 4 6 4 */
-				dbg(__LINE__, "xor>", meth, kofs, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+				dbg(__LINE__, "xor>", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 				break;
 			}
 
@@ -938,7 +938,7 @@ struct ceb_node *_ceb_descend(struct ceb_node **root,
 				/* let's stop if our key is not there */
 
 				if ((unsigned)llen < (unsigned)xlen && (unsigned)rlen < (unsigned)xlen) {
-					dbg(__LINE__, "mismatch", meth, kofs, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+					dbg(__LINE__, "mismatch", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 					break;
 				}
 
@@ -950,7 +950,7 @@ struct ceb_node *_ceb_descend(struct ceb_node **root,
 
 					if ((ssize_t)xlen < 0 || strcmp(key_ptr + mlen / 8, (const void *)k->str + mlen / 8) == 0) {
 						/* strcmp() still needed. E.g. 1 2 3 4 10 11 4 3 2 1 10 11 fails otherwise */
-						dbg(__LINE__, "equal", meth, kofs, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+						dbg(__LINE__, "equal", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 						nparent = lparent;
 						npside  = lpside;
 						found = 1;
@@ -960,7 +960,7 @@ struct ceb_node *_ceb_descend(struct ceb_node **root,
 			plen = xlen;
 			if (ret_is_dup && (ssize_t)xlen < 0) {
 				/* exact match, that's a duplicate */
-				dbg(__LINE__, "dup>", meth, kofs, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+				dbg(__LINE__, "dup>", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 				is_dup = 1;
 				break;
 			}
@@ -985,7 +985,7 @@ struct ceb_node *_ceb_descend(struct ceb_node **root,
 			xlen = string_equal_bits(l->ptr, r->ptr, 0);
 			if (xlen < plen) {
 				/* this is a leaf. E.g. triggered using 2 4 6 4 */
-				dbg(__LINE__, "xor>", meth, kofs, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+				dbg(__LINE__, "xor>", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 				break;
 			}
 
@@ -993,7 +993,7 @@ struct ceb_node *_ceb_descend(struct ceb_node **root,
 				/* let's stop if our key is not there */
 
 				if ((unsigned)llen < (unsigned)xlen && (unsigned)rlen < (unsigned)xlen) {
-					dbg(__LINE__, "mismatch", meth, kofs, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+					dbg(__LINE__, "mismatch", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 					break;
 				}
 
@@ -1005,7 +1005,7 @@ struct ceb_node *_ceb_descend(struct ceb_node **root,
 
 					if ((ssize_t)xlen < 0 || strcmp(key_ptr + mlen / 8, (const void *)k->ptr + mlen / 8) == 0) {
 						/* strcmp() still needed. E.g. 1 2 3 4 10 11 4 3 2 1 10 11 fails otherwise */
-						dbg(__LINE__, "equal", meth, kofs, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+						dbg(__LINE__, "equal", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 						nparent = lparent;
 						npside  = lpside;
 						found = 1;
@@ -1015,7 +1015,7 @@ struct ceb_node *_ceb_descend(struct ceb_node **root,
 			plen = xlen;
 			if (ret_is_dup && (ssize_t)xlen < 0) {
 				/* both sides are equal, that's a duplicate */
-				dbg(__LINE__, "dup>", meth, kofs, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+				dbg(__LINE__, "dup>", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 				is_dup = 1;
 				break;
 			}
@@ -1028,7 +1028,7 @@ struct ceb_node *_ceb_descend(struct ceb_node **root,
 			xoraddr = kl ^ kr;
 
 			if (xoraddr > (uintptr_t)pxor64) { // test using 2 4 6 4
-				dbg(__LINE__, "xor>", meth, kofs, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+				dbg(__LINE__, "xor>", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 				break;
 			}
 
@@ -1040,13 +1040,13 @@ struct ceb_node *_ceb_descend(struct ceb_node **root,
 				/* let's stop if our key is not there */
 
 				if (kl > xoraddr && kr > xoraddr) {
-					dbg(__LINE__, "mismatch", meth, kofs, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+					dbg(__LINE__, "mismatch", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 					break;
 				}
 
 				if (ret_npside || ret_nparent) {
-					if ((uintptr_t)key_ptr == (uintptr_t)p) {
-						dbg(__LINE__, "equal", meth, kofs, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+					if ((uintptr_t)key_ptr == (uintptr_t)node) {
+						dbg(__LINE__, "equal", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 						nparent = lparent;
 						npside  = lpside;
 					}
@@ -1055,7 +1055,7 @@ struct ceb_node *_ceb_descend(struct ceb_node **root,
 			pxor64 = xoraddr;
 			if (ret_is_dup && !xoraddr) {
 				/* both sides are equal, that's a duplicate */
-				dbg(__LINE__, "dup>", meth, kofs, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+				dbg(__LINE__, "dup>", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 				is_dup = 1;
 				break;
 			}
@@ -1064,34 +1064,34 @@ struct ceb_node *_ceb_descend(struct ceb_node **root,
 		/* shift all copies by one */
 		gparent = lparent;
 		gpside = lpside;
-		lparent = p;
+		lparent = node;
 		lpside = brside;
 		if (brside) {
 			if (meth == CEB_WM_KPR || meth == CEB_WM_KLE || meth == CEB_WM_KLT)
-				bnode = p;
-			root = &p->b[1];
+				bnode = node;
+			root = &node->b[1];
 
 			/* change branch for key-less walks */
 			if (meth == CEB_WM_NXT)
 				brside = 0;
 
-			dbg(__LINE__, "side1", meth, kofs, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+			dbg(__LINE__, "side1", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 		}
 		else {
 			if (meth == CEB_WM_KNX || meth == CEB_WM_KGE || meth == CEB_WM_KGT)
-				bnode = p;
-			root = &p->b[0];
+				bnode = node;
+			root = &node->b[0];
 
 			/* change branch for key-less walks */
 			if (meth == CEB_WM_PRV)
 				brside = 1;
 
-			dbg(__LINE__, "side0", meth, kofs, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+			dbg(__LINE__, "side0", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 		}
 
-		if (p == *root) {
+		if (node == *root) {
 			/* loops over itself, it's a leaf */
-			dbg(__LINE__, "loop", meth, kofs, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+			dbg(__LINE__, "loop", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 			break;
 		}
 	}
@@ -1135,7 +1135,7 @@ struct ceb_node *_ceb_descend(struct ceb_node **root,
 			*ret_nside = found || strcmp(key_ptr + plen / 8, (const void *)k->ptr + plen / 8) >= 0;
 			break;
 		case CEB_KT_ADDR:
-			*ret_nside = (uintptr_t)key_ptr >= (uintptr_t)p;
+			*ret_nside = (uintptr_t)key_ptr >= (uintptr_t)node;
 			break;
 		}
 	}
@@ -1168,7 +1168,7 @@ struct ceb_node *_ceb_descend(struct ceb_node **root,
 	if (ret_is_dup)
 		*ret_is_dup = is_dup;
 
-	dbg(__LINE__, "_ret____", meth, kofs, key_type, root, p, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+	dbg(__LINE__, "_ret____", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 
 	if (meth >= CEB_WM_KEQ) {
 		/* For lookups, an equal value means an instant return. For insertions,
@@ -1184,7 +1184,7 @@ struct ceb_node *_ceb_descend(struct ceb_node **root,
 			    (meth == CEB_WM_KGT && k->u32 >  key_u32) ||
 			    (meth == CEB_WM_KLE && k->u32 <= key_u32) ||
 			    (meth == CEB_WM_KLT && k->u32 <  key_u32))
-				return p;
+				return node;
 		}
 		else if (key_type == CEB_KT_U64) {
 			if ((meth == CEB_WM_KEQ && k->u64 == key_u64) ||
@@ -1194,7 +1194,7 @@ struct ceb_node *_ceb_descend(struct ceb_node **root,
 			    (meth == CEB_WM_KGT && k->u64 >  key_u64) ||
 			    (meth == CEB_WM_KLE && k->u64 <= key_u64) ||
 			    (meth == CEB_WM_KLT && k->u64 <  key_u64))
-				return p;
+				return node;
 		}
 		else if (key_type == CEB_KT_MB) {
 			int diff;
@@ -1211,7 +1211,7 @@ struct ceb_node *_ceb_descend(struct ceb_node **root,
 			    (meth == CEB_WM_KGT && diff >  0) ||
 			    (meth == CEB_WM_KLE && diff <= 0) ||
 			    (meth == CEB_WM_KLT && diff <  0))
-				return p;
+				return node;
 		}
 		else if (key_type == CEB_KT_IM) {
 			int diff;
@@ -1228,7 +1228,7 @@ struct ceb_node *_ceb_descend(struct ceb_node **root,
 			    (meth == CEB_WM_KGT && diff >  0) ||
 			    (meth == CEB_WM_KLE && diff <= 0) ||
 			    (meth == CEB_WM_KLT && diff <  0))
-				return p;
+				return node;
 		}
 		else if (key_type == CEB_KT_ST) {
 			int diff;
@@ -1245,7 +1245,7 @@ struct ceb_node *_ceb_descend(struct ceb_node **root,
 			    (meth == CEB_WM_KGT && diff >  0) ||
 			    (meth == CEB_WM_KLE && diff <= 0) ||
 			    (meth == CEB_WM_KLT && diff <  0))
-				return p;
+				return node;
 		}
 		else if (key_type == CEB_KT_IS) {
 			int diff;
@@ -1262,22 +1262,22 @@ struct ceb_node *_ceb_descend(struct ceb_node **root,
 			    (meth == CEB_WM_KGT && diff >  0) ||
 			    (meth == CEB_WM_KLE && diff <= 0) ||
 			    (meth == CEB_WM_KLT && diff <  0))
-				return p;
+				return node;
 		}
 		else if (key_type == CEB_KT_ADDR) {
-			if ((meth == CEB_WM_KEQ && (uintptr_t)p == (uintptr_t)key_ptr) ||
-			    (meth == CEB_WM_KNX && (uintptr_t)p == (uintptr_t)key_ptr) ||
-			    (meth == CEB_WM_KPR && (uintptr_t)p == (uintptr_t)key_ptr) ||
-			    (meth == CEB_WM_KGE && (uintptr_t)p >= (uintptr_t)key_ptr) ||
-			    (meth == CEB_WM_KGT && (uintptr_t)p >  (uintptr_t)key_ptr) ||
-			    (meth == CEB_WM_KLE && (uintptr_t)p <= (uintptr_t)key_ptr) ||
-			    (meth == CEB_WM_KLT && (uintptr_t)p <  (uintptr_t)key_ptr))
-				return p;
+			if ((meth == CEB_WM_KEQ && (uintptr_t)node == (uintptr_t)key_ptr) ||
+			    (meth == CEB_WM_KNX && (uintptr_t)node == (uintptr_t)key_ptr) ||
+			    (meth == CEB_WM_KPR && (uintptr_t)node == (uintptr_t)key_ptr) ||
+			    (meth == CEB_WM_KGE && (uintptr_t)node >= (uintptr_t)key_ptr) ||
+			    (meth == CEB_WM_KGT && (uintptr_t)node >  (uintptr_t)key_ptr) ||
+			    (meth == CEB_WM_KLE && (uintptr_t)node <= (uintptr_t)key_ptr) ||
+			    (meth == CEB_WM_KLT && (uintptr_t)node <  (uintptr_t)key_ptr))
+				return node;
 		}
 	} else if (meth == CEB_WM_FST || meth == CEB_WM_LST) {
-		return p;
+		return node;
 	} else if (meth == CEB_WM_PRV || meth == CEB_WM_NXT) {
-		return p;
+		return node;
 	}
 
 	/* lookups and deletes fail here */
