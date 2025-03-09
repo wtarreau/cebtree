@@ -45,7 +45,7 @@ _(TODO: add hash table: logN+N/logN, and rbtree: logN)_
 |next/prev          |  - / O(1) / -   | - / O(logN) / - | O(1) / O(1) / O(logN) |
 ||
 |__Costs per operation__|
-|string lookup cost|    N*strcmp()    | logN*strcmp()   |    ~1*strcmp()    |
+|string lookup cost|    N*strcmp()    |  ~1*strcmp()    |    ~1*strcmp()    |
 |mem accesses / node|       N         |    2*logN       |      1*logN       |
 
 #### Synthetic performance comparison
@@ -54,6 +54,11 @@ _(TODO: add hash table: logN+N/logN, and rbtree: logN)_
 - random lookups: ebtree > cebtree > lists
 - random deletion: lists > ebtree > cebtree
 - total purge: lists > ebtree > cebtree
+
+The tagged pointers permit the string lookup cost to remain low. Without tagged
+pointers (e.g. version 0.2), the string lookup cost becomes logN*strcmp() since
+a complete string needs to be compared at each layer (like in other non-radix
+trees).
 
 ## Limitations and future improvements
 
