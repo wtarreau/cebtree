@@ -32,33 +32,32 @@ in configuration files, as well as timer management (though ebtrees are much
 faster for timer management, albeit bigger).
 
 #### Comparison of costs by model
-_(TODO: add hash table: logN+N/logN, and rbtree: logN)_
 
-|             model |      list       |     cebtree     |      ebtree       |
-|-------------------|:---------------:|:---------------:|:-----------------:|
-|__operation__      | min / avg / max | min / avg / max |  min / avg / max  |
-|lookup ops         |  - / O(N) / -   | - / O(logN) / - |  - / O(logN) / -  |
-|insert ordered     |  - / O(N) / -   | - / O(logN) / - |  - / O(logN) / -  |
-|append (unordered) |  - / O(1) / -   | - / O(logN) / - |  - / O(logN) / -  |
-|delete             |  - / O(1) / -   | - / O(logN) / - |  - /   O(1)  / -  |
-|first/last         |  - / O(1) / -   | - / O(logN) / - |  - / O(logN) / -  |
-|next/prev          |  - / O(1) / -   | - / O(logN) / - | O(1) / O(1) / O(logN) |
+|             model |      list       | hash (B buckets)   |      rbtree     |     cebtree     |      ebtree       |
+|-------------------|:---------------:|:------------------:|:---------------:|:---------------:|:-----------------:|
+|__operation__      | min / avg / max |  min / avg / max   | min / avg / max | min / avg / max |  min / avg / max  |
+|lookup ops         |  - / O(N) / -   |  1 / N/B / O(N)    | - / O(logN) / - | - / O(logN) / - |  - / O(logN) / -  |
+|insert ordered     |  - / O(N) / -   |  1 / N/B / O(N)    | - / O(logN) / - | - / O(logN) / - |  - / O(logN) / -  |
+|append (unordered) |  - / O(1) / -   |  - / O(1) / -      | - / O(logN) / - | - / O(logN) / - |  - / O(logN) / -  |
+|delete             |  - / O(1) / -   |  - / O(1) / -      | - / O(logN) / - | - / O(logN) / - |  - /   O(1)  / -  |
+|first/last         |  - / O(1) / -   |  1 / N/B / O(N)    | - / O(logN) / - | - / O(logN) / - |  - / O(logN) / -  |
+|next/prev          |  - / O(1) / -   |  1 / O(1) / O(N/B) | O(1) / O(1) / O(logN) | - / O(logN) / - | O(1) / O(1) / O(logN) |
 ||
 |__Costs per operation__|
-|string lookup cost|    N*strcmp()    |  ~1*strcmp()    |    ~1*strcmp()    |
-|mem accesses / node|       N         |    2*logN       |      1*logN       |
+|string lookup cost|    N*strcmp()    |    N/B*strcmp()    | ~logN*strcmp()  |  ~1*strcmp()    |    ~1*strcmp()    |
+|visited nodes     |         N        |        N/B         |    2*logN       |    2*logN       |      1*logN       |
 
 #### Synthetic performance comparison
-- enumeration in insertion order: lists > ebtree > cebtree
-- enumeration in key order: ebtree > cebtree > lists
-- random lookups: ebtree > cebtree > lists
-- random deletion: lists > ebtree > cebtree
-- total purge: lists > ebtree > cebtree
+- enumeration in insertion order: lists > ebtree = rbtree > cebtree
+- enumeration in key order: ebtree > cebtree = rbtree > lists
+- random lookups: ebtree > cebtree = rbtree > lists
+- random deletion: lists > ebtree > cebtree = rbtree
+- total purge: lists > ebtree > cebtree = rbtree
 
 The tagged pointers permit the string lookup cost to remain low. Without tagged
-pointers (e.g. version 0.2), the string lookup cost becomes logN*strcmp() since
+pointers (i.e. version 0.2), the string lookup cost becomes logN*strcmp() since
 a complete string needs to be compared at each layer (like in other non-radix
-trees).
+trees such as rbtree).
 
 ## Limitations and future improvements
 
