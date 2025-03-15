@@ -417,11 +417,11 @@ union ceb_key_storage {
  * <kofs> contains the offset between the key and the node's base. When simply
  * adjacent, this would just be sizeof(ceb_node).
  */
-__attribute__((unused))
-static inline uint64_t _xor_branches(ptrdiff_t kofs, enum ceb_key_type key_type, uint32_t key_u32,
-                                     uint64_t key_u64, const void *key_ptr,
-                                     const struct ceb_node *l,
-                                     const struct ceb_node *r)
+__attribute__((unused,noinline))
+static uint64_t _xor_branches(ptrdiff_t kofs, enum ceb_key_type key_type, uint32_t key_u32,
+                              uint64_t key_u64, const void *key_ptr,
+                              const struct ceb_node *l,
+                              const struct ceb_node *r)
 {
 	if (l && r) {
 		if (key_type == CEB_KT_MB)
