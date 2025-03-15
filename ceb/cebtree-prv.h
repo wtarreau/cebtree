@@ -272,7 +272,7 @@ brk1:
 	 * identical bits. Note that low bit numbers are assigned to high positions
 	 * in the byte, as we compare them as strings.
 	 */
-	return (beg << 3) - flsnz(c);
+	return (beg << 3) + ((flsnz(c) - 1) ^ 7) - 8;
 same:
 	return (size_t)-1;
 }
