@@ -669,7 +669,6 @@ struct ceb_node *_ceb_descend(struct ceb_root **root,
 	size_t llen = 0;  // left vs key matching length
 	size_t rlen = 0;  // right vs key matching length
 	size_t plen = 0;  // previous common len between branches
-	int is_dup = 0;   // returned key is a duplicate
 	int is_leaf = 0;  // set if the current node is a leaf
 
 	dbg(__LINE__, "_enter__", meth, kofs, key_type, root, NULL, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
@@ -681,6 +680,8 @@ struct ceb_node *_ceb_descend(struct ceb_root **root,
 	gparent = lparent;
 	if (ret_nparent)
 		*ret_nparent = NULL;
+	if (ret_is_dup)
+		*ret_is_dup = 0;
 
 	/* for key-less descents we need to set the initial branch to take */
 	switch (meth) {
@@ -819,7 +820,7 @@ struct ceb_node *_ceb_descend(struct ceb_root **root,
 			if (ret_is_dup && !xor32) {
 				/* both sides are equal, that's a duplicate */
 				dbg(__LINE__, "dup>", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
-				is_dup = 1;
+				*ret_is_dup = 1;
 				break;
 			}
 		}
@@ -859,7 +860,7 @@ struct ceb_node *_ceb_descend(struct ceb_root **root,
 			if (ret_is_dup && !xor64) {
 				/* both sides are equal, that's a duplicate */
 				dbg(__LINE__, "dup>", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
-				is_dup = 1;
+				*ret_is_dup = 1;
 				break;
 			}
 		}
@@ -899,7 +900,7 @@ struct ceb_node *_ceb_descend(struct ceb_root **root,
 			if (ret_is_dup && !xoraddr) {
 				/* both sides are equal, that's a duplicate */
 				dbg(__LINE__, "dup>", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
-				is_dup = 1;
+				*ret_is_dup = 1;
 				break;
 			}
 		}
@@ -953,7 +954,7 @@ struct ceb_node *_ceb_descend(struct ceb_root **root,
 			if (ret_is_dup && (uint64_t)xlen / 8 == key_u64) {
 				/* both sides are equal, that's a duplicate */
 				dbg(__LINE__, "dup>", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
-				is_dup = 1;
+				*ret_is_dup = 1;
 				break;
 			}
 		}
@@ -1013,7 +1014,7 @@ struct ceb_node *_ceb_descend(struct ceb_root **root,
 			if (ret_is_dup && (ssize_t)xlen < 0) {
 				/* exact match, that's a duplicate */
 				dbg(__LINE__, "dup>", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
-				is_dup = 1;
+				*ret_is_dup = 1;
 				break;
 			}
 		}
@@ -1103,9 +1104,6 @@ struct ceb_node *_ceb_descend(struct ceb_root **root,
 
 	if (ret_back)
 		*ret_back = _ceb_dotag(bnode, 0);
-
-	if (ret_is_dup)
-		*ret_is_dup = is_dup;
 
 	dbg(__LINE__, "_ret____", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 
