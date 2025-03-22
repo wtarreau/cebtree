@@ -659,13 +659,11 @@ struct ceb_node *_ceb_descend(struct ceb_root **root,
 	struct ceb_node *node;
 	union ceb_key_storage *k;
 	struct ceb_node *gparent = NULL;
-	struct ceb_node *nparent = NULL;
 	struct ceb_node *bnode = NULL;
 	struct ceb_node *lparent;
 	uint32_t pxor32 __attribute__((unused)) = ~0U;   // previous xor between branches
 	uint64_t pxor64 __attribute__((unused)) = ~0ULL; // previous xor between branches
 	int gpside = 0;   // side on the grand parent
-	int npside = 0;   // side on the node's parent
 	long lpside = 0;  // side on the leaf's parent
 	long brside = 0;  // branch side when descending
 	size_t llen = 0;  // left vs key matching length
@@ -681,6 +679,8 @@ struct ceb_node *_ceb_descend(struct ceb_root **root,
 	 */
 	lparent = (struct ceb_node *)((char *)root - (long)&((struct ceb_node *)0)->b[0]);
 	gparent = lparent;
+	if (ret_nparent)
+		*ret_nparent = NULL;
 
 	/* for key-less descents we need to set the initial branch to take */
 	switch (meth) {
@@ -807,11 +807,11 @@ struct ceb_node *_ceb_descend(struct ceb_root **root,
 					break;
 				}
 
-				if (ret_npside || ret_nparent) {
-					if (!nparent && key_u32 == k->u32) {
+				if (ret_nparent && !*ret_nparent && ret_npside) {
+					if (key_u32 == k->u32) {
 						dbg(__LINE__, "equal", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
-						nparent = lparent;
-						npside  = lpside;
+						*ret_nparent = lparent;
+						*ret_npside  = lpside;
 					}
 				}
 			}
@@ -847,11 +847,11 @@ struct ceb_node *_ceb_descend(struct ceb_root **root,
 					break;
 				}
 
-				if (ret_npside || ret_nparent) {
-					if (!nparent && key_u64 == k->u64) {
+				if (ret_nparent && !*ret_nparent && ret_npside) {
+					if (key_u64 == k->u64) {
 						dbg(__LINE__, "equal", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
-						nparent = lparent;
-						npside  = lpside;
+						*ret_nparent = lparent;
+						*ret_npside  = lpside;
 					}
 				}
 			}
@@ -887,11 +887,11 @@ struct ceb_node *_ceb_descend(struct ceb_root **root,
 					break;
 				}
 
-				if (ret_npside || ret_nparent) {
-					if (!nparent && (uintptr_t)key_ptr == (uintptr_t)node) {
+				if (ret_nparent && !*ret_nparent && ret_npside) {
+					if ((uintptr_t)key_ptr == (uintptr_t)node) {
 						dbg(__LINE__, "equal", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
-						nparent = lparent;
-						npside  = lpside;
+						*ret_nparent = lparent;
+						*ret_npside  = lpside;
 					}
 				}
 			}
@@ -932,7 +932,7 @@ struct ceb_node *_ceb_descend(struct ceb_root **root,
 					break;
 				}
 
-				if (ret_npside || ret_nparent) { // delete ?
+				if (ret_nparent && !*ret_nparent && ret_npside) { // delete ?
 					/* When deleting we need to verify if the current node matches the key because
 					 * we'll have to remember the node's parent. Since the searched key belongs to
 					 * the tree, we know that the differences between it and the node's key may only
@@ -942,11 +942,10 @@ struct ceb_node *_ceb_descend(struct ceb_root **root,
 					 * "pick()" operation, the comparison would need to be performed starting from
 					 * min(xlen, max(llen, rlen)).
 					 */
-					if (!nparent &&
-					    memcmp(key_ptr + xlen / 8, ((key_type == CEB_KT_MB) ? k->mb : k->ptr) + xlen / 8, key_u64 - xlen / 8) == 0) {
+					if (memcmp(key_ptr + xlen / 8, ((key_type == CEB_KT_MB) ? k->mb : k->ptr) + xlen / 8, key_u64 - xlen / 8) == 0) {
 						dbg(__LINE__, "equal", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
-						nparent = lparent;
-						npside  = lpside;
+						*ret_nparent = lparent;
+						*ret_npside  = lpside;
 					}
 				}
 			}
@@ -992,7 +991,7 @@ struct ceb_node *_ceb_descend(struct ceb_root **root,
 					break;
 				}
 
-				if (ret_npside || ret_nparent) { // delete ?
+				if (ret_nparent && !*ret_nparent && ret_npside) { // delete ?
 					/* When deleting we need to verify if the current node matches the key because
 					 * we'll have to remember the node's parent. Since the searched key belongs to
 					 * the tree, we know that the differences between it and the node's key may only
@@ -1002,12 +1001,11 @@ struct ceb_node *_ceb_descend(struct ceb_root **root,
 					 * "pick()" operation, the comparison would need to be performed starting from
 					 * min(xlen, max(llen, rlen)).
 					 */
-					if (!nparent &&
-					    ((ssize_t)xlen < 0 || strcmp(key_ptr + xlen / 8, (const void *)((key_type == CEB_KT_ST) ? k->str : k->ptr) + xlen / 8) == 0)) {
+					if ((ssize_t)xlen < 0 || strcmp(key_ptr + xlen / 8, (const void *)((key_type == CEB_KT_ST) ? k->str : k->ptr) + xlen / 8) == 0) {
 						/* strcmp() still needed. E.g. 1 2 3 4 10 11 4 3 2 1 10 11 fails otherwise */
 						dbg(__LINE__, "equal", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
-						nparent = lparent;
-						npside  = lpside;
+						*ret_nparent = lparent;
+						*ret_npside  = lpside;
 					}
 				}
 			}
@@ -1096,12 +1094,6 @@ struct ceb_node *_ceb_descend(struct ceb_root **root,
 
 	if (ret_lparent)
 		*ret_lparent = lparent;
-
-	if (ret_npside)
-		*ret_npside = npside;
-
-	if (ret_nparent)
-		*ret_nparent = nparent;
 
 	if (ret_gpside)
 		*ret_gpside = gpside;
