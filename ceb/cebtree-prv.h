@@ -678,7 +678,7 @@ struct ceb_node *_ceb_descend(struct ceb_root **root,
 	 * &lparent->l == root, i.e. container_of(root, struct ceb_node, b[0]).
 	 */
 	lparent = (struct ceb_node *)((char *)root - (long)&((struct ceb_node *)0)->b[0]);
-	gparent = nparent = lparent;
+	gparent = lparent;
 
 	/* for key-less descents we need to set the initial branch to take */
 	switch (meth) {
@@ -808,7 +808,7 @@ struct ceb_node *_ceb_descend(struct ceb_root **root,
 				}
 
 				if (ret_npside || ret_nparent) {
-					if (key_u32 == k->u32) {
+					if (!nparent && key_u32 == k->u32) {
 						dbg(__LINE__, "equal", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 						nparent = lparent;
 						npside  = lpside;
@@ -849,7 +849,7 @@ struct ceb_node *_ceb_descend(struct ceb_root **root,
 				}
 
 				if (ret_npside || ret_nparent) {
-					if (key_u64 == k->u64) {
+					if (!nparent && key_u64 == k->u64) {
 						dbg(__LINE__, "equal", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 						nparent = lparent;
 						npside  = lpside;
@@ -890,7 +890,7 @@ struct ceb_node *_ceb_descend(struct ceb_root **root,
 				}
 
 				if (ret_npside || ret_nparent) {
-					if ((uintptr_t)key_ptr == (uintptr_t)node) {
+					if (!nparent && (uintptr_t)key_ptr == (uintptr_t)node) {
 						dbg(__LINE__, "equal", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 						nparent = lparent;
 						npside  = lpside;
@@ -946,7 +946,7 @@ struct ceb_node *_ceb_descend(struct ceb_root **root,
 					 * "pick()" operation, the comparison would need to be performed starting from
 					 * min(xlen, max(llen, rlen)).
 					 */
-					if ((uint64_t)xlen / 8 == key_u64 ||
+					if (!nparent &&
 					    memcmp(key_ptr + xlen / 8, ((key_type == CEB_KT_MB) ? k->mb : k->ptr) + xlen / 8, key_u64 - xlen / 8) == 0) {
 						dbg(__LINE__, "equal", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 						nparent = lparent;
@@ -1009,7 +1009,7 @@ struct ceb_node *_ceb_descend(struct ceb_root **root,
 					 * "pick()" operation, the comparison would need to be performed starting from
 					 * min(xlen, max(llen, rlen)).
 					 */
-					if ((ssize_t)xlen < 0 ||
+					if (!nparent &&
 					    strcmp(key_ptr + xlen / 8, (const void *)((key_type == CEB_KT_ST) ? k->str : k->ptr) + xlen / 8) == 0) {
 						/* strcmp() still needed. E.g. 1 2 3 4 10 11 4 3 2 1 10 11 fails otherwise */
 						dbg(__LINE__, "equal", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
@@ -1826,7 +1826,8 @@ struct ceb_node *_ceb_delete(struct ceb_root **root,
 				 */
 				first->b[0] = ret->b[0];
 				first->b[1] = ret->b[1];
-				gparent->b[gpside] = parent;
+				nparent->b[npside] = parent;
+				lparent->b[lpside] = _ceb_dotag(first, 1);
 			}
 			else {
 				/* first becomes the nodeless leaf since we only keep its leaf */
