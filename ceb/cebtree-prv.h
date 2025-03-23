@@ -965,7 +965,7 @@ struct ceb_node *_ceb_descend(struct ceb_node **root,
 					 * min(xlen, max(llen, rlen)).
 					 */
 					if (!nparent &&
-					    strcmp(key_ptr + xlen / 8, (const void *)((key_type == CEB_KT_ST) ? k->str : k->ptr) + xlen / 8) == 0) {
+					    ((ssize_t)xlen < 0 || strcmp(key_ptr + xlen / 8, (const void *)((key_type == CEB_KT_ST) ? k->str : k->ptr) + xlen / 8) == 0)) {
 						/* strcmp() still needed. E.g. 1 2 3 4 10 11 4 3 2 1 10 11 fails otherwise */
 						dbg(__LINE__, "equal", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 						nparent = lparent;
