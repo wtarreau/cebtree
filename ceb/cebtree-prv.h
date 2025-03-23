@@ -680,8 +680,6 @@ struct ceb_node *_ceb_descend(struct ceb_root **root,
 	gparent = lparent;
 	if (ret_nparent)
 		*ret_nparent = NULL;
-	if (ret_is_dup)
-		*ret_is_dup = 0;
 
 	/* for key-less descents we need to set the initial branch to take */
 	switch (meth) {
@@ -731,9 +729,9 @@ struct ceb_node *_ceb_descend(struct ceb_root **root,
 		k = NODEK(node, kofs);
 
 		/* two equal pointers identifies either the nodeless leaf or
-		 * the 2nd dup of a sub-tree. Only the former is tagged though.
+		 * the 2nd dup of a sub-tree.
 		 */
-		if (_l == _r && _ceb_gettag(_l)) {
+		if (_l == _r && is_leaf && _l == _ceb_dotag(node, 1)) {
 			dbg(__LINE__, "l==r", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 			break;
 		}
@@ -820,12 +818,6 @@ struct ceb_node *_ceb_descend(struct ceb_root **root,
 				}
 			}
 			pxor32 = xor32;
-			if (ret_is_dup && !xor32) {
-				/* both sides are equal, that's a duplicate */
-				dbg(__LINE__, "dup>", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
-				*ret_is_dup = 1;
-				break;
-			}
 		}
 		else if (key_type == CEB_KT_U64) {
 			uint64_t xor64;   // left vs right branch xor
@@ -860,12 +852,6 @@ struct ceb_node *_ceb_descend(struct ceb_root **root,
 				}
 			}
 			pxor64 = xor64;
-			if (ret_is_dup && !xor64) {
-				/* both sides are equal, that's a duplicate */
-				dbg(__LINE__, "dup>", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
-				*ret_is_dup = 1;
-				break;
-			}
 		}
 		else if (key_type == CEB_KT_ADDR) {
 			uintptr_t xoraddr;   // left vs right branch xor
@@ -900,12 +886,6 @@ struct ceb_node *_ceb_descend(struct ceb_root **root,
 				}
 			}
 			pxor64 = xoraddr;
-			if (ret_is_dup && !xoraddr) {
-				/* both sides are equal, that's a duplicate */
-				dbg(__LINE__, "dup>", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
-				*ret_is_dup = 1;
-				break;
-			}
 		}
 		else if (key_type == CEB_KT_MB || key_type == CEB_KT_IM) {
 			size_t xlen = 0; // left vs right matching length
@@ -954,12 +934,6 @@ struct ceb_node *_ceb_descend(struct ceb_root **root,
 				}
 			}
 			plen = xlen;
-			if (ret_is_dup && (uint64_t)xlen / 8 == key_u64) {
-				/* both sides are equal, that's a duplicate */
-				dbg(__LINE__, "dup>", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
-				*ret_is_dup = 1;
-				break;
-			}
 		}
 		else if (key_type == CEB_KT_ST || key_type == CEB_KT_IS) {
 			size_t xlen = 0; // left vs right matching length
@@ -1014,12 +988,6 @@ struct ceb_node *_ceb_descend(struct ceb_root **root,
 				}
 			}
 			plen = xlen;
-			if (ret_is_dup && (ssize_t)xlen < 0) {
-				/* exact match, that's a duplicate */
-				dbg(__LINE__, "dup>", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
-				*ret_is_dup = 1;
-				break;
-			}
 		}
 
 		/* shift all copies by one */
@@ -1054,6 +1022,19 @@ struct ceb_node *_ceb_descend(struct ceb_root **root,
 			/* loops over itself, it's either a leaf or the single and last list element of a dup sub-tree */
 			dbg(__LINE__, "loop", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 			break;
+		}
+	}
+
+	if (ret_is_dup) {
+		if (is_leaf && _ceb_gettag(node->b[0]) && _ceb_gettag(node->b[1]) &&
+		    (_ceb_clrtag(node->b[0]) != node || _ceb_clrtag(node->b[1]) != node)) {
+			/* This leaf has two tagged pointers, with at least one not pointing
+			 * to itself, it's not the nodeless leaf, it's a duplicate.
+			 */
+			dbg(__LINE__, "dup>", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+			*ret_is_dup = 1;
+		} else {
+			*ret_is_dup = 0;
 		}
 	}
 
@@ -1256,12 +1237,12 @@ struct ceb_node *_ceb_insert(struct ceb_root **root,
 		node->b[0] = *parent;
 
 		if (*is_dup_ptr) {
-			node->b[1] = _ceb_untag(*parent, 0)->b[1];
-			_ceb_untag(*parent, 0)->b[1] = _ceb_dotag(node, 0);
+			node->b[1] = _ceb_untag(*parent, 1)->b[1];
+			_ceb_untag(*parent, 1)->b[1] = _ceb_dotag(node, 1);
 		} else {
-			node->b[1] = _ceb_dotag(node, 0);
+			node->b[1] = _ceb_dotag(node, 1);
 		}
-		*parent = _ceb_dotag(node, 0);
+		*parent = _ceb_dotag(node, 1);
 		ret = node;
 	}
 	return ret;
@@ -1286,7 +1267,7 @@ struct ceb_node *_ceb_first(struct ceb_root **root,
 	node = _ceb_descend(root, CEB_WM_FST, kofs, key_type, 0, key_len, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, is_dup_ptr);
 	if (node && is_dup_ptr && *is_dup_ptr) {
 		/* on a duplicate, the first node is right->left and it's a leaf */
-		node = _ceb_untag(_ceb_untag(node->b[1], 0)->b[0], 1);
+		node = _ceb_untag(_ceb_untag(node->b[1], 1)->b[0], 1);
 	}
 	return node;
 }
@@ -1401,10 +1382,10 @@ struct ceb_node *_ceb_next_dup(struct ceb_root **root,
 	 * jump to node->b[1]. Otherwise we take from->b[1].
 	 */
 	if (node != from) {
-		if (_ceb_untag(node->b[1], 0)->b[0] == _ceb_dotag(from, 1))
-			return _ceb_untag(node->b[1], 0);
+		if (_ceb_untag(node->b[1], 1)->b[0] == _ceb_dotag(from, 1))
+			return _ceb_untag(node->b[1], 1);
 		else
-			return _ceb_clrtag(from->b[1]);
+			return _ceb_untag(from->b[1], 1);
 	}
 
 	/* there's no other dup here */
@@ -1442,8 +1423,8 @@ struct ceb_node *_ceb_prev_dup(struct ceb_root **root,
 	 *     hence we visit node->b[0] to switch to the previous dup.
 	 *   - from is the first dup so we've visited them all.
 	 */
-	if (is_dup && (node == from || _ceb_untag(node->b[1], 0)->b[0] != _ceb_dotag(from, 1)))
-		return _ceb_clrtag(from->b[0]);
+	if (is_dup && (node == from || _ceb_untag(node->b[1], 1)->b[0] != _ceb_dotag(from, 1)))
+		return _ceb_untag(from->b[0], 1);
 
 	/* there's no other dup here */
 	return NULL;
@@ -1486,10 +1467,10 @@ struct ceb_node *_ceb_next(struct ceb_root **root,
 	 * jump to node->b[1]. Otherwise we take from->b[1].
 	 */
 	if (node != from) {
-		if (_ceb_untag(node->b[1], 0)->b[0] == _ceb_dotag(from, 1))
-			return _ceb_untag(node->b[1], 0);
+		if (_ceb_untag(node->b[1], 1)->b[0] == _ceb_dotag(from, 1))
+			return _ceb_untag(node->b[1], 1);
 		else
-			return _ceb_clrtag(from->b[1]);
+			return _ceb_untag(from->b[1], 1);
 	}
 
 	/* Here the looked up node was found (node == from) and we can look up
@@ -1504,7 +1485,7 @@ struct ceb_node *_ceb_next(struct ceb_root **root,
 	node = _ceb_descend(&restart, CEB_WM_NXT, kofs, key_type, 0, key_u64, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, is_dup_ptr);
 	if (node && is_dup_ptr && *is_dup_ptr) {
 		/* on a duplicate, the first node is right->left and it's a leaf */
-		node = _ceb_untag(_ceb_untag(node->b[1], 0)->b[0], 1);
+		node = _ceb_untag(_ceb_untag(node->b[1], 1)->b[0], 1);
 	}
 	return node;
 }
@@ -1547,8 +1528,8 @@ struct ceb_node *_ceb_prev(struct ceb_root **root,
 	 *   - from is the first dup so we've visited them all, we now need
 	 *     to jump to the previous unique value.
 	 */
-	if (is_dup_ptr && *is_dup_ptr && (node == from || _ceb_untag(node->b[1], 0)->b[0] != _ceb_dotag(from, 1)))
-		return _ceb_clrtag(from->b[0]);
+	if (is_dup_ptr && *is_dup_ptr && (node == from || _ceb_untag(node->b[1], 1)->b[0] != _ceb_dotag(from, 1)))
+		return _ceb_untag(from->b[0], 1);
 
 	/* look up the previous unique entry */
 	if (!restart)
@@ -1578,7 +1559,7 @@ struct ceb_node *_ceb_lookup(struct ceb_root **root,
 	ret = _ceb_descend(root, CEB_WM_KEQ, kofs, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, is_dup_ptr);
 	if (ret && is_dup_ptr && *is_dup_ptr) {
 		/* on a duplicate, the first node is right->left and it's a leaf */
-		ret = _ceb_untag(_ceb_untag(ret->b[1], 0)->b[0], 1);
+		ret = _ceb_untag(_ceb_untag(ret->b[1], 1)->b[0], 1);
 	}
 	return ret;
 }
@@ -1675,7 +1656,7 @@ struct ceb_node *_ceb_lookup_ge(struct ceb_root **root,
 
 	if (ret && is_dup_ptr && *is_dup_ptr) {
 		/* on a duplicate, the first node is right->left and it's a leaf */
-		ret = _ceb_untag(_ceb_untag(ret->b[1], 0)->b[0], 1);
+		ret = _ceb_untag(_ceb_untag(ret->b[1], 1)->b[0], 1);
 	}
 	return ret;
 }
@@ -1711,7 +1692,7 @@ struct ceb_node *_ceb_lookup_gt(struct ceb_root **root,
 
 	if (ret && is_dup_ptr && *is_dup_ptr) {
 		/* on a duplicate, the first node is right->left and it's a leaf */
-		ret = _ceb_untag(_ceb_untag(ret->b[1], 0)->b[0], 1);
+		ret = _ceb_untag(_ceb_untag(ret->b[1], 1)->b[0], 1);
 	}
 	return ret;
 }
@@ -1787,16 +1768,16 @@ struct ceb_node *_ceb_delete(struct ceb_root **root,
 		 *         *((node == last) ? parent : &node->b[1]->b[0]) = node->b[0];
 		 */
 		struct ceb_node *first, *last;
-		struct ceb_root *parent;
 
 		last = ret;
-		parent = last->b[1];
-		first = _ceb_untag(parent, 0);
+		first = _ceb_untag(last->b[1], 1);
 
 		/* cases 1 and 2 below */
 		if (!node || node == _ceb_untag(first->b[0], 1)) {
-			/* node unspecified or the first, remove the first entry (the leaf) */
-			ret = _ceb_clrtag(first->b[0]); // update return node
+			/* node unspecified or the first, remove the leaf and
+			 * convert the first entry to it.
+			 */
+			ret = _ceb_untag(first->b[0], 1); // update return node
 			last->b[1] = first->b[1]; // new first (remains OK if last==first)
 
 			if (ret->b[0] != _ceb_dotag(ret, 1) || ret->b[1] != _ceb_dotag(ret, 1)) {
@@ -1805,7 +1786,7 @@ struct ceb_node *_ceb_delete(struct ceb_root **root,
 				 */
 				first->b[0] = ret->b[0];
 				first->b[1] = ret->b[1];
-				nparent->b[npside] = parent;
+				nparent->b[npside] = _ceb_dotag(first, 0);
 				/* if first is going to replace the leaf's parent, it becomes
 				 * its own parent and leaf and we must tag its branch accordingly.
 				 */
@@ -1820,15 +1801,15 @@ struct ceb_node *_ceb_delete(struct ceb_root **root,
 			}
 			/* first becomes a leaf, it must be tagged */
 			if (last != first)
-				_ceb_untag(last->b[1], 0)->b[0] = _ceb_dotag(first, 1);
+				_ceb_untag(last->b[1], 1)->b[0] = _ceb_dotag(first, 1);
 			/* done */
 		} else {
 			/* case 3: the node to delete is a dup, we only have to
 			 * manipulate the list.
 			 */
 			ret = node;
-			((node == first) ? last : _ceb_untag(node->b[0], 0))->b[1] = node->b[1];
-			*((node == last) ? &lparent->b[lpside] : &_ceb_untag(node->b[1], 0)->b[0]) = node->b[0];
+			((node == first) ? last : _ceb_untag(node->b[0], 1))->b[1] = node->b[1];
+			*((node == last) ? &lparent->b[lpside] : &_ceb_untag(node->b[1], 1)->b[0]) = node->b[0];
 			/* done */
 		}
 		goto mark_and_leave;
@@ -2030,7 +2011,7 @@ static void ceb_default_dump_dups(ptrdiff_t kofs, enum ceb_key_type key_type, co
 	 * that node either has both sides equal to itself, or a distinct
 	 * neighbours.
 	 */
-	leaf = _ceb_clrtag(_ceb_untag(node->b[1], 0)->b[0]);
+	leaf = _ceb_clrtag(_ceb_untag(node->b[1], 1)->b[0]);
 
 	is_last = 1;
 	if (leaf->b[0] != _ceb_dotag(leaf, 1) || leaf->b[1] != _ceb_dotag(leaf, 1))
