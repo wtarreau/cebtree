@@ -684,6 +684,9 @@ struct ceb_node *_ceb_descend(struct ceb_node **root,
 			/* this is a deletion, prefetch for writes */
 			__builtin_prefetch(node->b[0], 1);
 			__builtin_prefetch(node->b[1], 1);
+		} else {
+			__builtin_prefetch(node->b[0], 0);
+			__builtin_prefetch(node->b[1], 0);
 		}
 
 		/* neither pointer is tagged */
