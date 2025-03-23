@@ -625,6 +625,9 @@ static void dbg(int line,
  * size arrays are passed in key_ptr with their length in key_u64. For keyless
  * nodes whose address serves as the key, the pointer needs to be passed in
  * key_ptr, and pxor64 will be used internally.
+ * The support for duplicates is advertised by ret_is_dup not being null; it
+ * will be filled on return with an indication whether the node belongs to a
+ * duplicate list or not.
  */
 static inline __attribute__((always_inline))
 struct ceb_node *_ceb_descend(struct ceb_root **root,
@@ -1303,13 +1306,14 @@ static inline __attribute__((always_inline))
 struct ceb_node *_ceb_last(struct ceb_root **root,
                            ptrdiff_t kofs,
                            enum ceb_key_type key_type,
-                           uint64_t key_len)
+                           uint64_t key_len,
+                           int *is_dup_ptr)
 {
 	if (!*root)
 		return NULL;
 
 	/* note for duplicates: the current scheme always returns the last one by default */
-	return _ceb_descend(root, CEB_WM_LST, kofs, key_type, 0, key_len, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	return _ceb_descend(root, CEB_WM_LST, kofs, key_type, 0, key_len, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, is_dup_ptr);
 }
 
 /* Searches in the tree <root> made of keys of type <key_type>, for the next
@@ -1325,20 +1329,21 @@ struct ceb_node *_ceb_next_unique(struct ceb_root **root,
                                   enum ceb_key_type key_type,
                                   uint32_t key_u32,
                                   uint64_t key_u64,
-                                  const void *key_ptr)
+                                  const void *key_ptr,
+                                  int *is_dup_ptr)
 {
 	struct ceb_root *restart;
 
 	if (!*root)
 		return NULL;
 
-	if (!_ceb_descend(root, CEB_WM_KNX, kofs, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &restart, NULL))
+	if (!_ceb_descend(root, CEB_WM_KNX, kofs, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &restart, is_dup_ptr))
 		return NULL;
 
 	if (!restart)
 		return NULL;
 
-	return _ceb_descend(&restart, CEB_WM_NXT, kofs, key_type, 0, key_u64, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	return _ceb_descend(&restart, CEB_WM_NXT, kofs, key_type, 0, key_u64, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, is_dup_ptr);
 }
 
 /* Searches in the tree <root> made of keys of type <key_type>, for the prev
@@ -1354,20 +1359,21 @@ struct ceb_node *_ceb_prev_unique(struct ceb_root **root,
                                   enum ceb_key_type key_type,
                                   uint32_t key_u32,
                                   uint64_t key_u64,
-                                  const void *key_ptr)
+                                  const void *key_ptr,
+                                  int *is_dup_ptr)
 {
 	struct ceb_root *restart;
 
 	if (!*root)
 		return NULL;
 
-	if (!_ceb_descend(root, CEB_WM_KPR, kofs, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &restart, NULL))
+	if (!_ceb_descend(root, CEB_WM_KPR, kofs, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &restart, is_dup_ptr))
 		return NULL;
 
 	if (!restart)
 		return NULL;
 
-	return _ceb_descend(&restart, CEB_WM_PRV, kofs, key_type, 0, key_u64, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	return _ceb_descend(&restart, CEB_WM_PRV, kofs, key_type, 0, key_u64, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, is_dup_ptr);
 }
 
 /* Searches in the tree <root> made of keys of type <key_type>, for the next
@@ -1465,16 +1471,16 @@ struct ceb_node *_ceb_next(struct ceb_root **root,
                            uint32_t key_u32,
                            uint64_t key_u64,
                            const void *key_ptr,
-                           const struct ceb_node *from)
+                           const struct ceb_node *from,
+                           int *is_dup_ptr)
 {
 	struct ceb_root *restart;
 	struct ceb_node *node;
-	int is_dup;
 
 	if (!*root)
 		return NULL;
 
-	node = _ceb_descend(root, CEB_WM_KNX, kofs, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &restart, &is_dup);
+	node = _ceb_descend(root, CEB_WM_KNX, kofs, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &restart, is_dup_ptr);
 	if (!node)
 		return NULL;
 
@@ -1502,8 +1508,8 @@ struct ceb_node *_ceb_next(struct ceb_root **root,
 	/* this look up will stop on the topmost dup in a sub-tree which is
 	 * also the last one. Thanks to restart we know that this entry exists.
 	 */
-	node = _ceb_descend(&restart, CEB_WM_NXT, kofs, key_type, 0, key_u64, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &is_dup);
-	if (node && is_dup) {
+	node = _ceb_descend(&restart, CEB_WM_NXT, kofs, key_type, 0, key_u64, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, is_dup_ptr);
+	if (node && is_dup_ptr && *is_dup_ptr) {
 		/* on a duplicate, the first node is right->left and it's a leaf */
 		node = _ceb_untag(_ceb_untag(node->b[1], 0)->b[0], 1);
 	}
@@ -1526,16 +1532,16 @@ struct ceb_node *_ceb_prev(struct ceb_root **root,
                            uint32_t key_u32,
                            uint64_t key_u64,
                            const void *key_ptr,
-                           const struct ceb_node *from)
+                           const struct ceb_node *from,
+                           int *is_dup_ptr)
 {
 	struct ceb_root *restart;
 	struct ceb_node *node;
-	int is_dup;
 
 	if (!*root)
 		return NULL;
 
-	node = _ceb_descend(root, CEB_WM_KPR, kofs, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &restart, &is_dup);
+	node = _ceb_descend(root, CEB_WM_KPR, kofs, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &restart, is_dup_ptr);
 	if (!node)
 		return NULL;
 
@@ -1548,7 +1554,7 @@ struct ceb_node *_ceb_prev(struct ceb_root **root,
 	 *   - from is the first dup so we've visited them all, we now need
 	 *     to jump to the previous unique value.
 	 */
-	if (is_dup && (node == from || _ceb_untag(node->b[1], 0)->b[0] != _ceb_dotag(from, 1)))
+	if (is_dup_ptr && *is_dup_ptr && (node == from || _ceb_untag(node->b[1], 0)->b[0] != _ceb_dotag(from, 1)))
 		return _ceb_clrtag(from->b[0]);
 
 	/* look up the previous unique entry */
@@ -1556,7 +1562,7 @@ struct ceb_node *_ceb_prev(struct ceb_root **root,
 		return NULL;
 
 	/* Note that the descent stops on the last dup which is the one we want */
-	return _ceb_descend(&restart, CEB_WM_PRV, kofs, key_type, 0, key_u64, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &is_dup);
+	return _ceb_descend(&restart, CEB_WM_PRV, kofs, key_type, 0, key_u64, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, is_dup_ptr);
 }
 
 /* Searches in the tree <root> made of keys of type <key_type>, for the first
@@ -1594,7 +1600,8 @@ struct ceb_node *_ceb_lookup_le(struct ceb_root **root,
                                 enum ceb_key_type key_type,
                                 uint32_t key_u32,
                                 uint64_t key_u64,
-                                const void *key_ptr)
+                                const void *key_ptr,
+                                int *is_dup_ptr)
 {
 	struct ceb_node *ret = NULL;
 	struct ceb_root *restart;
@@ -1603,14 +1610,14 @@ struct ceb_node *_ceb_lookup_le(struct ceb_root **root,
 		return NULL;
 
 	/* note that for duplicates, we already find the last one */
-	ret = _ceb_descend(root, CEB_WM_KLE, kofs, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &restart, NULL);
+	ret = _ceb_descend(root, CEB_WM_KLE, kofs, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &restart, is_dup_ptr);
 	if (ret)
 		return ret;
 
 	if (!restart)
 		return NULL;
 
-	return _ceb_descend(&restart, CEB_WM_PRV, kofs, key_type, 0, key_u64, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	return _ceb_descend(&restart, CEB_WM_PRV, kofs, key_type, 0, key_u64, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, is_dup_ptr);
 }
 
 /* Searches in the tree <root> made of keys of type <key_type>, for the last
@@ -1624,7 +1631,8 @@ struct ceb_node *_ceb_lookup_lt(struct ceb_root **root,
                                 enum ceb_key_type key_type,
                                 uint32_t key_u32,
                                 uint64_t key_u64,
-                                const void *key_ptr)
+                                const void *key_ptr,
+                                int *is_dup_ptr)
 {
 	struct ceb_node *ret = NULL;
 	struct ceb_root *restart;
@@ -1633,14 +1641,14 @@ struct ceb_node *_ceb_lookup_lt(struct ceb_root **root,
 		return NULL;
 
 	/* note that for duplicates, we already find the last one */
-	ret = _ceb_descend(root, CEB_WM_KLT, kofs, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &restart, NULL);
+	ret = _ceb_descend(root, CEB_WM_KLT, kofs, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &restart, is_dup_ptr);
 	if (ret)
 		return ret;
 
 	if (!restart)
 		return NULL;
 
-	return _ceb_descend(&restart, CEB_WM_PRV, kofs, key_type, 0, key_u64, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	return _ceb_descend(&restart, CEB_WM_PRV, kofs, key_type, 0, key_u64, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, is_dup_ptr);
 }
 
 /* Searches in the tree <root> made of keys of type <key_type>, for the first
