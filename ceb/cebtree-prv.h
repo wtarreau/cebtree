@@ -1805,12 +1805,21 @@ struct ceb_node *_ceb_delete(struct ceb_root **root,
 				first->b[0] = ret->b[0];
 				first->b[1] = ret->b[1];
 				nparent->b[npside] = parent;
-				lparent->b[lpside] = _ceb_dotag(first, 1);
+				/* if first is going to replace the leaf's parent, it becomes
+				 * its own parent and leaf and we must tag its branch accordingly.
+				 */
+				if (ret != lparent)
+					lparent->b[lpside] = _ceb_dotag(first, 1);
+				else
+					first->b[lpside] = _ceb_dotag(first, 1);
 			}
 			else {
 				/* first becomes the nodeless leaf since we only keep its leaf */
 				first->b[0] = first->b[1] = _ceb_dotag(first, 1);
 			}
+			/* first becomes a leaf, it must be tagged */
+			if (last != first)
+				_ceb_untag(last->b[1], 0)->b[0] = _ceb_dotag(first, 1);
 			/* done */
 		} else {
 			/* case 3: the node to delete is a dup, we only have to
