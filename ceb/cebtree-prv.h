@@ -703,9 +703,8 @@ struct ceb_node *_ceb_descend(struct ceb_root **root,
 		union ceb_key_storage *l, *r;
 		struct ceb_root *_l, *_r;
 
-		_l = *root;
-		is_leaf = _ceb_gettag(_l);
-		node = _ceb_clrtag(_l);
+		node = _ceb_clrtag(*root);
+		is_leaf = _ceb_gettag(*root);
 
 		_l = node->b[0]; // tagged versions
 		_r = node->b[1];
@@ -728,11 +727,8 @@ struct ceb_node *_ceb_descend(struct ceb_root **root,
 		/* neither pointer is tagged */
 		k = NODEK(node, kofs);
 
-		/* two equal pointers identifies either the nodeless leaf or
-		 * the 2nd dup of a sub-tree.
-		 */
-		if (_l == _r && is_leaf && _l == _ceb_dotag(node, 1)) {
-			dbg(__LINE__, "l==r", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+		if (is_leaf) {
+			dbg(__LINE__, "leaf", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 			break;
 		}
 
@@ -795,11 +791,6 @@ struct ceb_node *_ceb_descend(struct ceb_root **root,
 				brside = kl >= kr;
 			}
 
-			if (is_leaf) {
-				dbg(__LINE__, "xor>", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
-				break;
-			}
-
 			xor32 = kl ^ kr;
 			if (meth >= CEB_WM_KEQ) {
 				/* let's stop if our key is not there */
@@ -827,11 +818,6 @@ struct ceb_node *_ceb_descend(struct ceb_root **root,
 			if (meth >= CEB_WM_KEQ) {
 				kl ^= key_u64; kr ^= key_u64;
 				brside = kl >= kr;
-			}
-
-			if (is_leaf) {
-				dbg(__LINE__, "xor>", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
-				break;
 			}
 
 			xor64 = kl ^ kr;
@@ -863,11 +849,6 @@ struct ceb_node *_ceb_descend(struct ceb_root **root,
 				brside = kl >= kr;
 			}
 
-			if (is_leaf) {
-				dbg(__LINE__, "xor>", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
-				break;
-			}
-
 			xoraddr = kl ^ kr;
 			if (meth >= CEB_WM_KEQ) {
 				/* let's stop if our key is not there */
@@ -892,17 +873,9 @@ struct ceb_node *_ceb_descend(struct ceb_root **root,
 
 			if (meth >= CEB_WM_KEQ) {
 				/* measure identical lengths */
-				size_t clen = is_leaf ? 0 : plen; // common length
-
-				llen = equal_bits(key_ptr, (key_type == CEB_KT_MB) ? l->mb : l->ptr, clen, key_u64 << 3);
-				rlen = equal_bits(key_ptr, (key_type == CEB_KT_MB) ? r->mb : r->ptr, clen, key_u64 << 3);
+				llen = equal_bits(key_ptr, (key_type == CEB_KT_MB) ? l->mb : l->ptr, plen, key_u64 << 3);
+				rlen = equal_bits(key_ptr, (key_type == CEB_KT_MB) ? r->mb : r->ptr, plen, key_u64 << 3);
 				brside = llen <= rlen;
-			}
-
-			if (is_leaf) {
-				/* this is a leaf. E.g. triggered using 2 4 6 4 */
-				dbg(__LINE__, "xor>", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
-				break;
 			}
 
 			xlen = equal_bits((key_type == CEB_KT_MB) ? l->mb : l->ptr,
@@ -945,17 +918,9 @@ struct ceb_node *_ceb_descend(struct ceb_root **root,
 				 * leaf. We take that negative length for an
 				 * infinite one, hence the uint cast.
 				 */
-				size_t clen = is_leaf ? 0 : plen; // common length
-
-				llen = string_equal_bits(key_ptr, (key_type == CEB_KT_ST) ? l->str : l->ptr, clen);
-				rlen = string_equal_bits(key_ptr, (key_type == CEB_KT_ST) ? r->str : r->ptr, clen);
+				llen = string_equal_bits(key_ptr, (key_type == CEB_KT_ST) ? l->str : l->ptr, plen);
+				rlen = string_equal_bits(key_ptr, (key_type == CEB_KT_ST) ? r->str : r->ptr, plen);
 				brside = (size_t)llen <= (size_t)rlen;
-			}
-
-			if (is_leaf) {
-				/* this is a leaf. E.g. triggered using 2 4 6 4 */
-				dbg(__LINE__, "xor>", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
-				break;
 			}
 
 			xlen = string_equal_bits((key_type == CEB_KT_ST) ? l->str : l->ptr,
