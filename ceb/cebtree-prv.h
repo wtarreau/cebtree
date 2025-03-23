@@ -987,7 +987,7 @@ struct ceb_node *_ceb_descend(struct ceb_root **root,
 			if (meth >= CEB_WM_KEQ) {
 				/* let's stop if our key is not there */
 
-				if ((unsigned)llen < (unsigned)xlen && (unsigned)rlen < (unsigned)xlen) {
+				if (llen < xlen && rlen < xlen) {
 					dbg(__LINE__, "mismatch", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 					break;
 				}
