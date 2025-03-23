@@ -642,7 +642,6 @@ struct ceb_node *_ceb_descend(struct ceb_node **root,
 	size_t rlen = 0;  // right vs key matching length
 	size_t plen = 0;  // previous common len between branches
 	int is_dup = 0;   // returned key is a duplicate
-	int found = 0;    // key was found (saves an extra strcmp for arrays)
 
 	dbg(__LINE__, "_enter__", meth, kofs, key_type, root, NULL, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 
@@ -745,8 +744,7 @@ struct ceb_node *_ceb_descend(struct ceb_node **root,
 		 *      - if we're deleting, it could be the key we were
 		 *        looking for so we have to check for it as long as
 		 *        it's still possible to keep a copy of the node's
-		 *        parent. <found> is set int this case for expensive
-		 *        types.
+		 *        parent.
 		 */
 
 		if (key_type == CEB_KT_U32) {
@@ -762,7 +760,6 @@ struct ceb_node *_ceb_descend(struct ceb_node **root,
 			}
 
 			if (meth >= CEB_WM_KEQ) {
-				/* "found" is not used here */
 				kl ^= key_u32; kr ^= key_u32;
 				brside = kl >= kr;
 
@@ -802,7 +799,6 @@ struct ceb_node *_ceb_descend(struct ceb_node **root,
 			}
 
 			if (meth >= CEB_WM_KEQ) {
-				/* "found" is not used here */
 				kl ^= key_u64; kr ^= key_u64;
 				brside = kl >= kr;
 
@@ -842,7 +838,6 @@ struct ceb_node *_ceb_descend(struct ceb_node **root,
 			}
 
 			if (meth >= CEB_WM_KEQ) {
-				/* "found" is not used here */
 				kl ^= (uintptr_t)key_ptr; kr ^= (uintptr_t)key_ptr;
 				brside = kl >= kr;
 
@@ -877,8 +872,6 @@ struct ceb_node *_ceb_descend(struct ceb_node **root,
 				llen = equal_bits(key_ptr, (key_type == CEB_KT_MB) ? l->mb : l->ptr, 0, key_u64 << 3);
 				rlen = equal_bits(key_ptr, (key_type == CEB_KT_MB) ? r->mb : r->ptr, 0, key_u64 << 3);
 				brside = llen <= rlen;
-				if (llen == rlen && (uint64_t)llen == key_u64 << 3)
-					found = 1;
 			}
 
 			xlen = equal_bits((key_type == CEB_KT_MB) ? l->mb : l->ptr,
@@ -912,7 +905,6 @@ struct ceb_node *_ceb_descend(struct ceb_node **root,
 						dbg(__LINE__, "equal", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 						nparent = lparent;
 						npside  = lpside;
-						found = 1;
 					}
 				}
 			}
@@ -937,8 +929,6 @@ struct ceb_node *_ceb_descend(struct ceb_node **root,
 				llen = string_equal_bits(key_ptr, (key_type == CEB_KT_ST) ? l->str : l->ptr, 0);
 				rlen = string_equal_bits(key_ptr, (key_type == CEB_KT_ST) ? r->str : r->ptr, 0);
 				brside = (size_t)llen <= (size_t)rlen;
-				if ((ssize_t)llen < 0 || (ssize_t)rlen < 0)
-					found = 1;
 			}
 
 			xlen = string_equal_bits((key_type == CEB_KT_ST) ? l->str : l->ptr,
@@ -973,7 +963,6 @@ struct ceb_node *_ceb_descend(struct ceb_node **root,
 						dbg(__LINE__, "equal", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 						nparent = lparent;
 						npside  = lpside;
-						found = 1;
 					}
 				}
 			}
@@ -1027,17 +1016,6 @@ struct ceb_node *_ceb_descend(struct ceb_node **root,
 	 * still deserved, depending on the matching method.
 	 */
 
-	/* if we've exited on an exact match after visiting a regular node
-	 * (i.e. not the nodeless leaf), we'll avoid checking the string again.
-	 * However if it doesn't match, we must make sure to compare from
-	 * within the key (which can be shorter than the ones already there),
-	 * so we restart the check from the longest of the two lengths, which
-	 * guarantees these bits exist. Test with "100", "10", "1" to see where
-	 * this is needed.
-	 */
-	if ((key_type == CEB_KT_ST || key_type == CEB_KT_IS) && meth >= CEB_WM_KEQ && !found)
-		plen = (llen > rlen) ? llen : rlen;
-
 	/* update the pointers needed for modifications (insert, delete) */
 	if (ret_nside && meth >= CEB_WM_KEQ) {
 		switch (key_type) {
@@ -1058,7 +1036,7 @@ struct ceb_node *_ceb_descend(struct ceb_node **root,
 
 		case CEB_KT_ST:
 		case CEB_KT_IS:
-			*ret_nside = found ||
+			*ret_nside = (ssize_t)plen < 0 ||
 				strcmp(key_ptr + plen / 8, (const void *)((key_type == CEB_KT_ST) ? k->str : k->ptr) + plen / 8) >= 0;
 			break;
 		}
@@ -1150,7 +1128,7 @@ struct ceb_node *_ceb_descend(struct ceb_node **root,
 		else if (key_type == CEB_KT_ST || key_type == CEB_KT_IS) {
 			int diff;
 
-			if (found)
+			if ((ssize_t)plen < 0)
 				diff = 0;
 			else
 				diff = strcmp((const void *)((key_type == CEB_KT_ST) ? k->str : k->ptr) + plen / 8, key_ptr + plen / 8);
