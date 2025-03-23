@@ -17,6 +17,8 @@
 
 struct ceb_root *ceb_root = NULL;
 
+long mask = ~0L;
+
 struct key {
 	struct ceb_node node;
 	char key[21];
@@ -136,7 +138,7 @@ static uint32_t rnd32()
 
 static uint64_t rnd64()
 {
-	return ((uint64_t)rnd32() << 32) + rnd32();
+	return (((uint64_t)rnd32() << 32) + rnd32()) & mask;
 }
 
 static void rnd64_to_str(char *dst)
@@ -146,7 +148,7 @@ static void rnd64_to_str(char *dst)
 
 void usage(const char *name)
 {
-	fprintf(stderr, "Usage: %s [-dD] entries lookups loops [first entries...]\n", name);
+	fprintf(stderr, "Usage: %s [-dD] [-m mask] entries lookups loops [first entries...]\n", name);
 	exit(1);
 }
 
@@ -165,6 +167,12 @@ int main(int argc, char **argv)
 			debug++;
 		else if (argv[1][1] == 'D')
 			dump = 1;
+		else if (argv[1][1] == 'm' && argc > 2) {
+			mask = atol(argv[2]);
+			argv[1] = argv[0];
+			argv++;
+			argc--;
+		}
 		else
 			usage(argv[0]);
 		argv[1] = argv[0];
