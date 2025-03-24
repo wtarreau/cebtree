@@ -696,6 +696,24 @@ struct ceb_node *_ceb_descend(struct ceb_root **root,
 		break;
 	}
 
+	/* In case of deletion, we need the node's parent and side. It's
+	 * normally discovered during the descent while comparing branches,
+	 * but there's a case where it's not possible, it's when the root
+	 * is the node's parent because the first node is the one we're
+	 * looking for. So we have to perform this check here.
+	 */
+	if (meth >= CEB_WM_KEQ && ret_nparent && ret_npside) {
+		union ceb_key_storage *k = NODEK(_ceb_clrtag(*root), kofs);
+
+		if (((key_type == CEB_KT_MB || key_type == CEB_KT_IM) &&
+		     (memcmp(key_ptr, ((key_type == CEB_KT_MB) ? k->mb : k->ptr), key_u64) == 0)) ||
+		    ((key_type == CEB_KT_ST || key_type == CEB_KT_IS) &&
+		     (strcmp(key_ptr, (const void *)((key_type == CEB_KT_ST) ? k->str : k->ptr)) == 0))) {
+			*ret_nparent = lparent;
+			*ret_npside  = lpside;
+		}
+	}
+
 	/* the previous xor is initialized to the largest possible inter-branch
 	 * value so that it can never match on the first test as we want to use
 	 * it to detect a leaf vs node. That's achieved with plen==0 for arrays
@@ -884,28 +902,16 @@ struct ceb_node *_ceb_descend(struct ceb_root **root,
 					  (key_type == CEB_KT_MB) ? r->mb : r->ptr, plen, key_u64 << 3);
 
 			if (meth >= CEB_WM_KEQ) {
-				/* let's stop if our key is not there */
-
 				if (llen < xlen && rlen < xlen) {
+					/* let's stop if our key is not there */
 					dbg(__LINE__, "mismatch", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 					break;
 				}
 
-				if (ret_nparent && !*ret_nparent && ret_npside) { // delete ?
-					/* When deleting we need to verify if the current node matches the key because
-					 * we'll have to remember the node's parent. Since the searched key belongs to
-					 * the tree, we know that the differences between it and the node's key may only
-					 * arise after the split bit defined by the two branches. This permits to only
-					 * compare the bits that differ after xlen, or even none at all if both match
-					 * (duplicates). If this were to be used with keys not in the tree (e.g. the
-					 * "pick()" operation, the comparison would need to be performed starting from
-					 * min(xlen, max(llen, rlen)).
-					 */
-					if (memcmp(key_ptr + xlen / 8, ((key_type == CEB_KT_MB) ? k->mb : k->ptr) + xlen / 8, key_u64 - xlen / 8) == 0) {
-						dbg(__LINE__, "equal", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
-						*ret_nparent = lparent;
-						*ret_npside  = lpside;
-					}
+				if (ret_nparent && ret_npside && !*ret_nparent &&
+				    ((llen == key_u64 << 3) || (rlen == key_u64 << 3))) {
+					*ret_nparent = node;
+					*ret_npside  = brside;
 				}
 			}
 			plen = xlen;
@@ -923,36 +929,20 @@ struct ceb_node *_ceb_descend(struct ceb_root **root,
 				llen = string_equal_bits(key_ptr, (key_type == CEB_KT_ST) ? l->str : l->ptr, plen);
 				rlen = string_equal_bits(key_ptr, (key_type == CEB_KT_ST) ? r->str : r->ptr, plen);
 				brside = (size_t)llen <= (size_t)rlen;
+				if (ret_nparent && ret_npside && !*ret_nparent &&
+				    ((ssize_t)llen < 0 || (ssize_t)rlen < 0)) {
+					*ret_nparent = node;
+					*ret_npside  = brside;
+				}
 			}
 
 			xlen = string_equal_bits((key_type == CEB_KT_ST) ? l->str : l->ptr,
 						 (key_type == CEB_KT_ST) ? r->str : r->ptr, plen);
 
-			if (meth >= CEB_WM_KEQ) {
+			if (meth >= CEB_WM_KEQ && llen < xlen && rlen < xlen) {
 				/* let's stop if our key is not there */
-
-				if (llen < xlen && rlen < xlen) {
-					dbg(__LINE__, "mismatch", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
-					break;
-				}
-
-				if (ret_nparent && !*ret_nparent && ret_npside) { // delete ?
-					/* When deleting we need to verify if the current node matches the key because
-					 * we'll have to remember the node's parent. Since the searched key belongs to
-					 * the tree, we know that the differences between it and the node's key may only
-					 * arise after the split bit defined by the two branches. This permits to only
-					 * compare the bits that differ after xlen, or even none at all if both match
-					 * (duplicates). If this were to be used with keys not in the tree (e.g. the
-					 * "pick()" operation, the comparison would need to be performed starting from
-					 * min(xlen, max(llen, rlen)).
-					 */
-					if ((ssize_t)xlen < 0 || strcmp(key_ptr + xlen / 8, (const void *)((key_type == CEB_KT_ST) ? k->str : k->ptr) + xlen / 8) == 0) {
-						/* strcmp() still needed. E.g. 1 2 3 4 10 11 4 3 2 1 10 11 fails otherwise */
-						dbg(__LINE__, "equal", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
-						*ret_nparent = lparent;
-						*ret_npside  = lpside;
-					}
-				}
+				dbg(__LINE__, "mismatch", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
+				break;
 			}
 			plen = xlen;
 		}
