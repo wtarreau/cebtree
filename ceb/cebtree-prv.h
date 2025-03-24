@@ -680,6 +680,8 @@ struct ceb_node *_ceb_descend(struct ceb_root **root,
 	gparent = lparent;
 	if (ret_nparent)
 		*ret_nparent = NULL;
+	if (ret_npside)
+		*ret_npside = 0;
 
 	/* for key-less descents we need to set the initial branch to take */
 	switch (meth) {
