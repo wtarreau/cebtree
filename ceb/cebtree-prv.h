@@ -985,6 +985,10 @@ struct ceb_node *_ceb_descend(struct ceb_root **root,
 				}
 			}
 
+			/* the compiler cannot know this never happens and this helps it optimize the code */
+			if ((ssize_t)plen < 0)
+				__builtin_unreachable();
+
 			xlen = string_equal_bits((key_type == CEB_KT_ST) ? l->str : l->ptr,
 						 (key_type == CEB_KT_ST) ? r->str : r->ptr, plen);
 
