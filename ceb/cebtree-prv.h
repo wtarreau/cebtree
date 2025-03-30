@@ -985,7 +985,7 @@ struct ceb_node *_ceb_descend(struct ceb_root **root,
 			dbg(__LINE__, "side0", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 		}
 
-		if (node == _ceb_clrtag(*root)) {
+		if (node == _ceb_untag(*root, 1)) {
 			/* loops over itself, it's either a leaf or the single and last list element of a dup sub-tree */
 			dbg(__LINE__, "loop", meth, kofs, key_type, root, node, key_u32, key_u64, key_ptr, pxor32, pxor64, plen);
 			break;
