@@ -145,6 +145,13 @@
 #define __builtin_prefetch(addr, ...) do { } while (0)
 #endif
 
+/* __builtin_unreachable() was added in gcc 4.5 */
+#if defined(__GNUC__) && (__GNUC__ >= 5 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 5))
+#define __has_builtin___builtin_unreachable 1  /* make __builtin_unreachable() return 1 */
+#elif !__has_builtin(__builtin_unreachable)
+#define __builtin_unreachable() do { } while (1)
+#endif
+
 /* FLSNZ: find last set bit for non-zero value. "Last" here means the highest
  * one. It returns a value from 1 to 32 for 1<<0 to 1<<31.
  */
