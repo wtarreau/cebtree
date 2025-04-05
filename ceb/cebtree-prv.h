@@ -579,13 +579,13 @@ struct ceb_node *_ceb_descend(struct ceb_root **root,
 	 */
 	while (1) {
 		union ceb_key_storage *lks, *rks;
-		struct ceb_root *_l, *_r;
+		struct ceb_root *lr, *rr;
 
 		node = _ceb_clrtag(*root);
 		is_leaf = _ceb_gettag(*root);
 
-		_l = node->b[0]; // tagged versions
-		_r = node->b[1];
+		lr = node->b[0]; // tagged versions
+		rr = node->b[1];
 
 		/* Tests have shown that for write-intensive workloads (many
 		 * insertions/deletion), prefetching for reads is counter
@@ -595,11 +595,11 @@ struct ceb_node *_ceb_descend(struct ceb_root **root,
 		 */
 		if (ret_lpside) {
 			/* this is a deletion, prefetch for writes */
-			__builtin_prefetch(_l, 1);
-			__builtin_prefetch(_r, 1);
+			__builtin_prefetch(lr, 1);
+			__builtin_prefetch(rr, 1);
 		} else {
-			__builtin_prefetch(_l, 0);
-			__builtin_prefetch(_r, 0);
+			__builtin_prefetch(lr, 0);
+			__builtin_prefetch(rr, 0);
 		}
 
 		/* neither pointer is tagged */
@@ -608,8 +608,8 @@ struct ceb_node *_ceb_descend(struct ceb_root **root,
 		if (is_leaf)
 			break;
 
-		lks = NODEK(_ceb_clrtag(_l), kofs);
-		rks = NODEK(_ceb_clrtag(_r), kofs);
+		lks = NODEK(_ceb_clrtag(lr), kofs);
+		rks = NODEK(_ceb_clrtag(rr), kofs);
 
 		/* In the following block, we're dealing with type-specific
 		 * operations which follow the same construct for each type:
