@@ -577,13 +577,14 @@ struct ceb_node *_ceb_descend(struct ceb_root **root,
 	 * it to detect a leaf vs node. That's achieved with plen==0 for arrays
 	 * and pxorXX==~0 for scalars.
 	 */
+	node = _ceb_clrtag(*root);
+	is_leaf = _ceb_gettag(*root);
+
 	while (1) {
 		union ceb_key_storage *lks, *rks;
-		struct ceb_node *ln, *rn;
+		struct ceb_node *ln, *rn, *next;
 		struct ceb_root *lr, *rr;
-
-		node = _ceb_clrtag(*root);
-		is_leaf = _ceb_gettag(*root);
+		int next_leaf;
 
 		lr = node->b[0]; // tagged versions
 		rr = node->b[1];
@@ -803,6 +804,8 @@ struct ceb_node *_ceb_descend(struct ceb_root **root,
 		if (brside) {
 			if (meth == CEB_WM_KPR || meth == CEB_WM_KLE || meth == CEB_WM_KLT)
 				bnode = node;
+			next = rn;
+			next_leaf = _ceb_gettag(rr);
 			root = &node->b[1];
 
 			/* change branch for key-less walks */
@@ -812,6 +815,8 @@ struct ceb_node *_ceb_descend(struct ceb_root **root,
 		else {
 			if (meth == CEB_WM_KNX || meth == CEB_WM_KGE || meth == CEB_WM_KGT)
 				bnode = node;
+			next = ln;
+			next_leaf = _ceb_gettag(lr);
 			root = &node->b[0];
 
 			/* change branch for key-less walks */
@@ -819,10 +824,12 @@ struct ceb_node *_ceb_descend(struct ceb_root **root,
 				brside = 1;
 		}
 
-		if (node == _ceb_untag(*root, 1)) {
+		if (next == node) {
 			/* loops over itself, it's either a leaf or the single and last list element of a dup sub-tree */
 			break;
 		}
+		node = next;
+		is_leaf = next_leaf;
 	}
 
 	if (ret_is_dup) {
