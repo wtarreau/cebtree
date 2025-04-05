@@ -578,7 +578,7 @@ struct ceb_node *_ceb_descend(struct ceb_root **root,
 	 * and pxorXX==~0 for scalars.
 	 */
 	while (1) {
-		union ceb_key_storage *l, *r;
+		union ceb_key_storage *lks, *rks;
 		struct ceb_root *_l, *_r;
 
 		node = _ceb_clrtag(*root);
@@ -608,8 +608,8 @@ struct ceb_node *_ceb_descend(struct ceb_root **root,
 		if (is_leaf)
 			break;
 
-		l = NODEK(_ceb_clrtag(_l), kofs);
-		r = NODEK(_ceb_clrtag(_r), kofs);
+		lks = NODEK(_ceb_clrtag(_l), kofs);
+		rks = NODEK(_ceb_clrtag(_r), kofs);
 
 		/* In the following block, we're dealing with type-specific
 		 * operations which follow the same construct for each type:
@@ -659,7 +659,7 @@ struct ceb_node *_ceb_descend(struct ceb_root **root,
 			uint32_t xor32;   // left vs right branch xor
 			uint32_t kl, kr;
 
-			kl = l->u32; kr = r->u32;
+			kl = lks->u32; kr = rks->u32;
 			if (meth >= CEB_WM_KEQ) {
 				kl ^= key_u32; kr ^= key_u32;
 				brside = kl >= kr;
@@ -684,7 +684,7 @@ struct ceb_node *_ceb_descend(struct ceb_root **root,
 			uint64_t xor64;   // left vs right branch xor
 			uint64_t kl, kr;
 
-			kl = l->u64; kr = r->u64;
+			kl = lks->u64; kr = rks->u64;
 			if (meth >= CEB_WM_KEQ) {
 				kl ^= key_u64; kr ^= key_u64;
 				brside = kl >= kr;
@@ -709,7 +709,7 @@ struct ceb_node *_ceb_descend(struct ceb_root **root,
 			uintptr_t xoraddr;   // left vs right branch xor
 			uintptr_t kl, kr;
 
-			kl = (uintptr_t)l; kr = (uintptr_t)r;
+			kl = (uintptr_t)lks; kr = (uintptr_t)rks;
 			if (meth >= CEB_WM_KEQ) {
 				kl ^= (uintptr_t)key_ptr; kr ^= (uintptr_t)key_ptr;
 				brside = kl >= kr;
@@ -735,13 +735,13 @@ struct ceb_node *_ceb_descend(struct ceb_root **root,
 
 			if (meth >= CEB_WM_KEQ) {
 				/* measure identical lengths */
-				llen = equal_bits(key_ptr, (key_type == CEB_KT_MB) ? l->mb : l->ptr, plen, key_u64 << 3);
-				rlen = equal_bits(key_ptr, (key_type == CEB_KT_MB) ? r->mb : r->ptr, plen, key_u64 << 3);
+				llen = equal_bits(key_ptr, (key_type == CEB_KT_MB) ? lks->mb : lks->ptr, plen, key_u64 << 3);
+				rlen = equal_bits(key_ptr, (key_type == CEB_KT_MB) ? rks->mb : rks->ptr, plen, key_u64 << 3);
 				brside = llen <= rlen;
 			}
 
-			xlen = equal_bits((key_type == CEB_KT_MB) ? l->mb : l->ptr,
-					  (key_type == CEB_KT_MB) ? r->mb : r->ptr, plen, key_u64 << 3);
+			xlen = equal_bits((key_type == CEB_KT_MB) ? lks->mb : lks->ptr,
+					  (key_type == CEB_KT_MB) ? rks->mb : rks->ptr, plen, key_u64 << 3);
 
 			if (meth >= CEB_WM_KEQ) {
 				/* let's stop if our key is not there */
@@ -766,8 +766,8 @@ struct ceb_node *_ceb_descend(struct ceb_root **root,
 				 * leaf. We take that negative length for an
 				 * infinite one, hence the uint cast.
 				 */
-				llen = string_equal_bits(key_ptr, (key_type == CEB_KT_ST) ? l->str : l->ptr, plen);
-				rlen = string_equal_bits(key_ptr, (key_type == CEB_KT_ST) ? r->str : r->ptr, plen);
+				llen = string_equal_bits(key_ptr, (key_type == CEB_KT_ST) ? lks->str : lks->ptr, plen);
+				rlen = string_equal_bits(key_ptr, (key_type == CEB_KT_ST) ? rks->str : rks->ptr, plen);
 				brside = (size_t)llen <= (size_t)rlen;
 				if (ret_nparent && ret_npside && !*ret_nparent &&
 				    ((ssize_t)llen < 0 || (ssize_t)rlen < 0)) {
@@ -780,8 +780,8 @@ struct ceb_node *_ceb_descend(struct ceb_root **root,
 			if ((ssize_t)plen < 0)
 				__builtin_unreachable();
 
-			xlen = string_equal_bits((key_type == CEB_KT_ST) ? l->str : l->ptr,
-						 (key_type == CEB_KT_ST) ? r->str : r->ptr, plen);
+			xlen = string_equal_bits((key_type == CEB_KT_ST) ? lks->str : lks->ptr,
+						 (key_type == CEB_KT_ST) ? rks->str : rks->ptr, plen);
 
 			/* let's stop if our key is not there */
 			if (meth >= CEB_WM_KEQ && llen < xlen && rlen < xlen)
