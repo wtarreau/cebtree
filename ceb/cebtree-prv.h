@@ -239,7 +239,12 @@ static inline __attribute__((always_inline)) unsigned int flsnz64(unsigned long 
  * bytes. Note that parts or all of <ignore> bits may be rechecked. It is only
  * passed here as a hint to speed up the check.
  */
-static inline __attribute__((always_inline))
+static
+#if defined(__OPTIMIZE_SIZE__)
+__attribute__((noinline))
+#else
+inline __attribute__((always_inline))
+#endif
 size_t equal_bits(const unsigned char *a,
                   const unsigned char *b,
                   size_t ignore, size_t len)
@@ -274,7 +279,12 @@ size_t equal_bits(const unsigned char *a,
  * permitted. Equal strings are reported as a negative number of bits, which
  * indicates the end was reached.
  */
-static inline __attribute__((always_inline))
+static
+#if defined(__OPTIMIZE_SIZE__)
+__attribute__((noinline))
+#else
+inline __attribute__((always_inline))
+#endif
 size_t string_equal_bits(const unsigned char *a,
                          const unsigned char *b,
                          size_t ignore)
