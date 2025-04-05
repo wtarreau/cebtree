@@ -579,6 +579,7 @@ struct ceb_node *_ceb_descend(struct ceb_root **root,
 	 */
 	while (1) {
 		union ceb_key_storage *lks, *rks;
+		struct ceb_node *ln, *rn;
 		struct ceb_root *lr, *rr;
 
 		node = _ceb_clrtag(*root);
@@ -602,14 +603,18 @@ struct ceb_node *_ceb_descend(struct ceb_root **root,
 			__builtin_prefetch(rr, 0);
 		}
 
+		/* get a copy of the corresponding nodes */
+		ln = _ceb_clrtag(lr);
+		rn = _ceb_clrtag(rr);
+
 		/* neither pointer is tagged */
 		k = NODEK(node, kofs);
 
 		if (is_leaf)
 			break;
 
-		lks = NODEK(_ceb_clrtag(lr), kofs);
-		rks = NODEK(_ceb_clrtag(rr), kofs);
+		lks = NODEK(ln, kofs);
+		rks = NODEK(rn, kofs);
 
 		/* In the following block, we're dealing with type-specific
 		 * operations which follow the same construct for each type:
