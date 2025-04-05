@@ -584,7 +584,7 @@ struct ceb_node *_ceb_descend(struct ceb_root **root,
 		union ceb_key_storage *lks, *rks;
 		struct ceb_node *ln, *rn, *next;
 		struct ceb_root *lr, *rr;
-		int next_leaf;
+		int next_leaf, lnl, rnl;
 
 		lr = node->b[0]; // tagged versions
 		rr = node->b[1];
@@ -605,7 +605,9 @@ struct ceb_node *_ceb_descend(struct ceb_root **root,
 		}
 
 		/* get a copy of the corresponding nodes */
+		lnl = _ceb_gettag(lr);
 		ln = _ceb_clrtag(lr);
+		rnl = _ceb_gettag(rr);
 		rn = _ceb_clrtag(rr);
 
 		/* neither pointer is tagged */
@@ -805,7 +807,7 @@ struct ceb_node *_ceb_descend(struct ceb_root **root,
 			if (meth == CEB_WM_KPR || meth == CEB_WM_KLE || meth == CEB_WM_KLT)
 				bnode = node;
 			next = rn;
-			next_leaf = _ceb_gettag(rr);
+			next_leaf = rnl;
 			root = &node->b[1];
 
 			/* change branch for key-less walks */
@@ -816,7 +818,7 @@ struct ceb_node *_ceb_descend(struct ceb_root **root,
 			if (meth == CEB_WM_KNX || meth == CEB_WM_KGE || meth == CEB_WM_KGT)
 				bnode = node;
 			next = ln;
-			next_leaf = _ceb_gettag(lr);
+			next_leaf = lnl;
 			root = &node->b[0];
 
 			/* change branch for key-less walks */
