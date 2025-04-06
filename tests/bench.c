@@ -18,6 +18,11 @@
 # define NODE_INS(r,k)     cebul_insert(r,k)
 # define NODE_DEL(r,k)     cebul_delete(r,k)
 # define NODE_INTREE(n)    ceb_intree(n)
+# define STORAGE_STRING 0  // greater for string size
+#endif
+
+#if !defined(STORAGE_STRING)
+# define STORAGE_STRING 0
 #endif
 
 #include <sys/time.h>
@@ -101,6 +106,47 @@ static inline unsigned long tv_ms_elapsed(const struct timeval *tv1, const struc
         return ret;
 }
 
+/* Returns the pointer to the '\0' or NULL if not enough space in dst */
+char *ulltoa(unsigned long long n, char *dst, ssize_t size)
+{
+	ssize_t i = 0;
+	char *res;
+
+	switch(n) {
+	case 10000000000000000000ULL ... 18446744073709551615ULL: i++; /* fall through */
+	case 1000000000000000000ULL ... 9999999999999999999ULL: i++; /* fall through */
+	case 100000000000000000ULL ... 999999999999999999ULL: i++; /* fall through */
+	case 10000000000000000ULL ... 99999999999999999ULL: i++; /* fall through */
+	case 1000000000000000ULL ... 9999999999999999ULL: i++; /* fall through */
+	case 100000000000000ULL ... 999999999999999ULL: i++; /* fall through */
+	case 10000000000000ULL ... 99999999999999ULL: i++; /* fall through */
+	case 1000000000000ULL ... 9999999999999ULL: i++; /* fall through */
+	case 100000000000ULL ... 999999999999ULL: i++; /* fall through */
+	case 10000000000ULL ... 99999999999ULL: i++; /* fall through */
+	case 1000000000ULL ... 9999999999ULL: i++; /* fall through */
+	case 100000000ULL ... 999999999ULL: i++; /* fall through */
+	case 10000000ULL ... 99999999ULL: i++; /* fall through */
+	case 1000000ULL ... 9999999ULL: i++; /* fall through */
+	case 100000ULL ... 999999ULL: i++; /* fall through */
+	case 10000ULL ... 99999ULL: i++; /* fall through */
+	case 1000ULL ... 9999ULL: i++; /* fall through */
+	case 100ULL ... 999ULL: i++; /* fall through */
+	case 10ULL ... 99ULL: i++; /* fall through */
+	default: break; /* single char, nothing to add */
+	}
+
+	if (i + 2 > size)
+		return NULL;
+
+	res = dst + i + 1;
+	*res = '\0';
+	for (; i >= 0; i--) {
+		dst[i] = n % 10ULL + '0';
+		n /= 10ULL;
+	}
+	return res;
+}
+
 /* display the message and exit with the code */
 __attribute__((noreturn)) void die(int code, const char *format, ...)
 {
@@ -126,7 +172,11 @@ __attribute__((noreturn)) void die(int code, const char *format, ...)
 /* one item */
 struct item {
 	NODE_TYPE node;
+#if STORAGE_STRING > 0
+	char key[STORAGE_STRING];
+#else
 	DATA_TYPE key;
+#endif
 	unsigned long flags;
 };
 
@@ -197,10 +247,17 @@ void run(void *arg)
 			//cebl_default_dump(&ctx->ceb_root, "del", &itm->node, ctx->loops);
 
 			if (node1 != &itm->node) {
+#if STORAGE_STRING > 0
+				fprintf(stderr, "BUG@%d: node1=%p('%s',%d,%lu) itm->node=%p('%s',%d,%lu)\n", __LINE__,
+					node1, container_of(node1, struct item, node)->key,
+					NODE_INTREE(node1), container_of(node1, struct item, node)->flags,
+					&itm->node, itm->key, NODE_INTREE(&itm->node), itm->flags);
+#else
 				fprintf(stderr, "BUG@%d: node1=%p(%llu,%d,%lu) itm->node=%p(%llu,%d,%lu)\n", __LINE__,
 					node1, (unsigned long long)container_of(node1, struct item, node)->key,
-				       NODE_INTREE(node1), container_of(node1, struct item, node)->flags,
-				       &itm->node, (unsigned long long)itm->key, NODE_INTREE(&itm->node), itm->flags);
+					NODE_INTREE(node1), container_of(node1, struct item, node)->flags,
+					&itm->node, (unsigned long long)itm->key, NODE_INTREE(&itm->node), itm->flags);
+#endif
 				BUG_ON(node1 != &itm->node);
 			}
 
@@ -215,7 +272,12 @@ void run(void *arg)
 
 			v = rnd64();
 			v >>= (v & 63);
+
+#if STORAGE_STRING > 0
+			ulltoa(v, itm->key, sizeof(itm->key));
+#else
 			itm->key = v;
+#endif
 			//fprintf(stderr, "idx=%5u itm=%p key=%llu flg=%lu intr=%d\n", idx, itm, (unsigned long long)itm->key, itm->flags, NODE_INTREE(&itm->node));
 			node1 = NODE_INS(&ctx->ceb_root, &itm->node);
 
