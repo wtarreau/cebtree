@@ -1603,13 +1603,6 @@ struct ceb_node *_ceb_delete(struct ceb_root **root,
 				first->b[0] = ret->b[0];
 				first->b[1] = ret->b[1];
 				nparent->b[npside] = _ceb_dotag(first, 0);
-				/* if first is going to replace the leaf's parent, it becomes
-				 * its own parent and leaf and we must tag its branch accordingly.
-				 */
-				if (ret != lparent)
-					lparent->b[lpside] = _ceb_dotag(first, 1);
-				else
-					first->b[lpside] = _ceb_dotag(first, 1);
 			}
 			else {
 				/* first becomes the nodeless leaf since we only keep its leaf */
