@@ -14,7 +14,7 @@
 # define INCLUDE_FILE "cebul_tree.h"
 # define DATA_TYPE    unsigned long
 # define NODE_TYPE    struct ceb_node
-# define ROOT_TYPE    struct ceb_root
+# define ROOT_TYPE    struct ceb_root*
 # define NODE_INS(r,k)     cebul_insert(r,k)
 # define NODE_DEL(r,k)     cebul_delete(r,k)
 # define NODE_INTREE(n)    ceb_intree(n)
@@ -183,7 +183,7 @@ struct item {
 /* thread context */
 struct ctx {
 	struct item *table;
-	ROOT_TYPE *ceb_root;
+	ROOT_TYPE root;
 	unsigned long min, max;
 	pthread_t thr;
 	unsigned long loops;
@@ -242,9 +242,9 @@ void run(void *arg)
 			 * one, it is just removed. If it does not match,
 			 * it is removed and we try to enter the new one.
 			 */
-			node1 = NODE_DEL(&ctx->ceb_root, &itm->node);
+			node1 = NODE_DEL(&ctx->root, &itm->node);
 
-			//cebl_default_dump(&ctx->ceb_root, "del", &itm->node, ctx->loops);
+			//cebl_default_dump(&ctx->root, "del", &itm->node, ctx->loops);
 
 			if (node1 != &itm->node) {
 #if STORAGE_STRING > 0
@@ -279,9 +279,9 @@ void run(void *arg)
 			itm->key = v;
 #endif
 			//fprintf(stderr, "idx=%5u itm=%p key=%llu flg=%lu intr=%d\n", idx, itm, (unsigned long long)itm->key, itm->flags, NODE_INTREE(&itm->node));
-			node1 = NODE_INS(&ctx->ceb_root, &itm->node);
+			node1 = NODE_INS(&ctx->root, &itm->node);
 
-			//cebl_default_dump(&ctx->ceb_root, "ins", &itm->node, ctx->loops);
+			//cebl_default_dump(&ctx->root, "ins", &itm->node, ctx->loops);
 
 			BUG_ON(!NODE_INTREE(node1));
 			/* note: we support both dups and unique entries */
