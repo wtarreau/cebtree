@@ -590,6 +590,12 @@ struct ceb_node *_ceb_descend(struct ceb_root **root,
 	node = _ceb_clrtag(*root);
 	is_leaf = _ceb_gettag(*root);
 
+	if (ret_lpside) {
+		/* this is a deletion, prefetch for writes */
+		__builtin_prefetch(node->b[0], 1);
+		__builtin_prefetch(node->b[1], 1);
+	}
+
 	while (1) {
 		union ceb_key_storage *lks, *rks;
 		struct ceb_node *ln, *rn, *next;
@@ -598,21 +604,6 @@ struct ceb_node *_ceb_descend(struct ceb_root **root,
 
 		lr = node->b[0]; // tagged versions
 		rr = node->b[1];
-
-		/* Tests have shown that for write-intensive workloads (many
-		 * insertions/deletion), prefetching for reads is counter
-		 * productive (-10% perf) but that prefetching only the next
-		 * nodes for writes when deleting can yield around 3% extra
-		 * boost.
-		 */
-		if (ret_lpside) {
-			/* this is a deletion, prefetch for writes */
-			__builtin_prefetch(lr, 1);
-			__builtin_prefetch(rr, 1);
-		} else {
-			__builtin_prefetch(lr, 0);
-			__builtin_prefetch(rr, 0);
-		}
 
 		/* get a copy of the corresponding nodes */
 		lnl = _ceb_gettag(lr);
@@ -840,6 +831,22 @@ struct ceb_node *_ceb_descend(struct ceb_root **root,
 			/* loops over itself, it's either a leaf or the single and last list element of a dup sub-tree */
 			break;
 		}
+
+		/* Tests have shown that for write-intensive workloads (many
+		 * insertions/deletion), prefetching for reads is counter
+		 * productive (-10% perf) but that prefetching only the next
+		 * nodes for writes when deleting can yield around 14% extra
+		 * boost for writes and 21% for lookups.
+		 */
+		if (ret_lpside) {
+			/* this is a deletion, prefetch for writes */
+			__builtin_prefetch(next->b[0], 1);
+			__builtin_prefetch(next->b[1], 1);
+		} else {
+			__builtin_prefetch(next->b[0], 0);
+			__builtin_prefetch(next->b[1], 0);
+		}
+
 		node = next;
 		is_leaf = next_leaf;
 	}
