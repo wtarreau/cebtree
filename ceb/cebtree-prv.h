@@ -686,6 +686,15 @@ struct ceb_node *_ceb_descend(struct ceb_root **root,
 						*ret_npside  = lpside;
 					}
 				}
+
+				/* for pure lookups, no need to go down the leaf
+				 * if we've found the key.
+				 */
+				if (!ret_root && !ret_lpside && !ret_lparent &&
+				    !ret_gpside && !ret_gparent && !ret_back) {
+					if (key_u32 == k->u32)
+						break;
+				}
 			}
 			pxor32 = xor32;
 		}
@@ -711,6 +720,15 @@ struct ceb_node *_ceb_descend(struct ceb_root **root,
 						*ret_npside  = lpside;
 					}
 				}
+
+				/* for pure lookups, no need to go down the leaf
+				 * if we've found the key.
+				 */
+				if (!ret_root && !ret_lpside && !ret_lparent &&
+				    !ret_gpside && !ret_gparent && !ret_back) {
+					if (key_u64 == k->u64)
+						break;
+				}
 			}
 			pxor64 = xor64;
 		}
@@ -735,6 +753,15 @@ struct ceb_node *_ceb_descend(struct ceb_root **root,
 						*ret_nparent = lparent;
 						*ret_npside  = lpside;
 					}
+				}
+
+				/* for pure lookups, no need to go down the leaf
+				 * if we've found the key.
+				 */
+				if (!ret_root && !ret_lpside && !ret_lparent &&
+				    !ret_gpside && !ret_gparent && !ret_back) {
+					if ((uintptr_t)key_ptr == (uintptr_t)node)
+						break;
 				}
 			}
 			pxor64 = xoraddr;
@@ -762,6 +789,23 @@ struct ceb_node *_ceb_descend(struct ceb_root **root,
 					*ret_nparent = node;
 					*ret_npside  = brside;
 				}
+
+				/* for pure lookups, no need to go down the leaf
+				 * if we've found the key.
+				 */
+				if (!ret_root && !ret_lpside && !ret_lparent &&
+				    !ret_gpside && !ret_gparent && !ret_back) {
+					if (llen == key_u64 << 3) {
+						node = ln;
+						plen = llen;
+						break;
+					}
+					if (rlen == key_u64 << 3) {
+						node = rn;
+						plen = rlen;
+						break;
+					}
+				}
 			}
 			plen = xlen;
 		}
@@ -782,6 +826,23 @@ struct ceb_node *_ceb_descend(struct ceb_root **root,
 				    ((ssize_t)llen < 0 || (ssize_t)rlen < 0)) {
 					*ret_nparent = node;
 					*ret_npside  = brside;
+				}
+
+				/* for pure lookups, no need to go down the leaf
+				 * if we've found the key.
+				 */
+				if (!ret_root && !ret_lpside && !ret_lparent &&
+				    !ret_gpside && !ret_gparent && !ret_back) {
+					if ((ssize_t)llen < 0) {
+						node = ln;
+						plen = llen;
+						break;
+					}
+					if ((ssize_t)rlen < 0) {
+						node = rn;
+						plen = rlen;
+						break;
+					}
 				}
 			}
 
