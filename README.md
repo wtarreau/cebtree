@@ -62,6 +62,10 @@ pointers (i.e. version 0.2), the string lookup cost becomes logN*strcmp() since
 a complete string needs to be compared at each layer (like in other non-radix
 trees such as rbtree).
 
+## API
+
+The application integration and API are documented in [this document](doc/API.md).
+
 ## Limitations and future improvements
 
 Relative addressing is not yet implemented but is in progress. This is handy to
