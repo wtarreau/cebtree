@@ -1,0 +1,13 @@
+for t in 64 u64 s us b ub; do for l in 0 1 10 1000; do echo "ceb$t-l$l"; taskset -c 0,4 perf record -o perf-ceb$t-l$l.dat -F 4000 ./tests/benchceb$t -n 1000000 -t 1 -r 10 -l $l | tee bench-ceb$t-l$l.out;done;done
+
+for i in perf-ceb*.dat; do perf report -i $i | grep ' ceb' | awk '{print $1,$5}' | column -t > ${i%.dat}.out;done
+
+for f in bench-ceb*out; do tail -n1 $f | awk '{ x=$10+$12+$14; if (x>0) print $0,x,"tot/s",1000000000/x,"ns/op" }' > ${f%.out}.stat;done
+
+for f in bench-ceb*stat; do t=${f#bench-};t=${t%.stat}; c=$(awk '{print $18}' $f);  s=perf-$t.out; i=$(grep 'insert$' $s | cut -f1 -d%); i2=$(grep insert_dup $s | cut -f1 -d%);  d=$(grep delete $s | cut -f1 -d%); l=$(grep lookup $s | cut -f1 -d%); i=$(echo "scale=6;($i${i2:+"+$i2"}-0)*$c/100" | bc -l); d=$(echo "scale=6;($d-0)*$c/100" | bc -l); l=$(echo "scale=6;($l-0)*$c/100" | bc -l); o=$(echo "$c-$i-$d-$l" | bc -l); echo "$t $i $d $l $o $c"; done
+
+## for unique keys: the tree reaches 60% full, meaning
+## that -l1 gives 40% insert, 30% delete, 30% lookup
+## for multi-keys: the tree reaches 66% full, meaning
+## that -l1 gives 33% of each operation
+

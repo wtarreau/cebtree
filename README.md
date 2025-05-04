@@ -33,6 +33,9 @@ faster for timer management, albeit bigger).
 
 #### Comparison of costs by model
 
+For more info please consult the [EB vs CEB benchmark](results/bench-eb-ceb/)
+that was run using the [bench utility](tests/bench.c).
+
 |             model |      list       | hash (B buckets)   |      rbtree     |     cebtree     |      ebtree       |
 |-------------------|:---------------:|:------------------:|:---------------:|:---------------:|:-----------------:|
 |__operation__      | min / avg / max |  min / avg / max   | min / avg / max | min / avg / max |  min / avg / max  |

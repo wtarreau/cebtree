@@ -1,0 +1,4 @@
+87.33%  ebst_lookup
+6.26%   ebst_insert
+0.27%   eb_insert_dup
+0.01%   eb_delete

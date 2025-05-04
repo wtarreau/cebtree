@@ -1,0 +1,11 @@
+Starting 1 thread  for 1000000 elems each
+meas: 0, threads: 1, num: 424279, time(ms): 1000, rates: 308031 lu/s, 1082313 ins/s, 658034 del/s
+meas: 1, threads: 1, num: 435359, time(ms): 1000, rates: 278280 lu/s, 942477 ins/s, 931397 del/s
+meas: 2, threads: 1, num: 435263, time(ms): 1000, rates: 277794 lu/s, 940639 ins/s, 940735 del/s
+meas: 3, threads: 1, num: 435947, time(ms): 1000, rates: 278731 lu/s, 941352 ins/s, 940668 del/s
+meas: 4, threads: 1, num: 434459, time(ms): 1000, rates: 278551 lu/s, 938273 ins/s, 939761 del/s
+meas: 5, threads: 1, num: 435522, time(ms): 1000, rates: 277753 lu/s, 936691 ins/s, 935628 del/s
+meas: 6, threads: 1, num: 435587, time(ms): 1000, rates: 279118 lu/s, 942827 ins/s, 942762 del/s
+meas: 7, threads: 1, num: 434864, time(ms): 1000, rates: 279249 lu/s, 942522 ins/s, 943245 del/s
+meas: 8, threads: 1, num: 435680, time(ms): 1000, rates: 278947 lu/s, 941120 ins/s, 940304 del/s
+meas: 9, threads: 1, num: 435178, time(ms): 1000, rates: 279135 lu/s, 943051 ins/s, 943553 del/s

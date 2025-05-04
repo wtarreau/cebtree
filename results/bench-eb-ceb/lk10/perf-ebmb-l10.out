@@ -1,0 +1,4 @@
+80.12%  ebmb_lookup
+12.66%  ebmb_insert
+0.70%   eb_insert_dup
+0.51%   eb_delete

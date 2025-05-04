@@ -1,0 +1,4 @@
+41.40%  eb64_insert
+35.36%  eb64_lookup
+4.86%   eb_delete
+2.30%   eb_insert_dup

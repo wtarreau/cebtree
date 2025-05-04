@@ -1,0 +1,23 @@
+
+set key autotitle columnhead
+set key outside bottom center horizontal
+set style data histograms
+set style fill solid 1.0 border lt -1
+set style histogram rowstacked
+set xrange [-0.5:]
+set yrange [0:760]
+set boxwidth 0.5 relative
+set xtics out rotate
+set grid
+set ylabel "Operation time in nanoseconds"
+set title "Comparison of operation times between eb/ceb trees by data type"
+
+set label 1 "Conditions: 1M keys, 666k avg in tree, duplicates" at -0.6,720
+plot "meas-m.out" using 2 t "insert()", "" using 4 t "lookup()", "" using 3 t "delete()", "" using 0:($2+$3+$4):(int($2)?gprintf("%3.f",$2+$3+$4):"") with labels center offset 0,.5 font "CourierBold,7", "" using 0:($2+$3/2+$4):(int($2)?gprintf("%3.f",$3):"") with labels center font "CourierBold,7", "" using 0:($2+$4/2):(int($2)?gprintf("%3.f",$4):"") with labels center font "CourierBold,7", "" using 0:($2/2):(int($2)?gprintf("%3.f",$2):"") with labels center font "CourierBold,7" tc lt 5, "" using -2:xtic(1)
+
+set label 1 "Conditions: 1M keys, 600k avg in tree, no duplicates" at -0.6,720
+plot "meas-u.out" using 2 t "insert()", "" using 4 t "lookup()", "" using 3 t "delete()", "" using 0:($2+$3+$4):(int($2)?gprintf("%3.f",$2+$3+$4):"") with labels center offset 0,.5 font "CourierBold,7", "" using 0:($2+$3/2+$4):(int($2)?gprintf("%3.f",$3):"") with labels center font "CourierBold,7", "" using 0:($2+$4/2):(int($2)?gprintf("%3.f",$4):"") with labels center font "CourierBold,7", "" using 0:($2/2):(int($2)?gprintf("%3.f",$2):"") with labels center font "CourierBold,7" tc lt 5, "" using -2:xtic(1)
+
+## insert this line every two lines in the input file to leave spaces between tests:
+##   "" 0 0 0 0
+## better pad line titles to same sizes between tests.
