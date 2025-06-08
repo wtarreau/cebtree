@@ -591,9 +591,9 @@ struct ceb_node *_ceb_descend(struct ceb_root **root,
 	is_leaf = _ceb_gettag(*root);
 
 	if (ret_lpside) {
-		/* this is a deletion, prefetch for writes */
-		__builtin_prefetch(node->b[0], 1);
-		__builtin_prefetch(node->b[1], 1);
+		/* this is a deletion, benefits from prefetching */
+		__builtin_prefetch(node->b[0], 0);
+		__builtin_prefetch(node->b[1], 0);
 	}
 
 	while (1) {
@@ -616,6 +616,12 @@ struct ceb_node *_ceb_descend(struct ceb_root **root,
 
 		if (is_leaf)
 			break;
+
+		/* Tests show that this is the most optimal location to start
+		 * a prefetch for adjacent nodes.
+		 */
+		__builtin_prefetch(ln, 0);
+		__builtin_prefetch(rn, 0);
 
 		lks = NODEK(ln, kofs);
 		rks = NODEK(rn, kofs);
@@ -893,21 +899,6 @@ struct ceb_node *_ceb_descend(struct ceb_root **root,
 			break;
 		}
 
-		/* Tests have shown that for write-intensive workloads (many
-		 * insertions/deletion), prefetching for reads is counter
-		 * productive (-10% perf) but that prefetching only the next
-		 * nodes for writes when deleting can yield around 14% extra
-		 * boost for writes and 21% for lookups.
-		 */
-		if (ret_lpside) {
-			/* this is a deletion, prefetch for writes */
-			__builtin_prefetch(next->b[0], 1);
-			__builtin_prefetch(next->b[1], 1);
-		} else {
-			__builtin_prefetch(next->b[0], 0);
-			__builtin_prefetch(next->b[1], 0);
-		}
-
 		node = next;
 		is_leaf = next_leaf;
 	}
@@ -956,15 +947,21 @@ struct ceb_node *_ceb_descend(struct ceb_root **root,
 		}
 	}
 
-	if (ret_root)
+	if (ret_root) {
+		/* this node is going to be changed */
 		*ret_root = root;
+		__builtin_prefetch(root, 1);
+	}
 
 	/* info needed by delete */
 	if (ret_lpside)
 		*ret_lpside = lpside;
 
-	if (ret_lparent)
+	if (ret_lparent) {
+		/* this node is going to be changed */
 		*ret_lparent = lparent;
+		__builtin_prefetch(lparent, 1);
+	}
 
 	if (ret_gpside)
 		*ret_gpside = gpside;
