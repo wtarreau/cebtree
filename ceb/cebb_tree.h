@@ -60,6 +60,12 @@ struct ceb_node *cebub_prev(struct ceb_root **root, struct ceb_node *node, size_
 struct ceb_node *cebub_delete(struct ceb_root **root, struct ceb_node *node, size_t len);
 struct ceb_node *cebub_pick(struct ceb_root **root, const void *key, size_t len);
 
+/* returns the pointer to the void* key that follows the node */
+static inline void *cebb_key(const struct ceb_node *node)
+{
+	return (void *)ceb_key_ptr(node, sizeof(struct ceb_node));
+}
+
 /* version taking a key offset */
 struct ceb_node *cebb_ofs_insert(struct ceb_root **root, ptrdiff_t kofs, struct ceb_node *node, size_t len);
 struct ceb_node *cebb_ofs_first(struct ceb_root **root, ptrdiff_t kofs, size_t len);
@@ -90,5 +96,11 @@ struct ceb_node *cebub_ofs_next(struct ceb_root **root, ptrdiff_t kofs, struct c
 struct ceb_node *cebub_ofs_prev(struct ceb_root **root, ptrdiff_t kofs, struct ceb_node *node, size_t len);
 struct ceb_node *cebub_ofs_delete(struct ceb_root **root, ptrdiff_t kofs, struct ceb_node *node, size_t len);
 struct ceb_node *cebub_ofs_pick(struct ceb_root **root, ptrdiff_t kofs, const void *key, size_t len);
+
+/* returns the pointer to the void* key*/
+static inline void *cebb_ofs_key(const struct ceb_node *node, ptrdiff_t kofs)
+{
+	return (void*)ceb_key_ptr(node, kofs);
+}
 
 #endif /* _CEBB_TREE_H */

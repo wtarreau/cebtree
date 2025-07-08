@@ -63,6 +63,15 @@ struct ceb_node *cebuis_pick(struct ceb_root **root, const void *key);
 /* generic dump function */
 void cebis_default_dump(struct ceb_root **root, const char *label, const void *ctx, int sub);
 
+/* returns the pointer to the indirect char* key, not the pointer itself,
+ * or NULL if node is NULL (note that the indirect pointer cannot be NULL
+ * if node is non-NULL).
+ */
+static inline char *cebis_key(const struct ceb_node *node)
+{
+	return node ? *(char **)_ceb_key_ptr(node, sizeof(struct ceb_node)) : NULL;
+}
+
 /* version taking a key offset */
 struct ceb_node *cebis_ofs_insert(struct ceb_root **root, ptrdiff_t kofs, struct ceb_node *node);
 struct ceb_node *cebis_ofs_first(struct ceb_root **root, ptrdiff_t kofs);
@@ -96,5 +105,14 @@ struct ceb_node *cebuis_ofs_pick(struct ceb_root **root, ptrdiff_t kofs, const v
 
 /* generic dump function taking a key offset */
 void cebis_ofs_default_dump(struct ceb_root **root, ptrdiff_t kofs, const char *label, const void *ctx, int sub);
+
+/* returns the pointer to the indirect char* key, not the pointer itself,
+ * or NULL if node is NULL (note that the indirect pointer cannot be NULL
+ * if node is non-NULL).
+ */
+static inline char *cebis_ofs_key(const struct ceb_node *node, ptrdiff_t kofs)
+{
+	return node ? *(char **)_ceb_key_ptr(node, kofs) : NULL;
+}
 
 #endif /* _CEBIS_TREE_H */

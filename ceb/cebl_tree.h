@@ -63,6 +63,12 @@ struct ceb_node *cebul_pick(struct ceb_root **root, unsigned long key);
 /* generic dump function */
 void cebl_default_dump(struct ceb_root **ceb_root, const char *label, const void *ctx, int sub);
 
+/* returns the pointer to the unsigned long key */
+static inline unsigned long *cebl_key(const struct ceb_node *node)
+{
+	return (unsigned long *)ceb_key_ptr(node, sizeof(struct ceb_node));
+}
+
 /* version taking a key offset */
 struct ceb_node *cebl_ofs_insert(struct ceb_root **root, ptrdiff_t kofs, struct ceb_node *node);
 struct ceb_node *cebl_ofs_first(struct ceb_root **root, ptrdiff_t kofs);
@@ -96,5 +102,11 @@ struct ceb_node *cebul_ofs_pick(struct ceb_root **root, ptrdiff_t kofs, unsigned
 
 /* generic dump function taking a key offset */
 void cebl_ofs_default_dump(struct ceb_root **root, ptrdiff_t kofs, const char *label, const void *ctx, int sub);
+
+/* returns the pointer to the unsigned long key */
+static inline unsigned long *cebl_ofs_key(const struct ceb_node *node, ptrdiff_t kofs)
+{
+	return (unsigned long *)ceb_key_ptr(node, kofs);
+}
 
 #endif /* _CEBL_TREE_H */

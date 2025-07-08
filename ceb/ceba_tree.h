@@ -46,4 +46,10 @@ struct ceb_node *cebua_pick(struct ceb_root **root, const void *key);
 /* generic dump function */
 void ceba_default_dump(struct ceb_root **root, const char *label, const void *ctx, int sub);
 
+/* returns the pointer to the area that immediately follows the node */
+static inline void *ceba_key(const struct ceb_node *node)
+{
+	return (void *)ceb_key_ptr(node, sizeof(struct ceb_node));
+}
+
 #endif /* _CEBA_TREE_H */

@@ -63,6 +63,12 @@ struct ceb_node *cebus_pick(struct ceb_root **root, const void *key);
 /* generic dump function */
 void cebs_default_dump(struct ceb_root **root, const char *label, const void *ctx, int sub);
 
+/* returns the pointer to the char* key that follows the node */
+static inline char *cebs_key(const struct ceb_node *node)
+{
+	return (char *)ceb_key_ptr(node, sizeof(struct ceb_node));
+}
+
 /* version taking a key offset */
 struct ceb_node *cebs_ofs_insert(struct ceb_root **root, ptrdiff_t kofs, struct ceb_node *node);
 struct ceb_node *cebs_ofs_first(struct ceb_root **root, ptrdiff_t kofs);
@@ -96,5 +102,11 @@ struct ceb_node *cebus_ofs_pick(struct ceb_root **root, ptrdiff_t kofs, const vo
 
 /* generic dump function taking a key offset */
 void cebs_ofs_default_dump(struct ceb_root **root, ptrdiff_t kofs, const char *label, const void *ctx, int sub);
+
+/* returns the pointer to the char* key*/
+static inline char *cebs_ofs_key(const struct ceb_node *node, ptrdiff_t kofs)
+{
+	return (char *)ceb_key_ptr(node, kofs);
+}
 
 #endif /* _CEBS_TREE_H */

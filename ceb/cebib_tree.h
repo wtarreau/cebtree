@@ -60,6 +60,15 @@ struct ceb_node *cebuib_prev(struct ceb_root **root, struct ceb_node *node, size
 struct ceb_node *cebuib_delete(struct ceb_root **root, struct ceb_node *node, size_t len);
 struct ceb_node *cebuib_pick(struct ceb_root **root, const void *key, size_t len);
 
+/* returns the pointer to the indirect void* key, not the pointer itself,
+ * or NULL if node is NULL (note that the indirect pointer cannot be NULL
+ * if node is non-NULL).
+ */
+static inline void *cebib_key(const struct ceb_node *node)
+{
+	return node ? *(void **)_ceb_key_ptr(node, sizeof(struct ceb_node)) : NULL;
+}
+
 /* version taking a key offset */
 struct ceb_node *cebib_ofs_insert(struct ceb_root **root, ptrdiff_t kofs, struct ceb_node *node, size_t len);
 struct ceb_node *cebib_ofs_first(struct ceb_root **root, ptrdiff_t kofs, size_t len);
@@ -90,5 +99,14 @@ struct ceb_node *cebuib_ofs_next(struct ceb_root **root, ptrdiff_t kofs, struct 
 struct ceb_node *cebuib_ofs_prev(struct ceb_root **root, ptrdiff_t kofs, struct ceb_node *node, size_t len);
 struct ceb_node *cebuib_ofs_delete(struct ceb_root **root, ptrdiff_t kofs, struct ceb_node *node, size_t len);
 struct ceb_node *cebuib_ofs_pick(struct ceb_root **root, ptrdiff_t kofs, const void *key, size_t len);
+
+/* returns the pointer to the indirect void* key, not the pointer itself,
+ * or NULL if node is NULL (note that the indirect pointer cannot be NULL
+ * if node is non-NULL).
+ */
+static inline void *cebib_ofs_key(const struct ceb_node *node, ptrdiff_t kofs)
+{
+	return node ? *(void **)_ceb_key_ptr(node, kofs) : NULL;
+}
 
 #endif /* _CEBIB_TREE_H */

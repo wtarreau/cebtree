@@ -51,4 +51,22 @@ static inline int ceb_isempty(const struct ceb_root **root)
 	return !*root;
 }
 
+/* returns a pointer to the key from the node and offset, where node is
+ * assumed to be non-null.
+ */
+static inline void *_ceb_key_ptr(const struct ceb_node *node, ptrdiff_t kofs)
+{
+	return (void*)((char *)node + kofs);
+}
+
+/* returns a pointer to the key from the node and offset if node is non-null,
+ * otherwise null. I.e. this is made to safely return a pointer to the key
+ * location from the return of a lookup operation.
+ */
+static inline void *ceb_key_ptr(const struct ceb_node *node, ptrdiff_t kofs)
+{
+	return node ? _ceb_key_ptr(node, kofs) : NULL;
+}
+
+
 #endif /* _CEBTREE_H */

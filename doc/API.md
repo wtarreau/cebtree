@@ -203,6 +203,14 @@ following components:
      * `prev_unique` : return the last node having a strictly lower key than
        the specified one, or NULL if no such node exists.
 
+     * `key` : return a pointer to the beginning of the key in its own type
+       (uint32_t, uint64_t, void*, unsigned long, char*, void*) if the node is
+       valid, otherwise NULL if the node is NULL. This corresponds to the node
+       added to the key offset for immediate keys, or a dereference of the key
+       pointer for indirect keys. Note that the key pointer cannot be NULL for
+       valid nodes, so it is always safe to assume that `key()==NULL` means
+       that the node does not exist.
+
 #### Examples:
 
 - Standard indexing, with support for duplicates:
@@ -239,4 +247,19 @@ following components:
   struct ceb_node *cebis_first(struct ceb_root **root);
   struct ceb_node *cebis_delete(struct ceb_root **root, struct ceb_node *node);
   struct ceb_node *cebis_next(struct ceb_root **root, struct ceb_node *node);
+```
+
+- Using `_key` to look up values within a range:
+```
+   void list_range(const struct ceb_root **root, uint32_t min, uint32_max)
+   {
+       uint32_t *key;
+
+       while ((key = ceb32_key(cebu32_lookup_ge(root, min))) != NULL) {
+            if (*key > max)
+                break;
+            printf("found: %u\n", *key);
+            min = key + 1;
+       }
+   }
 ```

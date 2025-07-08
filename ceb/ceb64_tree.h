@@ -64,6 +64,12 @@ struct ceb_node *cebu64_pick(struct ceb_root **root, uint64_t key);
 /* generic dump function */
 void ceb64_default_dump(struct ceb_root **ceb_root, const char *label, const void *ctx, int sub);
 
+/* returns the pointer to the uint64_t key */
+static inline uint64_t *ceb64_key(const struct ceb_node *node)
+{
+	return (uint64_t *)ceb_key_ptr(node, sizeof(struct ceb_node));
+}
+
 /* version taking a key offset */
 struct ceb_node *ceb64_ofs_insert(struct ceb_root **root, ptrdiff_t kofs, struct ceb_node *node);
 struct ceb_node *ceb64_ofs_first(struct ceb_root **root, ptrdiff_t kofs);
@@ -97,5 +103,11 @@ struct ceb_node *cebu64_ofs_pick(struct ceb_root **root, ptrdiff_t kofs, uint64_
 
 /* generic dump function taking a key offset */
 void ceb64_ofs_default_dump(struct ceb_root **root, ptrdiff_t kofs, const char *label, const void *ctx, int sub);
+
+/* returns the pointer to the uint64_t key */
+static inline uint64_t *ceb64_ofs_key(const struct ceb_node *node, ptrdiff_t kofs)
+{
+	return (uint64_t *)ceb_key_ptr(node, kofs);
+}
 
 #endif /* _CEB64_TREE_H */
