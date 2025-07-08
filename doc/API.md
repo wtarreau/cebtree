@@ -105,7 +105,11 @@ Two types are needed to be known by the application (these are defined in
     `struct ceb_root *`. The `ceb_root` struct is purposely not defined so as
     to make sure it's never used other than an opaque pointer. An empty tree
     only has a NULL pointer at the top. This is the only situation where a NULL
-    pointer may be met in a tree.
+    pointer may be met in a tree. For better readability, a function is
+    provided to determine if a tree is empty:
+
+  - `int ceb_isempty(const struct ceb_root **root)` : returns true if the tree
+     is empty, otherwise false.
 
   - the indexing node : `struct ceb_node`. This structure contains two
     non-NULL `ceb_root` pointers.
