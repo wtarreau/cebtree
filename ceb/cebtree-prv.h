@@ -297,29 +297,27 @@ size_t string_equal_bits(const unsigned char *a,
 	/* skip known and identical bits. We stop at the first different byte
 	 * or at the first zero we encounter on either side.
 	 */
-	c = a[beg + 0];
 	for (;; beg += 2) {
+		c = a[beg + 0];
 		d = b[beg + 0];
 		c ^= d;
-		if (__builtin_expect(c, 0))
+		if (__builtin_expect(c != 0, 0))
 			goto brk1;
-		c = a[beg + 1];
-		if (__builtin_expect(!d, 0))
+		if (!d)
 			goto same;
-
+		c = a[beg + 1];
 		d = b[beg + 1];
 		c ^= d;
-		if (__builtin_expect(c, 0))
+		if (__builtin_expect(c != 0, 0))
 			goto brk2;
-		c = a[beg + 2];
-		if (__builtin_expect(!d, 0))
+		if (!d)
 			goto same;
 	}
 brk2:
 	beg++;
 brk1:
 
-	/* OK now we know that a and b differ at byte <beg+1>, or that both are zero.
+	/* OK now we know that a and b differ at byte <beg>.
 	 * We have to find what bit is differing and report it as the number of
 	 * identical bits. Note that low bit numbers are assigned to high positions
 	 * in the byte, as we compare them as strings.
