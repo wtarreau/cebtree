@@ -897,6 +897,10 @@ struct ceb_node *_ceb_descend(struct ceb_root **root,
 			break;
 		}
 
+		/* let the compiler know there's no NULL in the tree */
+		if (!next)
+			__builtin_unreachable();
+
 		node = next;
 		is_leaf = next_leaf;
 	}
