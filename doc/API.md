@@ -211,10 +211,132 @@ following components:
        valid nodes, so it is always safe to assume that `key()==NULL` means
        that the node does not exist.
 
+#### API variant that acts on the container object instead ("item")
+
+A macro-based variant of the API leverages the ability of the `_ofs` functions
+to use the node and storage independently from each other, to offer the ability
+to act on the container struct instead of the CEB nodes themselves. The macros
+take the root, the node member name, the key member name, sometimes a key value,
+and either an item pointer (whose type is guessed using the typeof() operator),
+or an explicit type for operations that do return an item without having one in
+the argument (e.g. first()).
+
+The macros are named exactly like the `_ofs` variant, with `_item` replacing
+`_ofs`. This variant is not implemented for the address-based index (`ceba_*`)
+given that by definition it doesn't have a key and only indexes its own node's
+pointer. When a key type requires a length (`cebb`, `cebib`), then the length
+is always passed immediately after the key field name (`kname`).
+
+For each key type, we have the following macros:
+
+  - `ceb<type>_item_insert(root, nname, kname, item_ptr)`: insert item `item`
+    into tree `root` based on its node `item_ptr->nname` and key located at
+    `item_ptr->kname` and return `item_ptr`. Trees using unique keys will
+    return the pointer to the item having the same key if one is found, and the
+    new one will not be inserted in this case.
+
+  - `ceb<type>_item_first(root, nname, kname, itype)` : return a pointer to the
+    first lexicographically ordered item of type `itype` from tree `root`, or
+    NULL if the tree is empty. Identical keys are returned in insertion order.
+    The node is struct member `nname` in `itype`, and the key is located at
+    `kname`.
+
+  - `ceb<type>_item_last(root, nname, kname, itype)` : return a pointer to the
+    last lexicographically ordered item of type `itype` from the tree, or NULL
+    if the tree is empty. Identical keys are returned in reverse insertion
+    order. The node is struct member `nname` in `itype`, and the key is
+    located at `kname`.
+
+  - `ceb<type>_item_delete(root, nname, kname, item_ptr)` : delete the item
+    pointed to by `item_ptr` from tree `root` and return a pointer to it. NULL
+    is returned if the item was not in the tree. The node is named `nname`
+    after `item_ptr`, and the key is located at `kname`.
+
+  - `ceb<type>_item_pick(root, nname, kname, key, itype)` : look up an item of
+    type `itype` in tree `root`, delete it and return it if found, or return
+    NULL if not present. The node is struct member `nname` in `itype`, and the
+    key is located at `kname`.
+
+  - `ceb<type>_item_lookup(root, nname, kname, key, itype)` : return a pointer
+    to the first inserted item of type `itype` matching the specified key, or
+    NULL if the key was not found. The node is struct member `nname` in
+    `itype`, and the key is located at `kname`.
+
+  - `ceb<type>_item_lookup_ge(root, nname, kname, key, itype)` : return a
+    pointer to the first inserted item of type `itype` whose key is greater
+    than or equal to the specified one, or NULL if no such item can be found.
+    The node is struct member `nname` in `itype`, and the key is located at
+    `kname`.
+
+  - `ceb<type>_item_lookup_gt(root, nname, kname, key, itype)` : return a
+    pointer to the first inserted item of type `itype` whose key is strictly
+    greater than to the specified one, or NULL if no such item can be found.
+    The node is struct member `nname` in `itype`, and the key is located at
+    `kname`.
+
+  - `ceb<type>_item_lookup_le(root, nname, kname, key, itype)` : return a
+    pointer to the last inserted item of type `itype` whose key is less than or
+    equal to the specified one, or NULL if no such item can be found. The node
+    is struct member `nname` in `itype`, and the key is located at `kname`.
+
+  - `ceb<type>_item_lookup_lt(root, nname, kname, key, itype)` : return a
+    pointer to the last inserted item whose key is strictly less than to the
+    specified one, or NULL if no such item can be found. The node is struct
+    member `nname` in `itype`, and the key is located at `kname`.
+
+  - `ceb<type>_item_next(root, nname, kname, item_ptr)` : return a pointer to
+    the first inserted item after `item_ptr` in tree `root`, starting from the
+    ones having the same key and inserted after the current one, and continuing
+    with the first item having a strictly greater key than the current one, or
+    NULL if the end of the tree was reached. The node is named `nname` after
+    `item_ptr`, and the key is located at `kname`.
+
+  - `ceb<type>_item_next_dup(root, nname, kname, item_ptr)` : return a pointer
+    to the first inserted item after `item_ptr` in tree `root` and having the
+    exact same key, or NULL if no more duplicate of the specified one exists.
+    The node is named `nname` after `item_ptr`, and the key is located at
+    `kname`.
+
+  - `ceb<type>_item_next_unique(root, nname, kname, item_ptr)` : return a
+    pointer to the first item in tree `root` having a strictly greater key than
+    the that of item pointed to by `item_ptr`, or NULL if no such item exists.
+    The node is named `nname` after `item_ptr`, and the key is located at
+    `kname`.
+
+  - `ceb<type>_item_prev(root, nname, kname, item_ptr)` : return a pointer to
+    the last item inserted into tree `root` before `item_ptr`, starting from
+    the ones having the same key and inserted before the current one, and
+    continuing with the last item having a strictly lower key than the current
+    one, or NULL if no such item exists. The node is named `nname` after
+    `item_ptr`, and the key is located at `kname`.
+
+  - `ceb<type>_item_prev_dup(root, nname, kname, item_ptr)` : return a pointer
+    to the last inserted item before `item_ptr` in tree `root` and having the
+    exact same key, or NULL if no more duplicate of the specified one exists.
+    The node is named `nname` after `item_ptr`, and the key is located at
+    `kname`.
+
+  - `ceb<type>_item_prev_unique(root, nname, kname, item_ptr)` : return a
+    pointer to the last item in tree `root` having a strictly lower key than
+    that of item pointed to by `item_ptr`, or NULL if no such item exists. The
+    node is named `nname` after `item_ptr`, and the key is located at `kname`.
+
+Hints:
+
+  - generally the item's type is the same as the variable the return value is
+    assigned to, so it generally is convenient to use `typeof(*item)` to
+    specify the return type.
+
+  - in items indexed by multiple keys, it can be easy to confuse certain fields
+    and this will not be spotted at build time. A good practice is to name the
+    node elements after the key. For example if the key is called `addr` in the
+    item, calling the node `by_addr` to indicate that it is used to index the
+    item by this key is quite clear.
+
 #### Examples:
 
 - Standard indexing, with support for duplicates:
-```
+```c
   struct ceb_node *ceb32_lookup(struct ceb_root *const *root, uint32_t key);
   struct ceb_node *ceb32_insert(struct ceb_root **root, struct ceb_node *node);
   struct ceb_node *ceb32_first(struct ceb_root *const *root);
@@ -223,7 +345,7 @@ following components:
 ```
 
 - Indexing of unique keys:
-```
+```c
   struct ceb_node *cebu64_lookup(struct ceb_root *const *root, uint64_t key);
   struct ceb_node *cebu64_insert(struct ceb_root **root, struct ceb_node *node);
   struct ceb_node *cebu64_first(struct ceb_root *const *root);
@@ -232,7 +354,7 @@ following components:
 ```
 
 - Indexing of direct memory blocks located at a specific offset:
-```
+```c
   struct ceb_node *cebb_ofs_lookup(struct ceb_root *const *root, ptrdiff_t kofs, const void *key, size_t len);
   struct ceb_node *cebb_ofs_insert(struct ceb_root **root, ptrdiff_t kofs, struct ceb_node *node, size_t len);
   struct ceb_node *cebb_ofs_first(struct ceb_root *const *root, ptrdiff_t kofs, size_t len);
@@ -241,7 +363,7 @@ following components:
 ```
 
 - Indexing of indirect strings whose pointers immediately follow the node:
-```
+```c
   struct ceb_node *cebis_lookup(struct ceb_root *const *root, const void *key);
   struct ceb_node *cebis_insert(struct ceb_root **root, struct ceb_node *node);
   struct ceb_node *cebis_first(struct ceb_root *const *root);
@@ -250,7 +372,7 @@ following components:
 ```
 
 - Using `_key` to look up values within a range:
-```
+```c
    void list_range(struct ceb_root *const *root, uint32_t min, uint32_max)
    {
        uint32_t *key;
@@ -261,5 +383,33 @@ following components:
             printf("found: %u\n", *key);
             min = key + 1;
        }
+   }
+```
+
+- Walking over items by their name and by their ID using the item API:
+```c
+   struct symbol {
+       long addr;                 // 8 bytes
+       char *name;                // 8 bytes
+       struct ceb_node by_addr;   // 16 bytes
+       struct ceb_node by_name;   // 16 bytes
+   };
+
+   void list_syms_by_name(struct ceb_root *const *root)
+   {
+       struct symbol *sym;
+
+       sym = cebis_item_first(root, by_name, name, typeof(*sym));
+       for (; sym; sym = cebis_item_next(root, by_name, name, sym))
+           printf("Symbol %p name=%s addr=%lx\n", sym, sym->name, sym->addr);
+   }
+
+   void list_syms_by_addr(struct ceb_root *const *root)
+   {
+       struct symbol *sym;
+
+       sym = cebl_item_first(root, by_addr, addr, typeof(*sym));
+       for (; sym; sym = cebl_item_next(root, by_addr, addr, sym))
+           printf("Symbol %p name=%s addr=%lx\n", sym, sym->name, sym->addr);
    }
 ```

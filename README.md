@@ -65,6 +65,39 @@ trees such as rbtree).
 ## API
 
 The application integration and API are documented in [this document](doc/API.md).
+Overall, the API is quite straightforward to use, as illustrated in the short
+example below that enumerates symbols either sorted by their names or by their
+address:
+```c
+   #include <stdio.h>
+   #include <cebl_tree.h>
+   #include <cebis_tree.h>
+
+   struct symbol {
+       long addr;                 // 8 bytes
+       char *name;                // 8 bytes
+       struct ceb_node by_addr;   // 16 bytes
+       struct ceb_node by_name;   // 16 bytes
+   };
+
+   void list_syms_by_name(struct ceb_root *const *root)
+   {
+       struct symbol *sym;
+
+       sym = cebis_item_first(root, by_name, name, typeof(*sym));
+       for (; sym; sym = cebis_item_next(root, by_name, name, sym))
+           printf("Symbol %p name=%s addr=%lx\n", sym, sym->name, sym->addr);
+   }
+
+   void list_syms_by_addr(struct ceb_root *const *root)
+   {
+       struct symbol *sym;
+
+       sym = cebl_item_first(root, by_addr, addr, typeof(*sym));
+       for (; sym; sym = cebl_item_next(root, by_addr, addr, sym))
+           printf("Symbol %p name=%s addr=%lx\n", sym, sym->name, sym->addr);
+   }
+```
 
 ## Limitations and future improvements
 
@@ -76,7 +109,9 @@ Performance is a bit lower than EBTrees even for small keys due to the need to
 read both branches at each node to figure whether to stop or continue the
 descent. It effectively doubles the number of visited nodes (hence is less TLB
 friendly), though it does not necessarily increase the memory bandwidth since
-the nodes are much smaller.
+the nodes are much smaller. A performance test with real-world key distribution
+comparing cebtrees with other tree types was published:
+[here](https://wtarreau.blogspot.com/2025/06/real-world-performance-comparison-of.html).
 
 It was verified that an almost lockless approach could be implemented: lookups
 and insertion could be done without locking but deletion requires locking. As
