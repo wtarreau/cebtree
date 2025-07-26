@@ -119,3 +119,16 @@ such, an approach would require [rwlocks](https://github.com/wtarreau/plock)
 with shared locking for insertion and lookup, and exclusive locking for
 deletion. This might come as an advantage over EBTrees for highly contended
 environments.
+
+## Thanks
+
+Thanks to the following people for their help:
+  - Benoit Dolez and Olivier Houchard, for challenging my design ideas and
+    participating to endless discussions helping me give up on certain failed
+    attempts and prioritize the most important steps ;
+
+  - Frédéric Lécaille for suggesting the offset-based API that opened the way
+    to the convenient item API.
+
+  - Christopher Faulet for sharing super useful feedback on the item-based API
+    that was key to simplifying it.
