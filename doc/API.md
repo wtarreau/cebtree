@@ -108,7 +108,7 @@ Two types are needed to be known by the application (these are defined in
     pointer may be met in a tree. For better readability, a function is
     provided to determine if a tree is empty:
 
-  - `int ceb_isempty(const struct ceb_root **root)` : returns true if the tree
+  - `int ceb_isempty(struct ceb_root *const *root)` : returns true if the tree
      is empty, otherwise false.
 
   - the indexing node : `struct ceb_node`. This structure contains two
@@ -215,43 +215,43 @@ following components:
 
 - Standard indexing, with support for duplicates:
 ```
-  struct ceb_node *ceb32_lookup(struct ceb_root **root, uint32_t key);
+  struct ceb_node *ceb32_lookup(struct ceb_root *const *root, uint32_t key);
   struct ceb_node *ceb32_insert(struct ceb_root **root, struct ceb_node *node);
-  struct ceb_node *ceb32_first(struct ceb_root **root);
+  struct ceb_node *ceb32_first(struct ceb_root *const *root);
   struct ceb_node *ceb32_delete(struct ceb_root **root, struct ceb_node *node);
-  struct ceb_node *ceb32_next(struct ceb_root **root, struct ceb_node *node);
+  struct ceb_node *ceb32_next(struct ceb_root *const *root, struct ceb_node *node);
 ```
 
 - Indexing of unique keys:
 ```
-  struct ceb_node *cebu64_lookup(struct ceb_root **root, uint64_t key);
+  struct ceb_node *cebu64_lookup(struct ceb_root *const *root, uint64_t key);
   struct ceb_node *cebu64_insert(struct ceb_root **root, struct ceb_node *node);
-  struct ceb_node *cebu64_first(struct ceb_root **root);
+  struct ceb_node *cebu64_first(struct ceb_root *const *root);
   struct ceb_node *cebu64_delete(struct ceb_root **root, struct ceb_node *node);
-  struct ceb_node *cebu64_next(struct ceb_root **root, struct ceb_node *node);
+  struct ceb_node *cebu64_next(struct ceb_root *const *root, struct ceb_node *node);
 ```
 
 - Indexing of direct memory blocks located at a specific offset:
 ```
-  struct ceb_node *cebb_ofs_lookup(struct ceb_root **root, ptrdiff_t kofs, const void *key, size_t len);
+  struct ceb_node *cebb_ofs_lookup(struct ceb_root *const *root, ptrdiff_t kofs, const void *key, size_t len);
   struct ceb_node *cebb_ofs_insert(struct ceb_root **root, ptrdiff_t kofs, struct ceb_node *node, size_t len);
-  struct ceb_node *cebb_ofs_first(struct ceb_root **root, ptrdiff_t kofs, size_t len);
+  struct ceb_node *cebb_ofs_first(struct ceb_root *const *root, ptrdiff_t kofs, size_t len);
   struct ceb_node *cebb_ofs_delete(struct ceb_root **root, ptrdiff_t kofs, struct ceb_node *node, size_t len);
-  struct ceb_node *cebb_ofs_next(struct ceb_root **root, ptrdiff_t kofs, struct ceb_node *node, size_t len);
+  struct ceb_node *cebb_ofs_next(struct ceb_root *const *root, ptrdiff_t kofs, struct ceb_node *node, size_t len);
 ```
 
 - Indexing of indirect strings whose pointers immediately follow the node:
 ```
-  struct ceb_node *cebis_lookup(struct ceb_root **root, const void *key);
+  struct ceb_node *cebis_lookup(struct ceb_root *const *root, const void *key);
   struct ceb_node *cebis_insert(struct ceb_root **root, struct ceb_node *node);
-  struct ceb_node *cebis_first(struct ceb_root **root);
+  struct ceb_node *cebis_first(struct ceb_root *const *root);
   struct ceb_node *cebis_delete(struct ceb_root **root, struct ceb_node *node);
-  struct ceb_node *cebis_next(struct ceb_root **root, struct ceb_node *node);
+  struct ceb_node *cebis_next(struct ceb_root *const *root, struct ceb_node *node);
 ```
 
 - Using `_key` to look up values within a range:
 ```
-   void list_range(const struct ceb_root **root, uint32_t min, uint32_max)
+   void list_range(struct ceb_root *const *root, uint32_t min, uint32_max)
    {
        uint32_t *key;
 

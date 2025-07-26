@@ -31,20 +31,20 @@
 
 /* simpler version */
 struct ceb_node *cebua_insert(struct ceb_root **root, struct ceb_node *node);
-struct ceb_node *cebua_first(struct ceb_root **root);
-struct ceb_node *cebua_last(struct ceb_root **root);
-struct ceb_node *cebua_lookup(struct ceb_root **root, const void *key);
-struct ceb_node *cebua_lookup_le(struct ceb_root **root, const void *key);
-struct ceb_node *cebua_lookup_lt(struct ceb_root **root, const void *key);
-struct ceb_node *cebua_lookup_ge(struct ceb_root **root, const void *key);
-struct ceb_node *cebua_lookup_gt(struct ceb_root **root, const void *key);
-struct ceb_node *cebua_next(struct ceb_root **root, struct ceb_node *node);
-struct ceb_node *cebua_prev(struct ceb_root **root, struct ceb_node *node);
+struct ceb_node *cebua_first(struct ceb_root *const *root);
+struct ceb_node *cebua_last(struct ceb_root *const *root);
+struct ceb_node *cebua_lookup(struct ceb_root *const *root, const void *key);
+struct ceb_node *cebua_lookup_le(struct ceb_root *const *root, const void *key);
+struct ceb_node *cebua_lookup_lt(struct ceb_root *const *root, const void *key);
+struct ceb_node *cebua_lookup_ge(struct ceb_root *const *root, const void *key);
+struct ceb_node *cebua_lookup_gt(struct ceb_root *const *root, const void *key);
+struct ceb_node *cebua_next(struct ceb_root *const *root, struct ceb_node *node);
+struct ceb_node *cebua_prev(struct ceb_root *const *root, struct ceb_node *node);
 struct ceb_node *cebua_delete(struct ceb_root **root, struct ceb_node *node);
 struct ceb_node *cebua_pick(struct ceb_root **root, const void *key);
 
 /* generic dump function */
-void ceba_default_dump(struct ceb_root **root, const char *label, const void *ctx, int sub);
+void ceba_default_dump(struct ceb_root *const *root, const char *label, const void *ctx, int sub);
 
 /* returns the pointer to the area that immediately follows the node */
 static inline void *ceba_key(const struct ceb_node *node)

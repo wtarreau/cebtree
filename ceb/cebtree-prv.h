@@ -1136,7 +1136,7 @@ struct ceb_node *_ceb_insert(struct ceb_root **root,
  * If the tree starts with duplicates, the first of them is returned.
  */
 static inline __attribute__((always_inline))
-struct ceb_node *_ceb_first(struct ceb_root **root,
+struct ceb_node *_ceb_first(struct ceb_root *const *root,
                             ptrdiff_t kofs,
                             enum ceb_key_type key_type,
                             uint64_t key_len,
@@ -1147,7 +1147,7 @@ struct ceb_node *_ceb_first(struct ceb_root **root,
 	if (!*root)
 		return NULL;
 
-	node = _ceb_descend(root, CEB_WM_FST, kofs, key_type, 0, key_len, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, is_dup_ptr);
+	node = _ceb_descend((struct ceb_root **)root, CEB_WM_FST, kofs, key_type, 0, key_len, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, is_dup_ptr);
 	if (node && is_dup_ptr && *is_dup_ptr) {
 		/* on a duplicate, the first node is right->left and it's a leaf */
 		node = _ceb_untag(_ceb_untag(node->b[1], 1)->b[0], 1);
@@ -1160,7 +1160,7 @@ struct ceb_node *_ceb_first(struct ceb_root **root,
  * If the tree ends with duplicates, the last of them is returned.
  */
 static inline __attribute__((always_inline))
-struct ceb_node *_ceb_last(struct ceb_root **root,
+struct ceb_node *_ceb_last(struct ceb_root *const *root,
                            ptrdiff_t kofs,
                            enum ceb_key_type key_type,
                            uint64_t key_len,
@@ -1170,7 +1170,7 @@ struct ceb_node *_ceb_last(struct ceb_root **root,
 		return NULL;
 
 	/* note for duplicates: the current scheme always returns the last one by default */
-	return _ceb_descend(root, CEB_WM_LST, kofs, key_type, 0, key_len, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, is_dup_ptr);
+	return _ceb_descend((struct ceb_root **)root, CEB_WM_LST, kofs, key_type, 0, key_len, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, is_dup_ptr);
 }
 
 /* Searches in the tree <root> made of keys of type <key_type>, for the next
@@ -1181,7 +1181,7 @@ struct ceb_node *_ceb_last(struct ceb_root **root,
  * that fork.
  */
 static inline __attribute__((always_inline))
-struct ceb_node *_ceb_next_unique(struct ceb_root **root,
+struct ceb_node *_ceb_next_unique(struct ceb_root *const *root,
                                   ptrdiff_t kofs,
                                   enum ceb_key_type key_type,
                                   uint32_t key_u32,
@@ -1194,7 +1194,7 @@ struct ceb_node *_ceb_next_unique(struct ceb_root **root,
 	if (!*root)
 		return NULL;
 
-	if (!_ceb_descend(root, CEB_WM_KNX, kofs, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &restart, is_dup_ptr))
+	if (!_ceb_descend((struct ceb_root **)root, CEB_WM_KNX, kofs, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &restart, is_dup_ptr))
 		return NULL;
 
 	if (!restart)
@@ -1211,7 +1211,7 @@ struct ceb_node *_ceb_next_unique(struct ceb_root **root,
  * that fork.
  */
 static inline __attribute__((always_inline))
-struct ceb_node *_ceb_prev_unique(struct ceb_root **root,
+struct ceb_node *_ceb_prev_unique(struct ceb_root *const *root,
                                   ptrdiff_t kofs,
                                   enum ceb_key_type key_type,
                                   uint32_t key_u32,
@@ -1224,7 +1224,7 @@ struct ceb_node *_ceb_prev_unique(struct ceb_root **root,
 	if (!*root)
 		return NULL;
 
-	if (!_ceb_descend(root, CEB_WM_KPR, kofs, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &restart, is_dup_ptr))
+	if (!_ceb_descend((struct ceb_root **)root, CEB_WM_KPR, kofs, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &restart, is_dup_ptr))
 		return NULL;
 
 	if (!restart)
@@ -1238,7 +1238,7 @@ struct ceb_node *_ceb_prev_unique(struct ceb_root **root,
  * It's up to the caller to pass the current node's key in <key_*>.
  */
 static inline __attribute__((always_inline))
-struct ceb_node *_ceb_next_dup(struct ceb_root **root,
+struct ceb_node *_ceb_next_dup(struct ceb_root *const *root,
                                ptrdiff_t kofs,
                                enum ceb_key_type key_type,
                                uint32_t key_u32,
@@ -1252,7 +1252,7 @@ struct ceb_node *_ceb_next_dup(struct ceb_root **root,
 	if (!*root)
 		return NULL;
 
-	node = _ceb_descend(root, CEB_WM_KNX, kofs, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &is_dup);
+	node = _ceb_descend((struct ceb_root **)root, CEB_WM_KNX, kofs, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &is_dup);
 	if (!node)
 		return NULL;
 
@@ -1280,7 +1280,7 @@ struct ceb_node *_ceb_next_dup(struct ceb_root **root,
  * It's up to the caller to pass the current node's key in <key_*>.
  */
 static inline __attribute__((always_inline))
-struct ceb_node *_ceb_prev_dup(struct ceb_root **root,
+struct ceb_node *_ceb_prev_dup(struct ceb_root *const *root,
                                ptrdiff_t kofs,
                                enum ceb_key_type key_type,
                                uint32_t key_u32,
@@ -1294,7 +1294,7 @@ struct ceb_node *_ceb_prev_dup(struct ceb_root **root,
 	if (!*root)
 		return NULL;
 
-	node = _ceb_descend(root, CEB_WM_KPR, kofs, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &is_dup);
+	node = _ceb_descend((struct ceb_root **)root, CEB_WM_KPR, kofs, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &is_dup);
 	if (!node)
 		return NULL;
 
@@ -1322,7 +1322,7 @@ struct ceb_node *_ceb_prev_dup(struct ceb_root **root,
  * will be visited in insertion order prior to jumping to different keys.
  */
 static inline __attribute__((always_inline))
-struct ceb_node *_ceb_next(struct ceb_root **root,
+struct ceb_node *_ceb_next(struct ceb_root *const *root,
                            ptrdiff_t kofs,
                            enum ceb_key_type key_type,
                            uint32_t key_u32,
@@ -1337,7 +1337,7 @@ struct ceb_node *_ceb_next(struct ceb_root **root,
 	if (!*root)
 		return NULL;
 
-	node = _ceb_descend(root, CEB_WM_KNX, kofs, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &restart, is_dup_ptr);
+	node = _ceb_descend((struct ceb_root **)root, CEB_WM_KNX, kofs, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &restart, is_dup_ptr);
 	if (!node)
 		return NULL;
 
@@ -1383,7 +1383,7 @@ struct ceb_node *_ceb_next(struct ceb_root **root,
  * keys.
  */
 static inline __attribute__((always_inline))
-struct ceb_node *_ceb_prev(struct ceb_root **root,
+struct ceb_node *_ceb_prev(struct ceb_root *const *root,
                            ptrdiff_t kofs,
                            enum ceb_key_type key_type,
                            uint32_t key_u32,
@@ -1398,7 +1398,7 @@ struct ceb_node *_ceb_prev(struct ceb_root **root,
 	if (!*root)
 		return NULL;
 
-	node = _ceb_descend(root, CEB_WM_KPR, kofs, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &restart, is_dup_ptr);
+	node = _ceb_descend((struct ceb_root **)root, CEB_WM_KPR, kofs, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &restart, is_dup_ptr);
 	if (!node)
 		return NULL;
 
@@ -1426,7 +1426,7 @@ struct ceb_node *_ceb_prev(struct ceb_root **root,
  * node containing the key <key_*>. Returns NULL if not found.
  */
 static inline __attribute__((always_inline))
-struct ceb_node *_ceb_lookup(struct ceb_root **root,
+struct ceb_node *_ceb_lookup(struct ceb_root *const *root,
                              ptrdiff_t kofs,
                              enum ceb_key_type key_type,
                              uint32_t key_u32,
@@ -1439,7 +1439,7 @@ struct ceb_node *_ceb_lookup(struct ceb_root **root,
 	if (!*root)
 		return NULL;
 
-	ret = _ceb_descend(root, CEB_WM_KEQ, kofs, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, is_dup_ptr);
+	ret = _ceb_descend((struct ceb_root **)root, CEB_WM_KEQ, kofs, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, is_dup_ptr);
 	if (ret && is_dup_ptr && *is_dup_ptr) {
 		/* on a duplicate, the first node is right->left and it's a leaf */
 		ret = _ceb_untag(_ceb_untag(ret->b[1], 1)->b[0], 1);
@@ -1452,7 +1452,7 @@ struct ceb_node *_ceb_lookup(struct ceb_root **root,
  * Returns NULL if not found.
  */
 static inline __attribute__((always_inline))
-struct ceb_node *_ceb_lookup_le(struct ceb_root **root,
+struct ceb_node *_ceb_lookup_le(struct ceb_root *const *root,
                                 ptrdiff_t kofs,
                                 enum ceb_key_type key_type,
                                 uint32_t key_u32,
@@ -1467,7 +1467,7 @@ struct ceb_node *_ceb_lookup_le(struct ceb_root **root,
 		return NULL;
 
 	/* note that for duplicates, we already find the last one */
-	ret = _ceb_descend(root, CEB_WM_KLE, kofs, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &restart, is_dup_ptr);
+	ret = _ceb_descend((struct ceb_root **)root, CEB_WM_KLE, kofs, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &restart, is_dup_ptr);
 	if (ret)
 		return ret;
 
@@ -1483,7 +1483,7 @@ struct ceb_node *_ceb_lookup_le(struct ceb_root **root,
  * looked up value doesn't need to exist.
  */
 static inline __attribute__((always_inline))
-struct ceb_node *_ceb_lookup_lt(struct ceb_root **root,
+struct ceb_node *_ceb_lookup_lt(struct ceb_root *const *root,
                                 ptrdiff_t kofs,
                                 enum ceb_key_type key_type,
                                 uint32_t key_u32,
@@ -1498,7 +1498,7 @@ struct ceb_node *_ceb_lookup_lt(struct ceb_root **root,
 		return NULL;
 
 	/* note that for duplicates, we already find the last one */
-	ret = _ceb_descend(root, CEB_WM_KLT, kofs, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &restart, is_dup_ptr);
+	ret = _ceb_descend((struct ceb_root **)root, CEB_WM_KLT, kofs, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &restart, is_dup_ptr);
 	if (ret)
 		return ret;
 
@@ -1515,7 +1515,7 @@ struct ceb_node *_ceb_lookup_lt(struct ceb_root **root,
 
  */
 static inline __attribute__((always_inline))
-struct ceb_node *_ceb_lookup_ge(struct ceb_root **root,
+struct ceb_node *_ceb_lookup_ge(struct ceb_root *const *root,
                                 ptrdiff_t kofs,
                                 enum ceb_key_type key_type,
                                 uint32_t key_u32,
@@ -1529,7 +1529,7 @@ struct ceb_node *_ceb_lookup_ge(struct ceb_root **root,
 	if (!*root)
 		return NULL;
 
-	ret = _ceb_descend(root, CEB_WM_KGE, kofs, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &restart, is_dup_ptr);
+	ret = _ceb_descend((struct ceb_root **)root, CEB_WM_KGE, kofs, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &restart, is_dup_ptr);
 	if (!ret) {
 		if (!restart)
 			return NULL;
@@ -1551,7 +1551,7 @@ struct ceb_node *_ceb_lookup_ge(struct ceb_root **root,
  * permitted and this variable is used to temporarily carry an internal state.
  */
 static inline __attribute__((always_inline))
-struct ceb_node *_ceb_lookup_gt(struct ceb_root **root,
+struct ceb_node *_ceb_lookup_gt(struct ceb_root *const *root,
                                 ptrdiff_t kofs,
                                 enum ceb_key_type key_type,
                                 uint32_t key_u32,
@@ -1565,7 +1565,7 @@ struct ceb_node *_ceb_lookup_gt(struct ceb_root **root,
 	if (!*root)
 		return NULL;
 
-	ret = _ceb_descend(root, CEB_WM_KGT, kofs, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &restart, is_dup_ptr);
+	ret = _ceb_descend((struct ceb_root **)root, CEB_WM_KGT, kofs, key_type, key_u32, key_u64, key_ptr, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &restart, is_dup_ptr);
 	if (!ret) {
 		if (!restart)
 			return NULL;

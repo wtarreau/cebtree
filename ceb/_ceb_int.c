@@ -63,7 +63,7 @@ CEB_FDECL3(struct ceb_node *, CEB_MKEY_PFX, _insert, struct ceb_root **, root, p
 }
 
 /* return the first node or NULL if not found. */
-CEB_FDECL2(struct ceb_node *, CEB_MKEY_PFX, _first, struct ceb_root **, root, ptrdiff_t, kofs)
+CEB_FDECL2(struct ceb_node *, CEB_MKEY_PFX, _first, struct ceb_root *const *, root, ptrdiff_t, kofs)
 {
 	int is_dup;
 
@@ -74,7 +74,7 @@ CEB_FDECL2(struct ceb_node *, CEB_MKEY_PFX, _first, struct ceb_root **, root, pt
 }
 
 /* return the last node or NULL if not found. */
-CEB_FDECL2(struct ceb_node *, CEB_MKEY_PFX, _last, struct ceb_root **, root, ptrdiff_t, kofs)
+CEB_FDECL2(struct ceb_node *, CEB_MKEY_PFX, _last, struct ceb_root *const *, root, ptrdiff_t, kofs)
 {
 	int is_dup;
 
@@ -87,7 +87,7 @@ CEB_FDECL2(struct ceb_node *, CEB_MKEY_PFX, _last, struct ceb_root **, root, ptr
 /* look up the specified key, and returns either the node containing it, or
  * NULL if not found.
  */
-CEB_FDECL3(struct ceb_node *, CEB_MKEY_PFX, _lookup, struct ceb_root **, root, ptrdiff_t, kofs, CEB_KEY_TYPE, key)
+CEB_FDECL3(struct ceb_node *, CEB_MKEY_PFX, _lookup, struct ceb_root *const *, root, ptrdiff_t, kofs, CEB_KEY_TYPE, key)
 {
 	int is_dup;
 
@@ -100,7 +100,7 @@ CEB_FDECL3(struct ceb_node *, CEB_MKEY_PFX, _lookup, struct ceb_root **, root, p
 /* look up the specified key or the highest below it, and returns either the
  * node containing it, or NULL if not found.
  */
-CEB_FDECL3(struct ceb_node *, CEB_MKEY_PFX, _lookup_le, struct ceb_root **, root, ptrdiff_t, kofs, CEB_KEY_TYPE, key)
+CEB_FDECL3(struct ceb_node *, CEB_MKEY_PFX, _lookup_le, struct ceb_root *const *, root, ptrdiff_t, kofs, CEB_KEY_TYPE, key)
 {
 	int is_dup;
 
@@ -113,7 +113,7 @@ CEB_FDECL3(struct ceb_node *, CEB_MKEY_PFX, _lookup_le, struct ceb_root **, root
 /* look up highest key below the specified one, and returns either the
  * node containing it, or NULL if not found.
  */
-CEB_FDECL3(struct ceb_node *, CEB_MKEY_PFX, _lookup_lt, struct ceb_root **, root, ptrdiff_t, kofs, CEB_KEY_TYPE, key)
+CEB_FDECL3(struct ceb_node *, CEB_MKEY_PFX, _lookup_lt, struct ceb_root *const *, root, ptrdiff_t, kofs, CEB_KEY_TYPE, key)
 {
 	int is_dup;
 
@@ -126,7 +126,7 @@ CEB_FDECL3(struct ceb_node *, CEB_MKEY_PFX, _lookup_lt, struct ceb_root **, root
 /* look up the specified key or the smallest above it, and returns either the
  * node containing it, or NULL if not found.
  */
-CEB_FDECL3(struct ceb_node *, CEB_MKEY_PFX, _lookup_ge, struct ceb_root **, root, ptrdiff_t, kofs, CEB_KEY_TYPE, key)
+CEB_FDECL3(struct ceb_node *, CEB_MKEY_PFX, _lookup_ge, struct ceb_root *const *, root, ptrdiff_t, kofs, CEB_KEY_TYPE, key)
 {
 	int is_dup;
 
@@ -139,7 +139,7 @@ CEB_FDECL3(struct ceb_node *, CEB_MKEY_PFX, _lookup_ge, struct ceb_root **, root
 /* look up the smallest key above the specified one, and returns either the
  * node containing it, or NULL if not found.
  */
-CEB_FDECL3(struct ceb_node *, CEB_MKEY_PFX, _lookup_gt, struct ceb_root **, root, ptrdiff_t, kofs, CEB_KEY_TYPE, key)
+CEB_FDECL3(struct ceb_node *, CEB_MKEY_PFX, _lookup_gt, struct ceb_root *const *, root, ptrdiff_t, kofs, CEB_KEY_TYPE, key)
 {
 	int is_dup;
 
@@ -154,7 +154,7 @@ CEB_FDECL3(struct ceb_node *, CEB_MKEY_PFX, _lookup_gt, struct ceb_root **, root
  * time a left turn was made, and returning the first node along the right
  * branch at that fork.
  */
-CEB_FDECL3(struct ceb_node *, CEB_MKEY_PFX, _next_unique, struct ceb_root **, root, ptrdiff_t, kofs, struct ceb_node *, node)
+CEB_FDECL3(struct ceb_node *, CEB_MKEY_PFX, _next_unique, struct ceb_root *const *, root, ptrdiff_t, kofs, struct ceb_node *, node)
 {
 	CEB_KEY_TYPE key = NODEK(node, kofs)->CEB_KEY_MEMBER;
 	int is_dup;
@@ -170,7 +170,7 @@ CEB_FDECL3(struct ceb_node *, CEB_MKEY_PFX, _next_unique, struct ceb_root **, ro
  * time a right turn was made, and returning the last node along the left
  * branch at that fork.
  */
-CEB_FDECL3(struct ceb_node *, CEB_MKEY_PFX, _prev_unique, struct ceb_root **, root, ptrdiff_t, kofs, struct ceb_node *, node)
+CEB_FDECL3(struct ceb_node *, CEB_MKEY_PFX, _prev_unique, struct ceb_root *const *, root, ptrdiff_t, kofs, struct ceb_node *, node)
 {
 	CEB_KEY_TYPE key = NODEK(node, kofs)->CEB_KEY_MEMBER;
 	int is_dup;
@@ -184,7 +184,7 @@ CEB_FDECL3(struct ceb_node *, CEB_MKEY_PFX, _prev_unique, struct ceb_root **, ro
 /* search for the next node after the specified one containing the same value,
  * and return it, or NULL if not found.
  */
-CEB_FDECL3(struct ceb_node *, CEB_MKEY_PFX, _next_dup, struct ceb_root **, root, ptrdiff_t, kofs, struct ceb_node *, node)
+CEB_FDECL3(struct ceb_node *, CEB_MKEY_PFX, _next_dup, struct ceb_root *const *, root, ptrdiff_t, kofs, struct ceb_node *, node)
 {
 	CEB_KEY_TYPE key = NODEK(node, kofs)->CEB_KEY_MEMBER;
 
@@ -197,7 +197,7 @@ CEB_FDECL3(struct ceb_node *, CEB_MKEY_PFX, _next_dup, struct ceb_root **, root,
 /* search for the prev node before the specified one containing the same value,
  * and return it, or NULL if not found.
  */
-CEB_FDECL3(struct ceb_node *, CEB_MKEY_PFX, _prev_dup, struct ceb_root **, root, ptrdiff_t, kofs, struct ceb_node *, node)
+CEB_FDECL3(struct ceb_node *, CEB_MKEY_PFX, _prev_dup, struct ceb_root *const *, root, ptrdiff_t, kofs, struct ceb_node *, node)
 {
 	CEB_KEY_TYPE key = NODEK(node, kofs)->CEB_KEY_MEMBER;
 
@@ -212,7 +212,7 @@ CEB_FDECL3(struct ceb_node *, CEB_MKEY_PFX, _prev_dup, struct ceb_root **, root,
  * time a left turn was made, and returning the first node along the right
  * branch at that fork.
  */
-CEB_FDECL3(struct ceb_node *, CEB_MKEY_PFX, _next, struct ceb_root **, root, ptrdiff_t, kofs, struct ceb_node *, node)
+CEB_FDECL3(struct ceb_node *, CEB_MKEY_PFX, _next, struct ceb_root *const *, root, ptrdiff_t, kofs, struct ceb_node *, node)
 {
 	CEB_KEY_TYPE key = NODEK(node, kofs)->CEB_KEY_MEMBER;
 	int is_dup;
@@ -228,7 +228,7 @@ CEB_FDECL3(struct ceb_node *, CEB_MKEY_PFX, _next, struct ceb_root **, root, ptr
  * time a right turn was made, and returning the last node along the left
  * branch at that fork.
  */
-CEB_FDECL3(struct ceb_node *, CEB_MKEY_PFX, _prev, struct ceb_root **, root, ptrdiff_t, kofs, struct ceb_node *, node)
+CEB_FDECL3(struct ceb_node *, CEB_MKEY_PFX, _prev, struct ceb_root *const *, root, ptrdiff_t, kofs, struct ceb_node *, node)
 {
 	CEB_KEY_TYPE key = NODEK(node, kofs)->CEB_KEY_MEMBER;
 	int is_dup;
@@ -293,7 +293,7 @@ CEB_FDECL3(struct ceb_node *, CEB_UKEY_PFX, _insert, struct ceb_root **, root, p
 }
 
 /* return the first node or NULL if not found. */
-CEB_FDECL2(struct ceb_node *, CEB_UKEY_PFX, _first, struct ceb_root **, root, ptrdiff_t, kofs)
+CEB_FDECL2(struct ceb_node *, CEB_UKEY_PFX, _first, struct ceb_root *const *, root, ptrdiff_t, kofs)
 {
 	if (sizeof(CEB_KEY_TYPE) <= 4)
 		return _ceb_first(root, kofs, CEB_KT_U32, 0, NULL);
@@ -302,7 +302,7 @@ CEB_FDECL2(struct ceb_node *, CEB_UKEY_PFX, _first, struct ceb_root **, root, pt
 }
 
 /* return the last node or NULL if not found. */
-CEB_FDECL2(struct ceb_node *, CEB_UKEY_PFX, _last, struct ceb_root **, root, ptrdiff_t, kofs)
+CEB_FDECL2(struct ceb_node *, CEB_UKEY_PFX, _last, struct ceb_root *const *, root, ptrdiff_t, kofs)
 {
 	if (sizeof(CEB_KEY_TYPE) <= 4)
 		return _ceb_last(root, kofs, CEB_KT_U32, 0, NULL);
@@ -313,7 +313,7 @@ CEB_FDECL2(struct ceb_node *, CEB_UKEY_PFX, _last, struct ceb_root **, root, ptr
 /* look up the specified key, and returns either the node containing it, or
  * NULL if not found.
  */
-CEB_FDECL3(struct ceb_node *, CEB_UKEY_PFX, _lookup, struct ceb_root **, root, ptrdiff_t, kofs, CEB_KEY_TYPE, key)
+CEB_FDECL3(struct ceb_node *, CEB_UKEY_PFX, _lookup, struct ceb_root *const *, root, ptrdiff_t, kofs, CEB_KEY_TYPE, key)
 {
 	if (sizeof(CEB_KEY_TYPE) <= 4)
 		return _ceb_lookup(root, kofs, CEB_KT_U32, key, 0, NULL, NULL);
@@ -324,7 +324,7 @@ CEB_FDECL3(struct ceb_node *, CEB_UKEY_PFX, _lookup, struct ceb_root **, root, p
 /* look up the specified key or the highest below it, and returns either the
  * node containing it, or NULL if not found.
  */
-CEB_FDECL3(struct ceb_node *, CEB_UKEY_PFX, _lookup_le, struct ceb_root **, root, ptrdiff_t, kofs, CEB_KEY_TYPE, key)
+CEB_FDECL3(struct ceb_node *, CEB_UKEY_PFX, _lookup_le, struct ceb_root *const *, root, ptrdiff_t, kofs, CEB_KEY_TYPE, key)
 {
 	if (sizeof(CEB_KEY_TYPE) <= 4)
 		return _ceb_lookup_le(root, kofs, CEB_KT_U32, key, 0, NULL, NULL);
@@ -335,7 +335,7 @@ CEB_FDECL3(struct ceb_node *, CEB_UKEY_PFX, _lookup_le, struct ceb_root **, root
 /* look up highest key below the specified one, and returns either the
  * node containing it, or NULL if not found.
  */
-CEB_FDECL3(struct ceb_node *, CEB_UKEY_PFX, _lookup_lt, struct ceb_root **, root, ptrdiff_t, kofs, CEB_KEY_TYPE, key)
+CEB_FDECL3(struct ceb_node *, CEB_UKEY_PFX, _lookup_lt, struct ceb_root *const *, root, ptrdiff_t, kofs, CEB_KEY_TYPE, key)
 {
 	if (sizeof(CEB_KEY_TYPE) <= 4)
 		return _ceb_lookup_lt(root, kofs, CEB_KT_U32, key, 0, NULL, NULL);
@@ -346,7 +346,7 @@ CEB_FDECL3(struct ceb_node *, CEB_UKEY_PFX, _lookup_lt, struct ceb_root **, root
 /* look up the specified key or the smallest above it, and returns either the
  * node containing it, or NULL if not found.
  */
-CEB_FDECL3(struct ceb_node *, CEB_UKEY_PFX, _lookup_ge, struct ceb_root **, root, ptrdiff_t, kofs, CEB_KEY_TYPE, key)
+CEB_FDECL3(struct ceb_node *, CEB_UKEY_PFX, _lookup_ge, struct ceb_root *const *, root, ptrdiff_t, kofs, CEB_KEY_TYPE, key)
 {
 	if (sizeof(CEB_KEY_TYPE) <= 4)
 		return _ceb_lookup_ge(root, kofs, CEB_KT_U32, key, 0, NULL, NULL);
@@ -357,7 +357,7 @@ CEB_FDECL3(struct ceb_node *, CEB_UKEY_PFX, _lookup_ge, struct ceb_root **, root
 /* look up the smallest key above the specified one, and returns either the
  * node containing it, or NULL if not found.
  */
-CEB_FDECL3(struct ceb_node *, CEB_UKEY_PFX, _lookup_gt, struct ceb_root **, root, ptrdiff_t, kofs, CEB_KEY_TYPE, key)
+CEB_FDECL3(struct ceb_node *, CEB_UKEY_PFX, _lookup_gt, struct ceb_root *const *, root, ptrdiff_t, kofs, CEB_KEY_TYPE, key)
 {
 	if (sizeof(CEB_KEY_TYPE) <= 4)
 		return _ceb_lookup_gt(root, kofs, CEB_KT_U32, key, 0, NULL, NULL);
@@ -370,7 +370,7 @@ CEB_FDECL3(struct ceb_node *, CEB_UKEY_PFX, _lookup_gt, struct ceb_root **, root
  * time a left turn was made, and returning the first node along the right
  * branch at that fork.
  */
-CEB_FDECL3(struct ceb_node *, CEB_UKEY_PFX, _next, struct ceb_root **, root, ptrdiff_t, kofs, struct ceb_node *, node)
+CEB_FDECL3(struct ceb_node *, CEB_UKEY_PFX, _next, struct ceb_root *const *, root, ptrdiff_t, kofs, struct ceb_node *, node)
 {
 	CEB_KEY_TYPE key = NODEK(node, kofs)->CEB_KEY_MEMBER;
 
@@ -385,7 +385,7 @@ CEB_FDECL3(struct ceb_node *, CEB_UKEY_PFX, _next, struct ceb_root **, root, ptr
  * time a right turn was made, and returning the last node along the left
  * branch at that fork.
  */
-CEB_FDECL3(struct ceb_node *, CEB_UKEY_PFX, _prev, struct ceb_root **, root, ptrdiff_t, kofs, struct ceb_node *, node)
+CEB_FDECL3(struct ceb_node *, CEB_UKEY_PFX, _prev, struct ceb_root *const *, root, ptrdiff_t, kofs, struct ceb_node *, node)
 {
 	CEB_KEY_TYPE key = NODEK(node, kofs)->CEB_KEY_MEMBER;
 
@@ -442,7 +442,7 @@ CEB_FDECL3(struct ceb_node *, CEB_UKEY_PFX, _pick, struct ceb_root **, root, ptr
  *     0   tree *      prologue+tree+epilogue at once
  *    N>0  tree *      only the tree, after a prologue and before an epilogue
  */
-CEB_FDECL5(void, CEB_MKEY_PFX, _default_dump, struct ceb_root **, root, ptrdiff_t, kofs, const char *, label, const void *, ctx, int, sub)
+CEB_FDECL5(void, CEB_MKEY_PFX, _default_dump, struct ceb_root *const *, root, ptrdiff_t, kofs, const char *, label, const void *, ctx, int, sub)
 {
 	if (!sub && label) {
 		printf("\ndigraph " TO_STR(CEB_MKEY_PFX) "_tree {\n"

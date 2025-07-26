@@ -46,7 +46,7 @@ static inline int ceb_intree(const struct ceb_node *node)
 }
 
 /* indicates whether a root is empty or not */
-static inline int ceb_isempty(const struct ceb_root **root)
+static inline int ceb_isempty(struct ceb_root * const*root)
 {
 	return !*root;
 }
