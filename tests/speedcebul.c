@@ -57,15 +57,15 @@ int main(int argc, char **argv)
 
 	for (i = 0; i < entries; i++) {
 		key->key = rndl();
-		old = cebul_lookup(&ceb_root, key->key);
+		old = cebul_imm_lookup(&ceb_root, key->key);
 		if (old)
 			fprintf(stderr, "Note: value %#lx already present at %p\n", key->key, old);
 
 	try_again:
-		prev = cebul_insert(&ceb_root, &key->node);
+		prev = cebul_imm_insert(&ceb_root, &key->node);
 		if (prev != &key->node) {
 			fprintf(stderr, "Note: failed to insert %#lx, previous was at %p\n", key->key, old);
-			ret = cebul_delete(&ceb_root, prev);
+			ret = cebul_imm_delete(&ceb_root, prev);
 			if (ret != prev) {
 				/* was not properly removed either: THIS IS A BUG! */
 				fprintf(stderr, "failed to remove %p (returned %p)\n", prev, ret);
@@ -85,7 +85,7 @@ int main(int argc, char **argv)
 		found = 0;
 		for (i = 0; i < lookups; i++) {
 			key->key = rndl();
-			old = cebul_lookup(&ceb_root, key->key);
+			old = cebul_imm_lookup(&ceb_root, key->key);
 			if (old)
 				found++;
 		}

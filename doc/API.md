@@ -136,11 +136,13 @@ following components:
   - `<type>` : one of the types mentioned above (`a`,`32`,`64`,`l`,`b`,`ib`,`s`,`is`).
 
   - `<ofs>` : either `_ofs` when the keys are placed at an offset relative to
-              the address of the node, otherwise empty for the default case.
-              When an offset is passed to a function, it is always the first
-              argument after the root. Operations made without an offset
-              exactly correspond to specifying an offset of
-              `sizeof(struct ceb_node)`.
+              the address of the node, or "_imm" when the key immediately
+              follows the node. When an offset is passed to a function, it is
+              always the first argument after the root. Operations made without
+              an offset exactly correspond to specifying an offset of
+              `sizeof(struct ceb_node)` except that the offset is provided as a
+              function argument instead of a constant (i.e. compiler has less
+              opportunities to optimize the code).
 
   - `<operation>` : the operation to be performed among:
 
@@ -337,20 +339,20 @@ Hints:
 
 - Standard indexing, with support for duplicates:
 ```c
-  struct ceb_node *ceb32_lookup(struct ceb_root *const *root, uint32_t key);
-  struct ceb_node *ceb32_insert(struct ceb_root **root, struct ceb_node *node);
-  struct ceb_node *ceb32_first(struct ceb_root *const *root);
-  struct ceb_node *ceb32_delete(struct ceb_root **root, struct ceb_node *node);
-  struct ceb_node *ceb32_next(struct ceb_root *const *root, struct ceb_node *node);
+  struct ceb_node *ceb32_imm_lookup(struct ceb_root *const *root, uint32_t key);
+  struct ceb_node *ceb32_imm_insert(struct ceb_root **root, struct ceb_node *node);
+  struct ceb_node *ceb32_imm_first(struct ceb_root *const *root);
+  struct ceb_node *ceb32_imm_delete(struct ceb_root **root, struct ceb_node *node);
+  struct ceb_node *ceb32_imm_next(struct ceb_root *const *root, struct ceb_node *node);
 ```
 
 - Indexing of unique keys:
 ```c
-  struct ceb_node *cebu64_lookup(struct ceb_root *const *root, uint64_t key);
-  struct ceb_node *cebu64_insert(struct ceb_root **root, struct ceb_node *node);
-  struct ceb_node *cebu64_first(struct ceb_root *const *root);
-  struct ceb_node *cebu64_delete(struct ceb_root **root, struct ceb_node *node);
-  struct ceb_node *cebu64_next(struct ceb_root *const *root, struct ceb_node *node);
+  struct ceb_node *cebu64_imm_lookup(struct ceb_root *const *root, uint64_t key);
+  struct ceb_node *cebu64_imm_insert(struct ceb_root **root, struct ceb_node *node);
+  struct ceb_node *cebu64_imm_first(struct ceb_root *const *root);
+  struct ceb_node *cebu64_imm_delete(struct ceb_root **root, struct ceb_node *node);
+  struct ceb_node *cebu64_imm_next(struct ceb_root *const *root, struct ceb_node *node);
 ```
 
 - Indexing of direct memory blocks located at a specific offset:
@@ -364,11 +366,11 @@ Hints:
 
 - Indexing of indirect strings whose pointers immediately follow the node:
 ```c
-  struct ceb_node *cebis_lookup(struct ceb_root *const *root, const void *key);
-  struct ceb_node *cebis_insert(struct ceb_root **root, struct ceb_node *node);
-  struct ceb_node *cebis_first(struct ceb_root *const *root);
-  struct ceb_node *cebis_delete(struct ceb_root **root, struct ceb_node *node);
-  struct ceb_node *cebis_next(struct ceb_root *const *root, struct ceb_node *node);
+  struct ceb_node *cebis_imm_lookup(struct ceb_root *const *root, const void *key);
+  struct ceb_node *cebis_imm_insert(struct ceb_root **root, struct ceb_node *node);
+  struct ceb_node *cebis_imm_first(struct ceb_root *const *root);
+  struct ceb_node *cebis_imm_delete(struct ceb_root **root, struct ceb_node *node);
+  struct ceb_node *cebis_imm_next(struct ceb_root *const *root, struct ceb_node *node);
 ```
 
 - Using `_key` to look up values within a range:
@@ -377,7 +379,7 @@ Hints:
    {
        uint32_t *key;
 
-       while ((key = ceb32_key(cebu32_lookup_ge(root, min))) != NULL) {
+       while ((key = ceb32_imm_key(cebu32_imm_lookup_ge(root, min))) != NULL) {
             if (*key > max)
                 break;
             printf("found: %u\n", *key);

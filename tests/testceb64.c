@@ -30,12 +30,12 @@ struct ceb_node *add_value(struct ceb_root **root, uint64_t value)
 	key = calloc(1, sizeof(*key));
 	key->key = value;
 	do {
-		prev = ceb64_insert(root, &key->node);
+		prev = ceb64_imm_insert(root, &key->node);
 		if (prev == &key->node)
 			return prev; // was properly inserted
 		/* otherwise was already there, let's try to remove it */
 		fprintf(stderr, "Insert failed, removing node %p before inserting again.\n", prev);
-		ret = ceb64_delete(root, prev);
+		ret = ceb64_imm_delete(root, prev);
 		if (ret != prev) {
 			/* was not properly removed either: THIS IS A BUG! */
 			fprintf(stderr, "failed to insert %p(%llu) because %p has the same key and could not be removed because returns %p\n",
@@ -72,11 +72,11 @@ int main(int argc, char **argv)
 	orig_argv = larg = (argc > 0) ? *argv : argv0;
 
 	if (debug)
-		ceb64_default_dump(0, orig_argv, 0, 0); // prologue
+		ceb64_imm_default_dump(0, orig_argv, 0, 0); // prologue
 
 	while (argc > 0) {
 		v = atoll(argv[0]);
-		old = ceb64_lookup(&ceb_root, v);
+		old = ceb64_imm_lookup(&ceb_root, v);
 		if (old)
 			fprintf(stderr, "Note: value %llu already present at %p\n", (unsigned long long)v, old);
 		old = add_value(&ceb_root, v);
@@ -86,7 +86,7 @@ int main(int argc, char **argv)
 			size_t len;
 
 			len = snprintf(cmd, sizeof(cmd), "%s [%d] +%llu", orig_argv, debug, (unsigned long long)v);
-			ceb64_default_dump(&ceb_root, len < sizeof(cmd) ? cmd : orig_argv, old, debug);
+			ceb64_imm_default_dump(&ceb_root, len < sizeof(cmd) ? cmd : orig_argv, old, debug);
 			debug++;
 		}
 
@@ -99,7 +99,7 @@ int main(int argc, char **argv)
 		p += strlen(p);
 
 	printf("# Dump of all nodes using first() + next()\n");
-	for (i = 0, old = NULL, node = ceb64_first(&ceb_root); node; i++, node = ceb64_next(&ceb_root, (struct ceb_node*)(old = node))) {
+	for (i = 0, old = NULL, node = ceb64_imm_first(&ceb_root); node; i++, node = ceb64_imm_next(&ceb_root, (struct ceb_node*)(old = node))) {
 		if (node == old) {
 			printf("# BUG! prev(%p) = %p!\n", old, node);
 			exit(1);
@@ -108,7 +108,7 @@ int main(int argc, char **argv)
 	}
 
 	printf("# Dump of all nodes using last() + prev()\n");
-	for (i = 0, old = NULL, node = ceb64_last(&ceb_root); node; i++, node = ceb64_prev(&ceb_root, (struct ceb_node*)(old = node))) {
+	for (i = 0, old = NULL, node = ceb64_imm_last(&ceb_root); node; i++, node = ceb64_imm_prev(&ceb_root, (struct ceb_node*)(old = node))) {
 		if (node == old) {
 			printf("# BUG! prev(%p) = %p!\n", old, node);
 			exit(1);
@@ -117,26 +117,26 @@ int main(int argc, char **argv)
 	}
 
 	printf("# Removing all keys one at a time\n");
-	for (old = NULL; (node = ceb64_first(&ceb_root)); old = node) {
+	for (old = NULL; (node = ceb64_imm_first(&ceb_root)); old = node) {
 		if (node == old) {
 			printf("# BUG! first() after delete(%p) = %p!\n", old, node);
 			exit(1);
 		}
-		ceb64_delete(&ceb_root, (struct ceb_node*)node);
+		ceb64_imm_delete(&ceb_root, (struct ceb_node*)node);
 		if (debug) {
 			char cmd[100];
 			size_t len;
 
 			len = snprintf(cmd, sizeof(cmd), "delete(%p:%llu)", node, (unsigned long long)container_of(node, struct key, node)->key);
-			ceb64_default_dump(&ceb_root, len < sizeof(cmd) ? cmd : orig_argv, node, debug);
+			ceb64_imm_default_dump(&ceb_root, len < sizeof(cmd) ? cmd : orig_argv, node, debug);
 			debug++;
 		}
 	}
 
 	if (debug)
-		ceb64_default_dump(0, 0, 0, 0); // epilogue
+		ceb64_imm_default_dump(0, 0, 0, 0); // epilogue
 	else
-		ceb64_default_dump(&ceb_root, orig_argv, 0, 0);
+		ceb64_imm_default_dump(&ceb_root, orig_argv, 0, 0);
 
 	return 0;
 }

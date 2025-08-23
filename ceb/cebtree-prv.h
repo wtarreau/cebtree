@@ -386,7 +386,7 @@ static inline uintptr_t _ceb_gettag(const struct ceb_root *node)
 #define _CEB_FDECL2(type, pfx, sfx, type1, arg1, type2, arg2)		\
 	static inline __attribute__((always_inline))			\
 	type _##pfx##sfx(type1 arg1, type2 arg2);			\
-	_CEB_DEF_BASE(type pfx##sfx(type1 arg1) {			\
+	_CEB_DEF_BASE(type pfx##_imm##sfx(type1 arg1) {			\
 		return _##pfx##sfx(arg1, sizeof(struct ceb_node));	\
 	})								\
 	_CEB_DEF_OFST(type pfx##_ofs##sfx(type1 arg1, type2 arg2) {	\
@@ -402,7 +402,7 @@ static inline uintptr_t _ceb_gettag(const struct ceb_root *node)
 #define _CEB_FDECL3(type, pfx, sfx, type1, arg1, type2, arg2, type3, arg3) \
 	static inline __attribute__((always_inline))			\
 	type _##pfx##sfx(type1 arg1, type2 arg2, type3 arg3);		\
-	_CEB_DEF_BASE(type pfx##sfx(type1 arg1, type3 arg3) {		\
+	_CEB_DEF_BASE(type pfx##_imm##sfx(type1 arg1, type3 arg3) {		\
 		return _##pfx##sfx(arg1, sizeof(struct ceb_node), arg3); \
 	})								\
 	_CEB_DEF_OFST(type pfx##_ofs##sfx(type1 arg1, type2 arg2, type3 arg3) {	\
@@ -418,7 +418,7 @@ static inline uintptr_t _ceb_gettag(const struct ceb_root *node)
 #define _CEB_FDECL4(type, pfx, sfx, type1, arg1, type2, arg2, type3, arg3, type4, arg4) \
 	static inline __attribute__((always_inline))			\
 	type _##pfx##sfx(type1 arg1, type2 arg2, type3 arg3, type4 arg4); \
-	_CEB_DEF_BASE(type pfx##sfx(type1 arg1, type3 arg3, type4 arg4) {	\
+	_CEB_DEF_BASE(type pfx##_imm##sfx(type1 arg1, type3 arg3, type4 arg4) {	\
 		return _##pfx##sfx(arg1, sizeof(struct ceb_node), arg3, arg4); \
 	})								\
 	_CEB_DEF_OFST(type pfx##_ofs##sfx(type1 arg1, type2 arg2, type3 arg3, type4 arg4) { \
@@ -434,7 +434,7 @@ static inline uintptr_t _ceb_gettag(const struct ceb_root *node)
 #define _CEB_FDECL5(type, pfx, sfx, type1, arg1, type2, arg2, type3, arg3, type4, arg4, type5, arg5) \
 	static inline __attribute__((always_inline))			\
 	type _##pfx##sfx(type1 arg1, type2 arg2, type3 arg3, type4 arg4, type5 arg5); \
-	_CEB_DEF_BASE(type pfx##sfx(type1 arg1, type3 arg3, type4 arg4, type5 arg5) {	\
+	_CEB_DEF_BASE(type pfx##_imm##sfx(type1 arg1, type3 arg3, type4 arg4, type5 arg5) {	\
 		return _##pfx##sfx(arg1, sizeof(struct ceb_node), arg3, arg4, arg5); \
 	})										\
 	_CEB_DEF_OFST(type pfx##_ofs##sfx(type1 arg1, type2 arg2, type3 arg3, type4 arg4, type5 arg5) { \
@@ -1739,11 +1739,11 @@ done:
 //#if defined(CEB_ENABLE_DUMP)
 /* The dump functions are in cebtree-dbg.c */
 
-void ceb_default_dump_root(ptrdiff_t kofs, enum ceb_key_type key_type, struct ceb_root *const *root, const void *ctx, int sub);
-void ceb_default_dump_node(ptrdiff_t kofs, enum ceb_key_type key_type, const struct ceb_node *node, int level, const void *ctx, int sub);
-void ceb_default_dump_dups(ptrdiff_t kofs, enum ceb_key_type key_type, const struct ceb_node *node, int level, const void *ctx, int sub);
-void ceb_default_dump_leaf(ptrdiff_t kofs, enum ceb_key_type key_type, const struct ceb_node *node, int level, const void *ctx, int sub);
-const struct ceb_node *ceb_default_dump_tree(ptrdiff_t kofs, enum ceb_key_type key_type, struct ceb_root *const *root,
+void ceb_imm_default_dump_root(ptrdiff_t kofs, enum ceb_key_type key_type, struct ceb_root *const *root, const void *ctx, int sub);
+void ceb_imm_default_dump_node(ptrdiff_t kofs, enum ceb_key_type key_type, const struct ceb_node *node, int level, const void *ctx, int sub);
+void ceb_imm_default_dump_dups(ptrdiff_t kofs, enum ceb_key_type key_type, const struct ceb_node *node, int level, const void *ctx, int sub);
+void ceb_imm_default_dump_leaf(ptrdiff_t kofs, enum ceb_key_type key_type, const struct ceb_node *node, int level, const void *ctx, int sub);
+const struct ceb_node *ceb_imm_default_dump_tree(ptrdiff_t kofs, enum ceb_key_type key_type, struct ceb_root *const *root,
                                              uint64_t pxor, const void *last, int level, const void *ctx, int sub,
                                              void (*root_dump)(ptrdiff_t kofs, enum ceb_key_type key_type, struct ceb_root *const *root, const void *ctx, int sub),
                                              void (*node_dump)(ptrdiff_t kofs, enum ceb_key_type key_type, const struct ceb_node *node, int level, const void *ctx, int sub),

@@ -192,16 +192,16 @@ int main(int argc, char **argv)
 		}
 		else
 			rnd64_to_str(key->key);
-		old = cebus_lookup(&ceb_root, &key->key);
+		old = cebus_imm_lookup(&ceb_root, &key->key);
 		if (old)
 			fprintf(stderr, "Note: value %s already present at %p\n", key->key, old);
 
 	try_again:
-		prev = cebus_insert(&ceb_root, &key->node);
+		prev = cebus_imm_insert(&ceb_root, &key->node);
 		if (prev != &key->node) {
 			fprintf(stderr, "Note: failed to insert %p('%s'), previous was at %p('%s')\n", &key->node, key->key, prev, ((const struct key*)prev)->key);
 
-			ret = cebus_delete(&ceb_root, prev);
+			ret = cebus_imm_delete(&ceb_root, prev);
 			if (ret != prev) {
 				/* was not properly removed either: THIS IS A BUG! */
 				fprintf(stderr, "failed to remove %p (returned %p)\n", prev, ret);
@@ -229,7 +229,7 @@ int main(int argc, char **argv)
 				rnd64_to_str(key->key);
 				kptr = key->key;
 			}
-			old = cebus_lookup(&ceb_root, kptr);
+			old = cebus_imm_lookup(&ceb_root, kptr);
 			if (old)
 				found++;
 		}
@@ -240,12 +240,12 @@ int main(int argc, char **argv)
 
 	/* now count elements */
 	found = 0;
-	ret = cebus_first(&ceb_root);
+	ret = cebus_imm_first(&ceb_root);
 	if (debug > 1)
 		fprintf(stderr, "%d: ret=%p\n", __LINE__, ret);
 
 	while (ret) {
-		prev = cebus_next(&ceb_root, ret);
+		prev = cebus_imm_next(&ceb_root, ret);
 		if (debug)
 			fprintf(stderr, "   %4d: <%s>\n", found, ((const struct key *)ret)->key);
 		found++;
@@ -253,7 +253,7 @@ int main(int argc, char **argv)
 	}
 
 	printf("# Dump of all nodes using first() + next()\n");
-	for (i = 0, old = NULL, node = cebus_first(&ceb_root); node; i++, node = cebus_next(&ceb_root, (struct ceb_node*)(old = node))) {
+	for (i = 0, old = NULL, node = cebus_imm_first(&ceb_root); node; i++, node = cebus_imm_next(&ceb_root, (struct ceb_node*)(old = node))) {
 		if (node == old) {
 			printf("# BUG! next(%p) = %p!\n", old, node);
 			exit(1);
@@ -262,7 +262,7 @@ int main(int argc, char **argv)
 	}
 
 	printf("# Dump of all nodes using last() + prev()\n");
-	for (i = 0, old = NULL, node = cebus_last(&ceb_root); node; i++, node = cebus_prev(&ceb_root, (struct ceb_node*)(old = node))) {
+	for (i = 0, old = NULL, node = cebus_imm_last(&ceb_root); node; i++, node = cebus_imm_prev(&ceb_root, (struct ceb_node*)(old = node))) {
 		if (node == old) {
 			printf("# BUG! prev(%p) = %p!\n", old, node);
 			exit(1);
@@ -271,15 +271,15 @@ int main(int argc, char **argv)
 	}
 
 	if (!debug && dump)
-		cebus_default_dump(&ceb_root, orig_argv, 0, 0);
+		cebus_imm_default_dump(&ceb_root, orig_argv, 0, 0);
 
 	printf("# Removing all keys one at a time\n");
-	for (old = NULL; (node = cebus_first(&ceb_root)); old = node) {
+	for (old = NULL; (node = cebus_imm_first(&ceb_root)); old = node) {
 		if (node == old) {
 			printf("# BUG! first() after delete(%p) = %p!\n", old, node);
 			exit(1);
 		}
-		cebus_delete(&ceb_root, (struct ceb_node*)node);
+		cebus_imm_delete(&ceb_root, (struct ceb_node*)node);
 	}
 
 	if (debug)

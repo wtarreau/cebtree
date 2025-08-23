@@ -31,41 +31,41 @@
 #include <inttypes.h>
 
 /* simpler version */
-struct ceb_node *ceb32_insert(struct ceb_root **root, struct ceb_node *node);
-struct ceb_node *ceb32_first(struct ceb_root *const *root);
-struct ceb_node *ceb32_last(struct ceb_root *const *root);
-struct ceb_node *ceb32_lookup(struct ceb_root *const *root, uint32_t key);
-struct ceb_node *ceb32_lookup_le(struct ceb_root *const *root, uint32_t key);
-struct ceb_node *ceb32_lookup_lt(struct ceb_root *const *root, uint32_t key);
-struct ceb_node *ceb32_lookup_ge(struct ceb_root *const *root, uint32_t key);
-struct ceb_node *ceb32_lookup_gt(struct ceb_root *const *root, uint32_t key);
-struct ceb_node *ceb32_next_unique(struct ceb_root *const *root, struct ceb_node *node);
-struct ceb_node *ceb32_prev_unique(struct ceb_root *const *root, struct ceb_node *node);
-struct ceb_node *ceb32_next_dup(struct ceb_root *const *root, struct ceb_node *node);
-struct ceb_node *ceb32_prev_dup(struct ceb_root *const *root, struct ceb_node *node);
-struct ceb_node *ceb32_next(struct ceb_root *const *root, struct ceb_node *node);
-struct ceb_node *ceb32_prev(struct ceb_root *const *root, struct ceb_node *node);
-struct ceb_node *ceb32_delete(struct ceb_root **root, struct ceb_node *node);
-struct ceb_node *ceb32_pick(struct ceb_root **root, uint32_t key);
+struct ceb_node *ceb32_imm_insert(struct ceb_root **root, struct ceb_node *node);
+struct ceb_node *ceb32_imm_first(struct ceb_root *const *root);
+struct ceb_node *ceb32_imm_last(struct ceb_root *const *root);
+struct ceb_node *ceb32_imm_lookup(struct ceb_root *const *root, uint32_t key);
+struct ceb_node *ceb32_imm_lookup_le(struct ceb_root *const *root, uint32_t key);
+struct ceb_node *ceb32_imm_lookup_lt(struct ceb_root *const *root, uint32_t key);
+struct ceb_node *ceb32_imm_lookup_ge(struct ceb_root *const *root, uint32_t key);
+struct ceb_node *ceb32_imm_lookup_gt(struct ceb_root *const *root, uint32_t key);
+struct ceb_node *ceb32_imm_next_unique(struct ceb_root *const *root, struct ceb_node *node);
+struct ceb_node *ceb32_imm_prev_unique(struct ceb_root *const *root, struct ceb_node *node);
+struct ceb_node *ceb32_imm_next_dup(struct ceb_root *const *root, struct ceb_node *node);
+struct ceb_node *ceb32_imm_prev_dup(struct ceb_root *const *root, struct ceb_node *node);
+struct ceb_node *ceb32_imm_next(struct ceb_root *const *root, struct ceb_node *node);
+struct ceb_node *ceb32_imm_prev(struct ceb_root *const *root, struct ceb_node *node);
+struct ceb_node *ceb32_imm_delete(struct ceb_root **root, struct ceb_node *node);
+struct ceb_node *ceb32_imm_pick(struct ceb_root **root, uint32_t key);
 
-struct ceb_node *cebu32_insert(struct ceb_root **root, struct ceb_node *node);
-struct ceb_node *cebu32_first(struct ceb_root *const *root);
-struct ceb_node *cebu32_last(struct ceb_root *const *root);
-struct ceb_node *cebu32_lookup(struct ceb_root *const *root, uint32_t key);
-struct ceb_node *cebu32_lookup_le(struct ceb_root *const *root, uint32_t key);
-struct ceb_node *cebu32_lookup_lt(struct ceb_root *const *root, uint32_t key);
-struct ceb_node *cebu32_lookup_ge(struct ceb_root *const *root, uint32_t key);
-struct ceb_node *cebu32_lookup_gt(struct ceb_root *const *root, uint32_t key);
-struct ceb_node *cebu32_next(struct ceb_root *const *root, struct ceb_node *node);
-struct ceb_node *cebu32_prev(struct ceb_root *const *root, struct ceb_node *node);
-struct ceb_node *cebu32_delete(struct ceb_root **root, struct ceb_node *node);
-struct ceb_node *cebu32_pick(struct ceb_root **root, uint32_t key);
+struct ceb_node *cebu32_imm_insert(struct ceb_root **root, struct ceb_node *node);
+struct ceb_node *cebu32_imm_first(struct ceb_root *const *root);
+struct ceb_node *cebu32_imm_last(struct ceb_root *const *root);
+struct ceb_node *cebu32_imm_lookup(struct ceb_root *const *root, uint32_t key);
+struct ceb_node *cebu32_imm_lookup_le(struct ceb_root *const *root, uint32_t key);
+struct ceb_node *cebu32_imm_lookup_lt(struct ceb_root *const *root, uint32_t key);
+struct ceb_node *cebu32_imm_lookup_ge(struct ceb_root *const *root, uint32_t key);
+struct ceb_node *cebu32_imm_lookup_gt(struct ceb_root *const *root, uint32_t key);
+struct ceb_node *cebu32_imm_next(struct ceb_root *const *root, struct ceb_node *node);
+struct ceb_node *cebu32_imm_prev(struct ceb_root *const *root, struct ceb_node *node);
+struct ceb_node *cebu32_imm_delete(struct ceb_root **root, struct ceb_node *node);
+struct ceb_node *cebu32_imm_pick(struct ceb_root **root, uint32_t key);
 
 /* generic dump function */
-void ceb32_default_dump(struct ceb_root **ceb_root, const char *label, const void *ctx, int sub);
+void ceb32_imm_default_dump(struct ceb_root **ceb_root, const char *label, const void *ctx, int sub);
 
 /* returns the pointer to the uint32_t key */
-static inline uint32_t *ceb32_key(const struct ceb_node *node)
+static inline uint32_t *ceb32_imm_key(const struct ceb_node *node)
 {
 	return (uint32_t *)ceb_key_ptr(node, sizeof(struct ceb_node));
 }

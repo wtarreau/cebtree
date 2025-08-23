@@ -30,11 +30,11 @@ struct ceb_node *add_value(struct ceb_root **root, uint64_t value)
 	key = calloc(1, sizeof(*key));
 	key->key = value;
 	do {
-		prev = cebu64_insert(root, &key->node);
+		prev = cebu64_imm_insert(root, &key->node);
 		if (prev == &key->node)
 			return prev; // was properly inserted
 		/* otherwise was already there, let's try to remove it */
-		ret = cebu64_delete(root, prev);
+		ret = cebu64_imm_delete(root, prev);
 		if (ret != prev) {
 			/* was not properly removed either: THIS IS A BUG! */
 			printf("failed to insert %p(%llu) because %p has the same key and could not be removed because returns %p\n",
@@ -104,21 +104,21 @@ int main(int argc, char **argv)
 		p += strlen(p);
 
 	if (debug > 1)
-		cebu64_default_dump(0, orig_argv, 0, 0); // prologue
+		cebu64_imm_default_dump(0, orig_argv, 0, 0); // prologue
 
 	if (test == 0) {
 		while (count--) {
 			v = rnd64() & mask;
-			old = cebu64_lookup(&ceb_root, v);
+			old = cebu64_imm_lookup(&ceb_root, v);
 			if (old) {
-				if (cebu64_delete(&ceb_root, old) != old)
+				if (cebu64_imm_delete(&ceb_root, old) != old)
 					abort();
 				free(container_of(old, struct key, node));
 			}
 			else {
 				key = calloc(1, sizeof(*key));
 				key->key = v;
-				old = cebu64_insert(&ceb_root, &key->node);
+				old = cebu64_imm_insert(&ceb_root, &key->node);
 				if (old != &key->node)
 					abort();
 			}
@@ -126,16 +126,16 @@ int main(int argc, char **argv)
 	} else if (test == 1) {
 		while (count--) {
 			v = rnd64() & mask;
-			old = cebu64_lookup(&ceb_root, v);
+			old = cebu64_imm_lookup(&ceb_root, v);
 			if (old) {
-				if (cebu64_delete(&ceb_root, old) != old)
+				if (cebu64_imm_delete(&ceb_root, old) != old)
 					abort();
 				free(container_of(old, struct key, node));
 			}
 
 			key = calloc(1, sizeof(*key));
 			key->key = v;
-			old = cebu64_insert(&ceb_root, &key->node);
+			old = cebu64_imm_insert(&ceb_root, &key->node);
 			if (old != &key->node)
 				abort();
 
@@ -145,7 +145,7 @@ int main(int argc, char **argv)
 				size_t len;
 
 				len = snprintf(cmd, sizeof(cmd), "%s %d/%d : %p %llu\n", orig_argv, round, round+count, old, (unsigned long long)v);
-				cebu64_default_dump(&ceb_root, len < sizeof(cmd) ? cmd : orig_argv, old, round + 1);
+				cebu64_imm_default_dump(&ceb_root, len < sizeof(cmd) ? cmd : orig_argv, old, round + 1);
 				round++;
 			}
 		}
@@ -153,21 +153,21 @@ int main(int argc, char **argv)
 		while (count--) {
 			v = rnd64() & mask;
 			if (!count && debug > 2)
-				cebu64_default_dump(&ceb_root, "step1", 0, (count + 1) * 6 + 1);
-			old = cebu64_pick(&ceb_root, v);
+				cebu64_imm_default_dump(&ceb_root, "step1", 0, (count + 1) * 6 + 1);
+			old = cebu64_imm_pick(&ceb_root, v);
 			if (!count && debug > 2)
-				cebu64_default_dump(&ceb_root, "step2", 0, (count + 1) * 6 + 2);
+				cebu64_imm_default_dump(&ceb_root, "step2", 0, (count + 1) * 6 + 2);
 			back = old;
 			while (old) {
 				if (old && !count && debug > 2)
-					cebu64_default_dump(&ceb_root, "step3", 0, (count + 1) * 6 + 3);
-				old = cebu64_pick(&ceb_root, v);
+					cebu64_imm_default_dump(&ceb_root, "step3", 0, (count + 1) * 6 + 3);
+				old = cebu64_imm_pick(&ceb_root, v);
 				//if (old)
 				//	printf("count=%d v=%u back=%p old=%p\n", count, v, back, old);
 			}
 
 			if (!count && debug > 2)
-				cebu64_default_dump(&ceb_root, "step4", 0, (count + 1) * 6 + 4);
+				cebu64_imm_default_dump(&ceb_root, "step4", 0, (count + 1) * 6 + 4);
 
 			//abort();
 			//memset(old, 0, sizeof(*key));
@@ -176,28 +176,28 @@ int main(int argc, char **argv)
 
 			key = calloc(1, sizeof(*key));
 			key->key = v;
-			old = cebu64_insert(&ceb_root, &key->node);
+			old = cebu64_imm_insert(&ceb_root, &key->node);
 			if (old != &key->node)
 				abort();
 
 			if (!count && debug > 2)
-				cebu64_default_dump(&ceb_root, "step5", 0, (count + 1) * 6 + 5);
+				cebu64_imm_default_dump(&ceb_root, "step5", 0, (count + 1) * 6 + 5);
 			else if (debug > 1) {
 				static int round;
 				char cmd[100];
 				size_t len;
 
 				len = snprintf(cmd, sizeof(cmd), "%s %d/%d : %p %llu\n", orig_argv, round, round+count, old, (unsigned long long)v);
-				cebu64_default_dump(&ceb_root, len < sizeof(cmd) ? cmd : orig_argv, old, (count + 1) * 6 + 6);
+				cebu64_imm_default_dump(&ceb_root, len < sizeof(cmd) ? cmd : orig_argv, old, (count + 1) * 6 + 6);
 				round++;
 			}
 		}
 	}
 
 	if (debug > 1)
-		cebu64_default_dump(0, 0, 0, 0); // epilogue
+		cebu64_imm_default_dump(0, 0, 0, 0); // epilogue
 
 	if (debug == 1)
-		cebu64_default_dump(&ceb_root, orig_argv, 0, 0);
+		cebu64_imm_default_dump(&ceb_root, orig_argv, 0, 0);
 	return 0;
 }

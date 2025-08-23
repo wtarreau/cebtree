@@ -30,12 +30,12 @@ struct ceb_node *add_value(struct ceb_root **root, unsigned long value)
 	key = calloc(1, sizeof(*key));
 	key->key = value;
 	do {
-		prev = cebul_insert(root, &key->node);
+		prev = cebul_imm_insert(root, &key->node);
 		if (prev == &key->node)
 			return prev; // was properly inserted
 		/* otherwise was already there, let's try to remove it */
 		fprintf(stderr, "Insert failed, removing node %p before inserting again.\n", prev);
-		ret = cebul_delete(root, prev);
+		ret = cebul_imm_delete(root, prev);
 		if (ret != prev) {
 			/* was not properly removed either: THIS IS A BUG! */
 			fprintf(stderr, "failed to insert %p(%lu) because %p has the same key and could not be removed because returns %p\n",
@@ -86,20 +86,20 @@ int main(int argc, char **argv)
 	orig_argv = larg = (argc > 0) ? *argv : argv0;
 
 	if (debug)
-		cebul_default_dump(0, orig_argv, 0, 0); // prologue
+		cebul_imm_default_dump(0, orig_argv, 0, 0); // prologue
 
 	while (argc > 0) {
 		v = atoll(argv[0]);
 		if (lookup_mode == 0)
-			old = cebul_lookup(&ceb_root, v);
+			old = cebul_imm_lookup(&ceb_root, v);
 		else if (lookup_mode == -2)
-			old = cebul_lookup_lt(&ceb_root, v);
+			old = cebul_imm_lookup_lt(&ceb_root, v);
 		else if (lookup_mode == -1)
-			old = cebul_lookup_le(&ceb_root, v);
+			old = cebul_imm_lookup_le(&ceb_root, v);
 		else if (lookup_mode == 1)
-			old = cebul_lookup_ge(&ceb_root, v);
+			old = cebul_imm_lookup_ge(&ceb_root, v);
 		else if (lookup_mode == 2)
-			old = cebul_lookup_gt(&ceb_root, v);
+			old = cebul_imm_lookup_gt(&ceb_root, v);
 		else
 			old = NULL;
 
@@ -112,7 +112,7 @@ int main(int argc, char **argv)
 			size_t len;
 
 			len = snprintf(cmd, sizeof(cmd), "%s [%d] +%lu", orig_argv, debug, v);
-			cebul_default_dump(&ceb_root, len < sizeof(cmd) ? cmd : orig_argv, old, debug);
+			cebul_imm_default_dump(&ceb_root, len < sizeof(cmd) ? cmd : orig_argv, old, debug);
 			debug++;
 		}
 
@@ -127,12 +127,12 @@ int main(int argc, char **argv)
 	/* now count elements */
 	if (do_count) {
 		found = 0;
-		ret = cebul_first(&ceb_root);
+		ret = cebul_imm_first(&ceb_root);
 		if (debug)
 			fprintf(stderr, "%d: ret=%p\n", __LINE__, ret);
 
 		while (ret) {
-			next = cebul_next(&ceb_root, ret);
+			next = cebul_imm_next(&ceb_root, ret);
 			if (debug)
 				fprintf(stderr, "   %4d: @%p: <%#lx> next=%p\n", found, ret, ((const struct key *)ret)->key, next);
 			found++;
@@ -142,7 +142,7 @@ int main(int argc, char **argv)
 	}
 
 	printf("# Dump of all nodes using first() + next()\n");
-	for (i = 0, old = NULL, node = cebul_first(&ceb_root); node; i++, node = cebul_next(&ceb_root, (struct ceb_node*)(old = node))) {
+	for (i = 0, old = NULL, node = cebul_imm_first(&ceb_root); node; i++, node = cebul_imm_next(&ceb_root, (struct ceb_node*)(old = node))) {
 		if (node == old) {
 			printf("# BUG! prev(%p) = %p!\n", old, node);
 			exit(1);
@@ -151,7 +151,7 @@ int main(int argc, char **argv)
 	}
 
 	printf("# Dump of all nodes using last() + prev()\n");
-	for (i = 0, old = NULL, node = cebul_last(&ceb_root); node; i++, node = cebul_prev(&ceb_root, (struct ceb_node*)(old = node))) {
+	for (i = 0, old = NULL, node = cebul_imm_last(&ceb_root); node; i++, node = cebul_imm_prev(&ceb_root, (struct ceb_node*)(old = node))) {
 		if (node == old) {
 			printf("# BUG! prev(%p) = %p!\n", old, node);
 			exit(1);
@@ -160,26 +160,26 @@ int main(int argc, char **argv)
 	}
 
 	printf("# Removing all keys one at a time\n");
-	for (old = NULL; (node = cebul_first(&ceb_root)); old = node) {
+	for (old = NULL; (node = cebul_imm_first(&ceb_root)); old = node) {
 		if (node == old) {
 			printf("# BUG! first() after delete(%p) = %p!\n", old, node);
 			exit(1);
 		}
-		cebul_delete(&ceb_root, (struct ceb_node*)node);
+		cebul_imm_delete(&ceb_root, (struct ceb_node*)node);
 		if (debug) {
 			char cmd[100];
 			size_t len;
 
 			len = snprintf(cmd, sizeof(cmd), "delete(%p:%lu)", node, container_of(node, struct key, node)->key);
-			cebul_default_dump(&ceb_root, len < sizeof(cmd) ? cmd : orig_argv, node, debug);
+			cebul_imm_default_dump(&ceb_root, len < sizeof(cmd) ? cmd : orig_argv, node, debug);
 			debug++;
 		}
 	}
 
 	if (debug)
-		cebul_default_dump(0, 0, 0, 0); // epilogue
+		cebul_imm_default_dump(0, 0, 0, 0); // epilogue
 	else
-		cebul_default_dump(&ceb_root, orig_argv, 0, 0);
+		cebul_imm_default_dump(&ceb_root, orig_argv, 0, 0);
 
 	return 0;
 }

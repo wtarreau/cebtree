@@ -30,41 +30,41 @@
 #include "cebtree.h"
 
 /* simpler version */
-struct ceb_node *cebib_insert(struct ceb_root **root, struct ceb_node *node, size_t len);
-struct ceb_node *cebib_first(struct ceb_root *const *root, size_t len);
-struct ceb_node *cebib_last(struct ceb_root *const *root, size_t len);
-struct ceb_node *cebib_lookup(struct ceb_root *const *root, const void *key, size_t len);
-struct ceb_node *cebib_lookup_le(struct ceb_root *const *root, const void *key, size_t len);
-struct ceb_node *cebib_lookup_lt(struct ceb_root *const *root, const void *key, size_t len);
-struct ceb_node *cebib_lookup_ge(struct ceb_root *const *root, const void *key, size_t len);
-struct ceb_node *cebib_lookup_gt(struct ceb_root *const *root, const void *key, size_t len);
-struct ceb_node *cebib_next_unique(struct ceb_root *const *root, struct ceb_node *node, size_t len);
-struct ceb_node *cebib_prev_unique(struct ceb_root *const *root, struct ceb_node *node, size_t len);
-struct ceb_node *cebib_next_dup(struct ceb_root *const *root, struct ceb_node *node, size_t len);
-struct ceb_node *cebib_prev_dup(struct ceb_root *const *root, struct ceb_node *node, size_t len);
-struct ceb_node *cebib_next(struct ceb_root *const *root, struct ceb_node *node, size_t len);
-struct ceb_node *cebib_prev(struct ceb_root *const *root, struct ceb_node *node, size_t len);
-struct ceb_node *cebib_delete(struct ceb_root **root, struct ceb_node *node, size_t len);
-struct ceb_node *cebib_pick(struct ceb_root **root, const void *key, size_t len);
+struct ceb_node *cebib_imm_insert(struct ceb_root **root, struct ceb_node *node, size_t len);
+struct ceb_node *cebib_imm_first(struct ceb_root *const *root, size_t len);
+struct ceb_node *cebib_imm_last(struct ceb_root *const *root, size_t len);
+struct ceb_node *cebib_imm_lookup(struct ceb_root *const *root, const void *key, size_t len);
+struct ceb_node *cebib_imm_lookup_le(struct ceb_root *const *root, const void *key, size_t len);
+struct ceb_node *cebib_imm_lookup_lt(struct ceb_root *const *root, const void *key, size_t len);
+struct ceb_node *cebib_imm_lookup_ge(struct ceb_root *const *root, const void *key, size_t len);
+struct ceb_node *cebib_imm_lookup_gt(struct ceb_root *const *root, const void *key, size_t len);
+struct ceb_node *cebib_imm_next_unique(struct ceb_root *const *root, struct ceb_node *node, size_t len);
+struct ceb_node *cebib_imm_prev_unique(struct ceb_root *const *root, struct ceb_node *node, size_t len);
+struct ceb_node *cebib_imm_next_dup(struct ceb_root *const *root, struct ceb_node *node, size_t len);
+struct ceb_node *cebib_imm_prev_dup(struct ceb_root *const *root, struct ceb_node *node, size_t len);
+struct ceb_node *cebib_imm_next(struct ceb_root *const *root, struct ceb_node *node, size_t len);
+struct ceb_node *cebib_imm_prev(struct ceb_root *const *root, struct ceb_node *node, size_t len);
+struct ceb_node *cebib_imm_delete(struct ceb_root **root, struct ceb_node *node, size_t len);
+struct ceb_node *cebib_imm_pick(struct ceb_root **root, const void *key, size_t len);
 
-struct ceb_node *cebuib_insert(struct ceb_root **root, struct ceb_node *node, size_t len);
-struct ceb_node *cebuib_first(struct ceb_root *const *root, size_t len);
-struct ceb_node *cebuib_last(struct ceb_root *const *root, size_t len);
-struct ceb_node *cebuib_lookup(struct ceb_root *const *root, const void *key, size_t len);
-struct ceb_node *cebuib_lookup_le(struct ceb_root *const *root, const void *key, size_t len);
-struct ceb_node *cebuib_lookup_lt(struct ceb_root *const *root, const void *key, size_t len);
-struct ceb_node *cebuib_lookup_ge(struct ceb_root *const *root, const void *key, size_t len);
-struct ceb_node *cebuib_lookup_gt(struct ceb_root *const *root, const void *key, size_t len);
-struct ceb_node *cebuib_next(struct ceb_root *const *root, struct ceb_node *node, size_t len);
-struct ceb_node *cebuib_prev(struct ceb_root *const *root, struct ceb_node *node, size_t len);
-struct ceb_node *cebuib_delete(struct ceb_root **root, struct ceb_node *node, size_t len);
-struct ceb_node *cebuib_pick(struct ceb_root **root, const void *key, size_t len);
+struct ceb_node *cebuib_imm_insert(struct ceb_root **root, struct ceb_node *node, size_t len);
+struct ceb_node *cebuib_imm_first(struct ceb_root *const *root, size_t len);
+struct ceb_node *cebuib_imm_last(struct ceb_root *const *root, size_t len);
+struct ceb_node *cebuib_imm_lookup(struct ceb_root *const *root, const void *key, size_t len);
+struct ceb_node *cebuib_imm_lookup_le(struct ceb_root *const *root, const void *key, size_t len);
+struct ceb_node *cebuib_imm_lookup_lt(struct ceb_root *const *root, const void *key, size_t len);
+struct ceb_node *cebuib_imm_lookup_ge(struct ceb_root *const *root, const void *key, size_t len);
+struct ceb_node *cebuib_imm_lookup_gt(struct ceb_root *const *root, const void *key, size_t len);
+struct ceb_node *cebuib_imm_next(struct ceb_root *const *root, struct ceb_node *node, size_t len);
+struct ceb_node *cebuib_imm_prev(struct ceb_root *const *root, struct ceb_node *node, size_t len);
+struct ceb_node *cebuib_imm_delete(struct ceb_root **root, struct ceb_node *node, size_t len);
+struct ceb_node *cebuib_imm_pick(struct ceb_root **root, const void *key, size_t len);
 
 /* returns the pointer to the indirect void* key, not the pointer itself,
  * or NULL if node is NULL (note that the indirect pointer cannot be NULL
  * if node is non-NULL).
  */
-static inline void *cebib_key(const struct ceb_node *node)
+static inline void *cebib_imm_key(const struct ceb_node *node)
 {
 	return node ? *(void **)_ceb_key_ptr(node, sizeof(struct ceb_node)) : NULL;
 }

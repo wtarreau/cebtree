@@ -30,12 +30,12 @@ struct ceb_node *add_value(struct ceb_root **root, uint32_t value)
 	key = calloc(1, sizeof(*key));
 	key->key = value;
 	do {
-		prev = ceb32_insert(root, &key->node);
+		prev = ceb32_imm_insert(root, &key->node);
 		if (prev == &key->node)
 			return prev; // was properly inserted
 		/* otherwise was already there, let's try to remove it */
 		fprintf(stderr, "Insert failed, removing node %p before inserting again.\n", prev);
-		ret = ceb32_delete(root, prev);
+		ret = ceb32_imm_delete(root, prev);
 		if (ret != prev) {
 			/* was not properly removed either: THIS IS A BUG! */
 			fprintf(stderr, "failed to insert %p(%u) because %p has the same key and could not be removed because returns %p\n",
@@ -72,11 +72,11 @@ int main(int argc, char **argv)
 	orig_argv = larg = (argc > 0) ? *argv : argv0;
 
 	if (debug)
-		ceb32_default_dump(0, orig_argv, 0, 0); // prologue
+		ceb32_imm_default_dump(0, orig_argv, 0, 0); // prologue
 
 	while (argc > 0) {
 		v = atoi(argv[0]);
-		old = ceb32_lookup(&ceb_root, v);
+		old = ceb32_imm_lookup(&ceb_root, v);
 		if (old)
 			fprintf(stderr, "Note: value %u already present at %p\n", v, old);
 		old = add_value(&ceb_root, v);
@@ -86,7 +86,7 @@ int main(int argc, char **argv)
 			size_t len;
 
 			len = snprintf(cmd, sizeof(cmd), "%s [%d] +%d", orig_argv, debug, v);
-			ceb32_default_dump(&ceb_root, len < sizeof(cmd) ? cmd : orig_argv, old, debug);
+			ceb32_imm_default_dump(&ceb_root, len < sizeof(cmd) ? cmd : orig_argv, old, debug);
 			debug++;
 		}
 
@@ -99,7 +99,7 @@ int main(int argc, char **argv)
 		p += strlen(p);
 
 	printf("# Dump of all nodes using first() + next()\n");
-	for (i = 0, old = NULL, node = ceb32_first(&ceb_root); node; i++, node = ceb32_next(&ceb_root, (struct ceb_node*)(old = node))) {
+	for (i = 0, old = NULL, node = ceb32_imm_first(&ceb_root); node; i++, node = ceb32_imm_next(&ceb_root, (struct ceb_node*)(old = node))) {
 		if (node == old) {
 			printf("# BUG! prev(%p) = %p!\n", old, node);
 			exit(1);
@@ -108,7 +108,7 @@ int main(int argc, char **argv)
 	}
 
 	printf("# Dump of all nodes using last() + prev()\n");
-	for (i = 0, old = NULL, node = ceb32_last(&ceb_root); node; i++, node = ceb32_prev(&ceb_root, (struct ceb_node*)(old = node))) {
+	for (i = 0, old = NULL, node = ceb32_imm_last(&ceb_root); node; i++, node = ceb32_imm_prev(&ceb_root, (struct ceb_node*)(old = node))) {
 		if (node == old) {
 			printf("# BUG! prev(%p) = %p!\n", old, node);
 			exit(1);
@@ -117,26 +117,26 @@ int main(int argc, char **argv)
 	}
 
 	printf("# Removing all keys one at a time\n");
-	for (old = NULL; (node = ceb32_first(&ceb_root)); old = node) {
+	for (old = NULL; (node = ceb32_imm_first(&ceb_root)); old = node) {
 		if (node == old) {
 			printf("# BUG! first() after delete(%p) = %p!\n", old, node);
 			exit(1);
 		}
-		ceb32_delete(&ceb_root, (struct ceb_node*)node);
+		ceb32_imm_delete(&ceb_root, (struct ceb_node*)node);
 		if (debug) {
 			char cmd[100];
 			size_t len;
 
 			len = snprintf(cmd, sizeof(cmd), "delete(%p:%d)", node, container_of(node, struct key, node)->key);
-			ceb32_default_dump(&ceb_root, len < sizeof(cmd) ? cmd : orig_argv, node, debug);
+			ceb32_imm_default_dump(&ceb_root, len < sizeof(cmd) ? cmd : orig_argv, node, debug);
 			debug++;
 		}
 	}
 
 	if (debug)
-		ceb32_default_dump(0, 0, 0, 0); // epilogue
+		ceb32_imm_default_dump(0, 0, 0, 0); // epilogue
 	else
-		ceb32_default_dump(&ceb_root, orig_argv, 0, 0);
+		ceb32_imm_default_dump(&ceb_root, orig_argv, 0, 0);
 
 	return 0;
 }

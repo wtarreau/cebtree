@@ -161,15 +161,15 @@ int main(int argc, char **argv)
 
 	for (i = 0; i < entries; i++) {
 		rnd64_to_str(key->key);
-		old = cebus_lookup(&ceb_root, &key->key);
+		old = cebus_imm_lookup(&ceb_root, &key->key);
 		if (old)
 			fprintf(stderr, "Note: value %s already present at %p\n", key->key, old);
 
 	try_again:
-		prev = cebus_insert(&ceb_root, &key->node);
+		prev = cebus_imm_insert(&ceb_root, &key->node);
 		if (prev != &key->node) {
 			fprintf(stderr, "Note: failed to insert %s, previous was at %p\n", key->key, old);
-			ret = cebus_delete(&ceb_root, prev);
+			ret = cebus_imm_delete(&ceb_root, prev);
 			if (ret != prev) {
 				/* was not properly removed either: THIS IS A BUG! */
 				fprintf(stderr, "failed to remove %p (returned %p)\n", prev, ret);
@@ -189,7 +189,7 @@ int main(int argc, char **argv)
 		found = 0;
 		for (i = 0; i < lookups; i++) {
 			rnd64_to_str(key->key);
-			old = cebus_lookup(&ceb_root, &key->key);
+			old = cebus_imm_lookup(&ceb_root, &key->key);
 			if (old)
 				found++;
 		}

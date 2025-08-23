@@ -188,47 +188,47 @@ void run(void *arg)
 			 */
 			BUG_ON(!ceb_intree(&itm->node));
 
-			node1 = cebul_lookup(&ctx->ceb_root, itm->key);
+			node1 = cebul_imm_lookup(&ctx->ceb_root, itm->key);
 			BUG_ON(!node1);
 			BUG_ON(node1 != &itm->node);
 
-			node1 = cebul_lookup_ge(&ctx->ceb_root, itm->key);
+			node1 = cebul_imm_lookup_ge(&ctx->ceb_root, itm->key);
 			BUG_ON(!node1);
 			BUG_ON(node1 != &itm->node);
 
-			node1 = cebul_lookup_le(&ctx->ceb_root, itm->key);
+			node1 = cebul_imm_lookup_le(&ctx->ceb_root, itm->key);
 			BUG_ON(!node1);
 			BUG_ON(node1 != &itm->node);
 
-			node3 = cebul_lookup_lt(&ctx->ceb_root, itm->key);
+			node3 = cebul_imm_lookup_lt(&ctx->ceb_root, itm->key);
 			BUG_ON(node3 == node1);
 
-			node2 = cebul_prev(&ctx->ceb_root, node1);
+			node2 = cebul_imm_prev(&ctx->ceb_root, node1);
 			BUG_ON(node2 != node3); // prev() of an existing node is lt
 
 			if (!node2) {
 				/* this must be the first */
-				node3 = cebul_first(&ctx->ceb_root);
+				node3 = cebul_imm_first(&ctx->ceb_root);
 				BUG_ON(node3 != node1);
 			} else {
-				node3 = cebul_next(&ctx->ceb_root, node2);
+				node3 = cebul_imm_next(&ctx->ceb_root, node2);
 				BUG_ON(node3 != node1);
 			}
 
 			node2 = node3; // lt
-			node3 = cebul_lookup_gt(&ctx->ceb_root, itm->key);
+			node3 = cebul_imm_lookup_gt(&ctx->ceb_root, itm->key);
 			BUG_ON(node3 == node1);
 			BUG_ON(node3 && node3 == node2);
 
-			node2 = cebul_next(&ctx->ceb_root, node1);
+			node2 = cebul_imm_next(&ctx->ceb_root, node1);
 			BUG_ON(node2 != node3); // next() of an existing node is gt
 
 			if (!node2) {
 				/* this must be the last */
-				node3 = cebul_last(&ctx->ceb_root);
+				node3 = cebul_imm_last(&ctx->ceb_root);
 				BUG_ON(node3 != node1);
 			} else {
-				node3 = cebul_prev(&ctx->ceb_root, node2);
+				node3 = cebul_imm_prev(&ctx->ceb_root, node2);
 				BUG_ON(node3 != node1);
 			}
 
@@ -236,7 +236,7 @@ void run(void *arg)
 			 * one, it is just removed. If it does not match,
 			 * it is removed and we try to enter the new one.
 			 */
-			node2 = cebul_delete(&ctx->ceb_root, node1);
+			node2 = cebul_imm_delete(&ctx->ceb_root, node1);
 			BUG_ON(node2 != node1);
 
 			itm->flags &= ~IN_TREE;
@@ -244,7 +244,7 @@ void run(void *arg)
 
 			if (v != itm->key) {
 				itm->key = v;
-				node2 = cebul_insert(&ctx->ceb_root, &itm->node);
+				node2 = cebul_imm_insert(&ctx->ceb_root, &itm->node);
 				if (node2 == &itm->node) {
 					BUG_ON(!ceb_intree(&itm->node));
 					itm->flags |= IN_TREE;
@@ -259,15 +259,15 @@ void run(void *arg)
 			 */
 			do {
 				itm->key = v;
-				node2 = cebul_lookup_le(&ctx->ceb_root, itm->key);
+				node2 = cebul_imm_lookup_le(&ctx->ceb_root, itm->key);
 				if (node2)
 					BUG_ON(container_of(node2, struct item, node)->key > itm->key);
 
-				node3 = cebul_lookup_ge(&ctx->ceb_root, itm->key);
+				node3 = cebul_imm_lookup_ge(&ctx->ceb_root, itm->key);
 				if (node3)
 					BUG_ON(container_of(node3, struct item, node)->key < itm->key);
 
-				node1 = cebul_insert(&ctx->ceb_root, &itm->node);
+				node1 = cebul_imm_insert(&ctx->ceb_root, &itm->node);
 
 				if (node2 && container_of(node2, struct item, node)->key == itm->key)
 					BUG_ON(node1 != node2);
@@ -286,47 +286,47 @@ void run(void *arg)
 			itm->flags |= IN_TREE;
 
 			/* perform a few post-insert checks */
-			node1 = cebul_lookup(&ctx->ceb_root, itm->key);
+			node1 = cebul_imm_lookup(&ctx->ceb_root, itm->key);
 			BUG_ON(!node1);
 			BUG_ON(node1 != &itm->node);
 
-			node1 = cebul_lookup_ge(&ctx->ceb_root, itm->key);
+			node1 = cebul_imm_lookup_ge(&ctx->ceb_root, itm->key);
 			BUG_ON(!node1);
 			BUG_ON(node1 != &itm->node);
 
-			node1 = cebul_lookup_le(&ctx->ceb_root, itm->key);
+			node1 = cebul_imm_lookup_le(&ctx->ceb_root, itm->key);
 			BUG_ON(!node1);
 			BUG_ON(node1 != &itm->node);
 
-			node3 = cebul_lookup_lt(&ctx->ceb_root, itm->key);
+			node3 = cebul_imm_lookup_lt(&ctx->ceb_root, itm->key);
 			BUG_ON(node3 == node1);
 
-			node2 = cebul_prev(&ctx->ceb_root, node1);
+			node2 = cebul_imm_prev(&ctx->ceb_root, node1);
 			BUG_ON(node2 != node3); // prev() of an existing node is lt
 
 			if (!node2) {
 				/* this must be the first */
-				node3 = cebul_first(&ctx->ceb_root);
+				node3 = cebul_imm_first(&ctx->ceb_root);
 				BUG_ON(node3 != node1);
 			} else {
-				node3 = cebul_next(&ctx->ceb_root, node2);
+				node3 = cebul_imm_next(&ctx->ceb_root, node2);
 				BUG_ON(node3 != node1);
 			}
 
 			node2 = node3; // lt
-			node3 = cebul_lookup_gt(&ctx->ceb_root, itm->key);
+			node3 = cebul_imm_lookup_gt(&ctx->ceb_root, itm->key);
 			BUG_ON(node3 == node1);
 			BUG_ON(node3 && node3 == node2);
 
-			node2 = cebul_next(&ctx->ceb_root, node1);
+			node2 = cebul_imm_next(&ctx->ceb_root, node1);
 			BUG_ON(node2 != node3); // next() of an existing node is gt
 
 			if (!node2) {
 				/* this must be the last */
-				node3 = cebul_last(&ctx->ceb_root);
+				node3 = cebul_imm_last(&ctx->ceb_root);
 				BUG_ON(node3 != node1);
 			} else {
-				node3 = cebul_prev(&ctx->ceb_root, node2);
+				node3 = cebul_imm_prev(&ctx->ceb_root, node2);
 				BUG_ON(node3 != node1);
 			}
 		}

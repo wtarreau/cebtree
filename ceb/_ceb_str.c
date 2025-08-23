@@ -377,7 +377,7 @@ CEB_FDECL5(void, CEB_MKEY_PFX, _default_dump, struct ceb_root *const *, root, pt
 		printf("\n### sub %d ###\n\n", sub);
 
 	if (root)
-		ceb_default_dump_tree(kofs, CEB_KEY_TYPE, root, 0, NULL, 0, ctx, sub, NULL, NULL, NULL, NULL);
+		ceb_imm_default_dump_tree(kofs, CEB_KEY_TYPE, root, 0, NULL, 0, ctx, sub, NULL, NULL, NULL, NULL);
 
 	if (!sub && (root || !label))
 		printf("}\n");

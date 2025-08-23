@@ -30,41 +30,41 @@
 #include "cebtree.h"
 
 /* simpler version */
-struct ceb_node *cebl_insert(struct ceb_root **root, struct ceb_node *node);
-struct ceb_node *cebl_first(struct ceb_root *const *root);
-struct ceb_node *cebl_last(struct ceb_root *const *root);
-struct ceb_node *cebl_lookup(struct ceb_root *const *root, unsigned long key);
-struct ceb_node *cebl_lookup_le(struct ceb_root *const *root, unsigned long key);
-struct ceb_node *cebl_lookup_lt(struct ceb_root *const *root, unsigned long key);
-struct ceb_node *cebl_lookup_ge(struct ceb_root *const *root, unsigned long key);
-struct ceb_node *cebl_lookup_gt(struct ceb_root *const *root, unsigned long key);
-struct ceb_node *cebl_next_unique(struct ceb_root *const *root, struct ceb_node *node);
-struct ceb_node *cebl_prev_unique(struct ceb_root *const *root, struct ceb_node *node);
-struct ceb_node *cebl_next_dup(struct ceb_root *const *root, struct ceb_node *node);
-struct ceb_node *cebl_prev_dup(struct ceb_root *const *root, struct ceb_node *node);
-struct ceb_node *cebl_next(struct ceb_root *const *root, struct ceb_node *node);
-struct ceb_node *cebl_prev(struct ceb_root *const *root, struct ceb_node *node);
-struct ceb_node *cebl_delete(struct ceb_root **root, struct ceb_node *node);
-struct ceb_node *cebl_pick(struct ceb_root **root, unsigned long key);
+struct ceb_node *cebl_imm_insert(struct ceb_root **root, struct ceb_node *node);
+struct ceb_node *cebl_imm_first(struct ceb_root *const *root);
+struct ceb_node *cebl_imm_last(struct ceb_root *const *root);
+struct ceb_node *cebl_imm_lookup(struct ceb_root *const *root, unsigned long key);
+struct ceb_node *cebl_imm_lookup_le(struct ceb_root *const *root, unsigned long key);
+struct ceb_node *cebl_imm_lookup_lt(struct ceb_root *const *root, unsigned long key);
+struct ceb_node *cebl_imm_lookup_ge(struct ceb_root *const *root, unsigned long key);
+struct ceb_node *cebl_imm_lookup_gt(struct ceb_root *const *root, unsigned long key);
+struct ceb_node *cebl_imm_next_unique(struct ceb_root *const *root, struct ceb_node *node);
+struct ceb_node *cebl_imm_prev_unique(struct ceb_root *const *root, struct ceb_node *node);
+struct ceb_node *cebl_imm_next_dup(struct ceb_root *const *root, struct ceb_node *node);
+struct ceb_node *cebl_imm_prev_dup(struct ceb_root *const *root, struct ceb_node *node);
+struct ceb_node *cebl_imm_next(struct ceb_root *const *root, struct ceb_node *node);
+struct ceb_node *cebl_imm_prev(struct ceb_root *const *root, struct ceb_node *node);
+struct ceb_node *cebl_imm_delete(struct ceb_root **root, struct ceb_node *node);
+struct ceb_node *cebl_imm_pick(struct ceb_root **root, unsigned long key);
 
-struct ceb_node *cebul_insert(struct ceb_root *const *root, struct ceb_node *node);
-struct ceb_node *cebul_first(struct ceb_root *const *root);
-struct ceb_node *cebul_last(struct ceb_root *const *root);
-struct ceb_node *cebul_lookup(struct ceb_root *const *root, unsigned long key);
-struct ceb_node *cebul_lookup_le(struct ceb_root *const *root, unsigned long key);
-struct ceb_node *cebul_lookup_lt(struct ceb_root *const *root, unsigned long key);
-struct ceb_node *cebul_lookup_ge(struct ceb_root *const *root, unsigned long key);
-struct ceb_node *cebul_lookup_gt(struct ceb_root *const *root, unsigned long key);
-struct ceb_node *cebul_next(struct ceb_root *const *root, struct ceb_node *node);
-struct ceb_node *cebul_prev(struct ceb_root *const *root, struct ceb_node *node);
-struct ceb_node *cebul_delete(struct ceb_root **root, struct ceb_node *node);
-struct ceb_node *cebul_pick(struct ceb_root **root, unsigned long key);
+struct ceb_node *cebul_imm_insert(struct ceb_root *const *root, struct ceb_node *node);
+struct ceb_node *cebul_imm_first(struct ceb_root *const *root);
+struct ceb_node *cebul_imm_last(struct ceb_root *const *root);
+struct ceb_node *cebul_imm_lookup(struct ceb_root *const *root, unsigned long key);
+struct ceb_node *cebul_imm_lookup_le(struct ceb_root *const *root, unsigned long key);
+struct ceb_node *cebul_imm_lookup_lt(struct ceb_root *const *root, unsigned long key);
+struct ceb_node *cebul_imm_lookup_ge(struct ceb_root *const *root, unsigned long key);
+struct ceb_node *cebul_imm_lookup_gt(struct ceb_root *const *root, unsigned long key);
+struct ceb_node *cebul_imm_next(struct ceb_root *const *root, struct ceb_node *node);
+struct ceb_node *cebul_imm_prev(struct ceb_root *const *root, struct ceb_node *node);
+struct ceb_node *cebul_imm_delete(struct ceb_root **root, struct ceb_node *node);
+struct ceb_node *cebul_imm_pick(struct ceb_root **root, unsigned long key);
 
 /* generic dump function */
-void cebl_default_dump(struct ceb_root **ceb_root, const char *label, const void *ctx, int sub);
+void cebl_imm_default_dump(struct ceb_root **ceb_root, const char *label, const void *ctx, int sub);
 
 /* returns the pointer to the unsigned long key */
-static inline unsigned long *cebl_key(const struct ceb_node *node)
+static inline unsigned long *cebl_imm_key(const struct ceb_node *node)
 {
 	return (unsigned long *)ceb_key_ptr(node, sizeof(struct ceb_node));
 }

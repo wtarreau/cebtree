@@ -31,41 +31,41 @@
 #include <inttypes.h>
 
 /* simpler version */
-struct ceb_node *ceb64_insert(struct ceb_root **root, struct ceb_node *node);
-struct ceb_node *ceb64_first(struct ceb_root *const *root);
-struct ceb_node *ceb64_last(struct ceb_root *const *root);
-struct ceb_node *ceb64_lookup(struct ceb_root *const *root, uint64_t key);
-struct ceb_node *ceb64_lookup_le(struct ceb_root *const *root, uint64_t key);
-struct ceb_node *ceb64_lookup_lt(struct ceb_root *const *root, uint64_t key);
-struct ceb_node *ceb64_lookup_ge(struct ceb_root *const *root, uint64_t key);
-struct ceb_node *ceb64_lookup_gt(struct ceb_root *const *root, uint64_t key);
-struct ceb_node *ceb64_next_unique(struct ceb_root *const *root, struct ceb_node *node);
-struct ceb_node *ceb64_prev_unique(struct ceb_root *const *root, struct ceb_node *node);
-struct ceb_node *ceb64_next_dup(struct ceb_root *const *root, struct ceb_node *node);
-struct ceb_node *ceb64_prev_dup(struct ceb_root *const *root, struct ceb_node *node);
-struct ceb_node *ceb64_next(struct ceb_root *const *root, struct ceb_node *node);
-struct ceb_node *ceb64_prev(struct ceb_root *const *root, struct ceb_node *node);
-struct ceb_node *ceb64_delete(struct ceb_root **root, struct ceb_node *node);
-struct ceb_node *ceb64_pick(struct ceb_root **root, uint64_t key);
+struct ceb_node *ceb64_imm_insert(struct ceb_root **root, struct ceb_node *node);
+struct ceb_node *ceb64_imm_first(struct ceb_root *const *root);
+struct ceb_node *ceb64_imm_last(struct ceb_root *const *root);
+struct ceb_node *ceb64_imm_lookup(struct ceb_root *const *root, uint64_t key);
+struct ceb_node *ceb64_imm_lookup_le(struct ceb_root *const *root, uint64_t key);
+struct ceb_node *ceb64_imm_lookup_lt(struct ceb_root *const *root, uint64_t key);
+struct ceb_node *ceb64_imm_lookup_ge(struct ceb_root *const *root, uint64_t key);
+struct ceb_node *ceb64_imm_lookup_gt(struct ceb_root *const *root, uint64_t key);
+struct ceb_node *ceb64_imm_next_unique(struct ceb_root *const *root, struct ceb_node *node);
+struct ceb_node *ceb64_imm_prev_unique(struct ceb_root *const *root, struct ceb_node *node);
+struct ceb_node *ceb64_imm_next_dup(struct ceb_root *const *root, struct ceb_node *node);
+struct ceb_node *ceb64_imm_prev_dup(struct ceb_root *const *root, struct ceb_node *node);
+struct ceb_node *ceb64_imm_next(struct ceb_root *const *root, struct ceb_node *node);
+struct ceb_node *ceb64_imm_prev(struct ceb_root *const *root, struct ceb_node *node);
+struct ceb_node *ceb64_imm_delete(struct ceb_root **root, struct ceb_node *node);
+struct ceb_node *ceb64_imm_pick(struct ceb_root **root, uint64_t key);
 
-struct ceb_node *cebu64_insert(struct ceb_root **root, struct ceb_node *node);
-struct ceb_node *cebu64_first(struct ceb_root *const *root);
-struct ceb_node *cebu64_last(struct ceb_root *const *root);
-struct ceb_node *cebu64_lookup(struct ceb_root *const *root, uint64_t key);
-struct ceb_node *cebu64_lookup_le(struct ceb_root *const *root, uint64_t key);
-struct ceb_node *cebu64_lookup_lt(struct ceb_root *const *root, uint64_t key);
-struct ceb_node *cebu64_lookup_ge(struct ceb_root *const *root, uint64_t key);
-struct ceb_node *cebu64_lookup_gt(struct ceb_root *const *root, uint64_t key);
-struct ceb_node *cebu64_next(struct ceb_root *const *root, struct ceb_node *node);
-struct ceb_node *cebu64_prev(struct ceb_root *const *root, struct ceb_node *node);
-struct ceb_node *cebu64_delete(struct ceb_root **root, struct ceb_node *node);
-struct ceb_node *cebu64_pick(struct ceb_root **root, uint64_t key);
+struct ceb_node *cebu64_imm_insert(struct ceb_root **root, struct ceb_node *node);
+struct ceb_node *cebu64_imm_first(struct ceb_root *const *root);
+struct ceb_node *cebu64_imm_last(struct ceb_root *const *root);
+struct ceb_node *cebu64_imm_lookup(struct ceb_root *const *root, uint64_t key);
+struct ceb_node *cebu64_imm_lookup_le(struct ceb_root *const *root, uint64_t key);
+struct ceb_node *cebu64_imm_lookup_lt(struct ceb_root *const *root, uint64_t key);
+struct ceb_node *cebu64_imm_lookup_ge(struct ceb_root *const *root, uint64_t key);
+struct ceb_node *cebu64_imm_lookup_gt(struct ceb_root *const *root, uint64_t key);
+struct ceb_node *cebu64_imm_next(struct ceb_root *const *root, struct ceb_node *node);
+struct ceb_node *cebu64_imm_prev(struct ceb_root *const *root, struct ceb_node *node);
+struct ceb_node *cebu64_imm_delete(struct ceb_root **root, struct ceb_node *node);
+struct ceb_node *cebu64_imm_pick(struct ceb_root **root, uint64_t key);
 
 /* generic dump function */
-void ceb64_default_dump(struct ceb_root **ceb_root, const char *label, const void *ctx, int sub);
+void ceb64_imm_default_dump(struct ceb_root **ceb_root, const char *label, const void *ctx, int sub);
 
 /* returns the pointer to the uint64_t key */
-static inline uint64_t *ceb64_key(const struct ceb_node *node)
+static inline uint64_t *ceb64_imm_key(const struct ceb_node *node)
 {
 	return (uint64_t *)ceb_key_ptr(node, sizeof(struct ceb_node));
 }

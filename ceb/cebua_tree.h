@@ -30,7 +30,7 @@
 
 #include "ceba_tree.h"
 
-#define cebua_default_dump ceba_default_dump
+#define cebua_imm_default_dump ceba_imm_default_dump
 #define cebua_ofs_default_dump ceba_ofs_default_dump
 
 #endif

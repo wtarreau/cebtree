@@ -30,7 +30,7 @@
 
 #include "cebl_tree.h"
 
-#define cebul_default_dump cebl_default_dump
+#define cebul_imm_default_dump cebl_imm_default_dump
 #define cebul_ofs_default_dump cebl_ofs_default_dump
 
 #endif

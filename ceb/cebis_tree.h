@@ -30,44 +30,44 @@
 #include "cebtree.h"
 
 /* simpler version */
-struct ceb_node *cebis_insert(struct ceb_root **root, struct ceb_node *node);
-struct ceb_node *cebis_first(struct ceb_root *const *root);
-struct ceb_node *cebis_last(struct ceb_root *const *root);
-struct ceb_node *cebis_lookup(struct ceb_root *const *root, const void *key);
-struct ceb_node *cebis_lookup_le(struct ceb_root *const *root, const void *key);
-struct ceb_node *cebis_lookup_lt(struct ceb_root *const *root, const void *key);
-struct ceb_node *cebis_lookup_ge(struct ceb_root *const *root, const void *key);
-struct ceb_node *cebis_lookup_gt(struct ceb_root *const *root, const void *key);
-struct ceb_node *cebis_next_unique(struct ceb_root *const *root, struct ceb_node *node);
-struct ceb_node *cebis_prev_unique(struct ceb_root *const *root, struct ceb_node *node);
-struct ceb_node *cebis_next_dup(struct ceb_root *const *root, struct ceb_node *node);
-struct ceb_node *cebis_prev_dup(struct ceb_root *const *root, struct ceb_node *node);
-struct ceb_node *cebis_next(struct ceb_root *const *root, struct ceb_node *node);
-struct ceb_node *cebis_prev(struct ceb_root *const *root, struct ceb_node *node);
-struct ceb_node *cebis_delete(struct ceb_root **root, struct ceb_node *node);
-struct ceb_node *cebis_pick(struct ceb_root **root, const void *key);
+struct ceb_node *cebis_imm_insert(struct ceb_root **root, struct ceb_node *node);
+struct ceb_node *cebis_imm_first(struct ceb_root *const *root);
+struct ceb_node *cebis_imm_last(struct ceb_root *const *root);
+struct ceb_node *cebis_imm_lookup(struct ceb_root *const *root, const void *key);
+struct ceb_node *cebis_imm_lookup_le(struct ceb_root *const *root, const void *key);
+struct ceb_node *cebis_imm_lookup_lt(struct ceb_root *const *root, const void *key);
+struct ceb_node *cebis_imm_lookup_ge(struct ceb_root *const *root, const void *key);
+struct ceb_node *cebis_imm_lookup_gt(struct ceb_root *const *root, const void *key);
+struct ceb_node *cebis_imm_next_unique(struct ceb_root *const *root, struct ceb_node *node);
+struct ceb_node *cebis_imm_prev_unique(struct ceb_root *const *root, struct ceb_node *node);
+struct ceb_node *cebis_imm_next_dup(struct ceb_root *const *root, struct ceb_node *node);
+struct ceb_node *cebis_imm_prev_dup(struct ceb_root *const *root, struct ceb_node *node);
+struct ceb_node *cebis_imm_next(struct ceb_root *const *root, struct ceb_node *node);
+struct ceb_node *cebis_imm_prev(struct ceb_root *const *root, struct ceb_node *node);
+struct ceb_node *cebis_imm_delete(struct ceb_root **root, struct ceb_node *node);
+struct ceb_node *cebis_imm_pick(struct ceb_root **root, const void *key);
 
-struct ceb_node *cebuis_insert(struct ceb_root **root, struct ceb_node *node);
-struct ceb_node *cebuis_first(struct ceb_root *const *root);
-struct ceb_node *cebuis_last(struct ceb_root *const *root);
-struct ceb_node *cebuis_lookup(struct ceb_root *const *root, const void *key);
-struct ceb_node *cebuis_lookup_le(struct ceb_root *const *root, const void *key);
-struct ceb_node *cebuis_lookup_lt(struct ceb_root *const *root, const void *key);
-struct ceb_node *cebuis_lookup_ge(struct ceb_root *const *root, const void *key);
-struct ceb_node *cebuis_lookup_gt(struct ceb_root *const *root, const void *key);
-struct ceb_node *cebuis_next(struct ceb_root *const *root, struct ceb_node *node);
-struct ceb_node *cebuis_prev(struct ceb_root *const *root, struct ceb_node *node);
-struct ceb_node *cebuis_delete(struct ceb_root **root, struct ceb_node *node);
-struct ceb_node *cebuis_pick(struct ceb_root **root, const void *key);
+struct ceb_node *cebuis_imm_insert(struct ceb_root **root, struct ceb_node *node);
+struct ceb_node *cebuis_imm_first(struct ceb_root *const *root);
+struct ceb_node *cebuis_imm_last(struct ceb_root *const *root);
+struct ceb_node *cebuis_imm_lookup(struct ceb_root *const *root, const void *key);
+struct ceb_node *cebuis_imm_lookup_le(struct ceb_root *const *root, const void *key);
+struct ceb_node *cebuis_imm_lookup_lt(struct ceb_root *const *root, const void *key);
+struct ceb_node *cebuis_imm_lookup_ge(struct ceb_root *const *root, const void *key);
+struct ceb_node *cebuis_imm_lookup_gt(struct ceb_root *const *root, const void *key);
+struct ceb_node *cebuis_imm_next(struct ceb_root *const *root, struct ceb_node *node);
+struct ceb_node *cebuis_imm_prev(struct ceb_root *const *root, struct ceb_node *node);
+struct ceb_node *cebuis_imm_delete(struct ceb_root **root, struct ceb_node *node);
+struct ceb_node *cebuis_imm_pick(struct ceb_root **root, const void *key);
 
 /* generic dump function */
-void cebis_default_dump(struct ceb_root *const *root, const char *label, const void *ctx, int sub);
+void cebis_imm_default_dump(struct ceb_root *const *root, const char *label, const void *ctx, int sub);
 
 /* returns the pointer to the indirect char* key, not the pointer itself,
  * or NULL if node is NULL (note that the indirect pointer cannot be NULL
  * if node is non-NULL).
  */
-static inline char *cebis_key(const struct ceb_node *node)
+static inline char *cebis_imm_key(const struct ceb_node *node)
 {
 	return node ? *(char **)_ceb_key_ptr(node, sizeof(struct ceb_node)) : NULL;
 }
