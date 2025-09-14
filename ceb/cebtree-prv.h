@@ -192,6 +192,19 @@ static inline __attribute__((always_inline)) unsigned int flsnz64(unsigned long 
 	        : "=r" (r) : "rm" (x));
 	return r + 1;
 }
+#else
+static inline __attribute__((always_inline)) unsigned int flsnz64(unsigned long long x)
+{
+	unsigned int h;
+	unsigned int bits = 32;
+
+	h = x >> 32;
+	if (!h) {
+		h = x;
+		bits = 0;
+	}
+	return flsnz32(h) + bits;
+}
 #endif
 
 #else /* Neither gcc >= 4.2 nor x86, use generic code */
