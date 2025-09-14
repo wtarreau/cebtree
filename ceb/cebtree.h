@@ -39,6 +39,18 @@ struct ceb_node {
 	struct ceb_root *b[2]; /* branches: 0=left, 1=right */
 };
 
+/* initializes a root as an empty tree */
+static inline void ceb_init_root(struct ceb_root **root)
+{
+	*root = NULL;
+}
+
+/* initializes a node as not belonging to a tree */
+static inline void ceb_init_node(struct ceb_node *node)
+{
+	node->b[0] = NULL;
+}
+
 /* indicates whether a valid node is in a tree or not */
 static inline int ceb_intree(const struct ceb_node *node)
 {
