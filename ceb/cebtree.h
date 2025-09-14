@@ -29,6 +29,32 @@
 
 #include <stddef.h>
 
+/* offsetof() is provided as a builtin starting with gcc-4.1 */
+#ifndef offsetof
+# if (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 1))
+#  define offsetof(type, field)  __builtin_offsetof(type, field)
+# else
+#  define offsetof(type, field) ((__size_t)(__uintptr_t)((const volatile void *)&((type *)0)->field))
+# endif
+#endif
+
+/* Linux-like "container_of". It returns a pointer to the structure of type
+ * <type> which has its member <name> stored at address <ptr>.
+ */
+#ifndef container_of
+#define container_of(ptr, type, name) ((type *)(((char *)(ptr)) - offsetof(type, name)))
+#endif
+
+/* returns a pointer to the structure of type <type> which has its member <name>
+ * stored at address <ptr>, unless <ptr> is 0, in which case 0 is returned.
+ */
+#ifndef container_of_safe
+#define container_of_safe(ptr, type, name) \
+	({ void *__p = (ptr); \
+	   __p ? container_of(__p, type, name) : (type *)0; \
+	})
+#endif
+
 /* This is what a tagged pointer points to, as found on the root or any branch.
  * It's only a forward declaration so that it is never directly dereferenced.
  */
