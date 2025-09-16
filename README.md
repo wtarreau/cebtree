@@ -99,6 +99,37 @@ address:
    }
 ```
 
+## Porting from EBTree
+
+Porting from EBTree may be done using the "immediate" API (`cebXX_imm_YY`) and
+placing the key immediately after the `ceb_node`. It is suggested to place
+comments in the structures indicating that the two are expected to be located
+next to each other. It also allows to reuse generic functions designed to work
+on generic nodes of different structures (e.g. sorting functions). Alternately,
+using the "item" API is more natural and flexible but will require a little bit
+more adaptation. In this case, given that the node and key members will be
+named as macro arguments and will not immediately appear as being struct
+members, it is suggested to use non-ambiguous terms to name them. For example
+one should favor `guid_node` and `guid_key` over `guid` or `node` and `key`.
+Normally when porting from EBTree the key member will not exist as it used to
+be accessed under the node, so it is the right opportunity to assign it a clear
+name. However it sometimes happens that this key was duplicated (e.g. a GUID
+key could also have appeared as `id`) and that the renaming is not welcome due
+to exposed API or too much code to change. In that case it can be wise to
+rename only the node to match the key name (e.g. `id_node`) and use a comment
+on both to indicate what the node indexes and what indexes the ID.
+
+One difficulty that will sometimes be met is that EBTree can delete a node
+regardless of the tree it belongs to, since it's possible to walk in every
+direction. With cebtrees it is needed to know the root, and this might require
+some code adaptations to figure the proper root and pass it down the code.
+
+Alignment will change due to the node's size, so it's important to detect newly
+created holes using `pahole`, and possibly move the key around to plug them.
+Benchmarks are often important, as replacing critical nodes doing only insert/
+delete operations may end up being slower, then the case must be arbitered
+between RAM savings and CPU savings when both cannot be achieved together.
+
 ## Limitations and future improvements
 
 Relative addressing is not yet implemented but is in progress. This is handy to
@@ -109,8 +140,12 @@ Performance is a bit lower than EBTrees even for small keys due to the need to
 read both branches at each node to figure whether to stop or continue the
 descent. It effectively doubles the number of visited nodes (hence is less TLB
 friendly), though it does not necessarily increase the memory bandwidth since
-the nodes are much smaller. A performance test with real-world key distribution
-comparing cebtrees with other tree types was published:
+the nodes are much smaller. Another point to consider is that cebtrees arrange
+duplicate keys in lists accessed in O(1) while EBTrees arrange them in subtrees
+accessed in O(logN). This can make a difference with timers, cache keys, or
+idle connections management where most keys are duplicates. A performance test
+with real-world key distribution comparing cebtrees with other tree types was
+published:
 [here](https://wtarreau.blogspot.com/2025/06/real-world-performance-comparison-of.html).
 
 It was verified that an almost lockless approach could be implemented: lookups
